@@ -1,0 +1,61 @@
+# macOS
+.DS_Store
+
+# Vue.js / Node.js
+node_modules/
+dist/
+dist-ssr/
+*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+coverage/
+*.ntvs*
+*.njsproj
+*.tsbuildinfo
+
+# .NET Core / C#
+bin/
+obj/
+*.user
+*.suo
+.vs/
+.idea/
+*.iml
+*.AssemblyInfo.cs
+*.AssemblyInfoInputs.cache
+*.assets.cache
+*.csproj.nuget.*
+project.lock.json
+project.fragment.lock.json
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Docker
+docker-compose.override.yml
+
+# SQL Server files
+*.mdf
+*.ldf
+*.ndf
+
+# Logs
+logs/
+*.log
+
+# Editor
+*.swp
+*.swo
+.vscode/*
+!.vscode/extensions.json
+
+# Custom Files
+API/appsettings.Development.json
+API/appsettings.Production.json
+.vscode/*
+Vue/.vscode/*
