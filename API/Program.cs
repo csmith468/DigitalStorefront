@@ -1,14 +1,19 @@
 using API.Database;
+using API.Setup;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerAuth();
 
 builder.Services.AddControllers();
-builder.Services.AddScoped<IDataContextDapper, DataContextDapper>();
+
+builder.Services.AddAutoRegistration(typeof(Program).Assembly);
+builder.Services.AddSharedContainer();
+builder.Services.AddAuthentication(builder.Configuration);
+
 builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddCors((options) =>
@@ -43,6 +48,9 @@ else
     app.UseCors("ProdCors");
     app.UseHttpsRedirection();
 }
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapControllers();
 

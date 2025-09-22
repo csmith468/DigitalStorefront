@@ -14,12 +14,15 @@ public interface IDataContextDapper : IDisposable
     int ExecuteStoredProcedure(string sql, object parameters = null);
 
     T WithTransaction<T>(Func<T> func);
+    void WithTransaction(Action action);
     
     int Insert<T>(T obj) where T : class;
     void Update<T>(T obj) where T : class;
     T GetById<T>(int id) where T : class;
     List<T> GetWhere<T>(Dictionary<string, object> whereConditions) where T : class;
+    List<T> GetByField<T>(string fieldName, object value) where T : class;
     bool Exists<T>(int id) where T : class;
+    bool ExistsByField<T>(string fieldName, object value) where T : class;
     
     string Database { get; }
     IDbTransaction Transaction { get; }
@@ -81,6 +84,15 @@ public class DataContextDapper : IDataContextDapper
           }
       }
 
+      public void WithTransaction(Action action)
+      {
+          WithTransaction<object>(() =>
+          {
+              action();
+              return null;
+          });
+      }
+
       public int Insert<T>(T obj) where T : class
       {
           var tableName = DbAttributes.GetTableName(typeof(T));
@@ -130,15 +142,24 @@ public class DataContextDapper : IDataContextDapper
           return Query<T>(sql, whereConditions);
       }
 
+      public List<T> GetByField<T>(string fieldName, object value) where T : class
+      {
+          return GetWhere<T>(new Dictionary<string, object>{ { fieldName, value } });
+      }
+
       public bool Exists<T>(int id) where T : class
       {
           return GetById<T>(id) != null;
       }
-      
+
+      public bool ExistsByField<T>(string fieldName, object value) where T : class
+      {
+          return GetWhere<T>(new Dictionary<string, object> { { fieldName, value } }).Count > 0;
+      }
+
       public IDbTransaction Transaction => _transaction;
       
       public string Database => _db.Database;
-
 
 
       public void Dispose()

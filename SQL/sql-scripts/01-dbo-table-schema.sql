@@ -55,6 +55,7 @@ CREATE TABLE dbo.product (
     isNew BIT DEFAULT 0,
     isPromotional BIT DEFAULT 0,
     isExclusive BIT DEFAULT 0,
+    parentProductId INT NULL,
     sku NVARCHAR(50) NOT NULL,
     priceTypeId INT NOT NULL,
     price DECIMAL(10,2) NOT NULL,
