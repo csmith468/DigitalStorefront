@@ -1,4 +1,7 @@
-using API.Models.Dbo;
+using API.Extensions;
+using API.Models.DboTables;
+using API.Models.Dtos;
+using API.Services;
 using API.Setup;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,39 +11,24 @@ namespace API.Controllers;
 [Route("product")]
 public class ProductController(ISharedContainer container) : BaseController(container)
 {
-    [HttpGet("all")]
-    public async Task<ActionResult<List<Product>>> GetAllProducts()
+    private IProductService _productService => DepInj<IProductService>();
+    
+    [HttpGet("category/{categorySlug}")]
+    public async Task<ActionResult<List<ProductDto>>> GetProductsByCategory(string categorySlug)
     {
-        return (await Dapper.GetAllAsync<Product>()).ToList();
+        return (await _productService.GetProductsByCategoryAsync(categorySlug)).ToActionResult();
     }
 
     [HttpGet("subcategory/{subcategorySlug}")]
-    public async Task<ActionResult<List<Product>>> GetProductsBySubcategory(string subcategorySlug)
+    public async Task<ActionResult<List<ProductDto>>> GetProductsBySubcategory(string subcategorySlug)
     {
-        var categoryExists = await Dapper.ExistsByFieldAsync<Subcategory>("slug", subcategorySlug);
-        if (!categoryExists) return NotFound($"Subcategory slug {subcategorySlug} not found.");
-        
-        var products = (await Dapper.QueryAsync<Product>(
-            """
-                SELECT p.*
-                FROM dbo.product p
-                JOIN dbo.productSubcategory ps ON p.productId = ps.productId
-                join dbo.subcategory s ON s.subcategoryId = ps.subcategoryId
-                WHERE s.slug = @subcategorySlug
-            """,
-            new { subcategorySlug })).ToList();
-        
-        if (products.Count == 0) return NotFound($"No products found for {subcategorySlug}.");
-        return Ok(products);
+        return (await _productService.GetProductsBySubcategoryAsync(subcategorySlug)).ToActionResult();
     }
     
-    
     [HttpGet("{productId}")]
-    public async Task<ActionResult<Product>> GetProduct(int productId)
+    public async Task<ActionResult<ProductDetailDto>> GetProduct(int productId)
     {
-        var product = await Dapper.GetByIdAsync<Product>(productId);
-        if (product == null) return NotFound($"Product ID {productId} not found.");
-        return Ok(product);
+        return (await _productService.GetProductByIdAsync(productId)).ToActionResult();
     }
 }
 

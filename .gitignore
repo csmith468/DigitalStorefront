@@ -59,3 +59,4 @@ API/appsettings.Development.json
 API/appsettings.Production.json
 .vscode/*
 Vue/.vscode/*
+server/API/wwwroot/images/*

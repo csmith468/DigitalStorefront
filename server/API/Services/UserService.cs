@@ -1,4 +1,4 @@
-using API.Models.Dsf;
+using API.Models.DsfTables;
 using API.Setup;
 
 namespace API.Services;

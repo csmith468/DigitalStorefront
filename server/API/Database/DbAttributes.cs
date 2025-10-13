@@ -13,24 +13,57 @@ public class DbColumnAttribute : Attribute { }
 
 public static class DbAttributes
 {
-    public static string GetTableName(Type type)
+    public static Dictionary<string, object?> CreateParameters(object obj, List<PropertyInfo> properties)
     {
-        var tableAttribute = type.GetCustomAttribute<DbTableAttribute>();
-        return tableAttribute != null ? tableAttribute.Name : type.Name;
+        return properties.ToDictionary(prop => prop.Name, prop => prop.GetValue(obj));
+    }
+    
+    public static TableMetadata GetTableMetadata<T>()
+    {
+        ValidateTable<T>();
+        
+        var tableName = GetTableName(typeof(T));
+        var columns = GetDbColumnProperties(typeof(T));
+        var primaryKey = GetPrimaryKeyProperty(typeof(T));
+
+        return new TableMetadata
+        {
+            TableName = tableName!,
+            Columns = columns,
+            PrimaryKey = primaryKey!
+        };
     }
 
-    public static PropertyInfo GetPrimaryKeyProperty(Type type)
+    private static void ValidateTable<T>()
+    {
+        var tableName = GetTableName(typeof(T));
+        var columns = GetDbColumnProperties(typeof(T));
+        var primaryKey = GetPrimaryKeyProperty(typeof(T));
+        if (tableName is null || columns.Count == 0 || primaryKey is null)
+            throw new InvalidOperationException("Invalid table.");
+    }
+    
+    private static string? GetTableName(Type type)
+    {
+        var tableAttribute = type.GetCustomAttribute<DbTableAttribute>();
+        return tableAttribute?.Name;
+    }
+
+    private static PropertyInfo? GetPrimaryKeyProperty(Type type)
     {
         return type.GetProperties().FirstOrDefault(p => p.GetCustomAttribute<DbPrimaryKeyAttribute>() != null);
     }
 
-    public static List<PropertyInfo> GetDbColumnProperties(Type type)
+    private static List<PropertyInfo> GetDbColumnProperties(Type type)
     {
         return type.GetProperties().Where(p => p.GetCustomAttribute<DbColumnAttribute>() != null).ToList();
     }
 
-    public static Dictionary<string, object> CreateParameters(object obj, List<PropertyInfo> properties)
+    public record TableMetadata
     {
-        return properties.ToDictionary(prop => prop.Name, prop => prop.GetValue(obj));
+        public string TableName { get; init; } = "";
+        public required PropertyInfo PrimaryKey { get; init; }
+        public List<PropertyInfo> Columns { get; init; } = [];
     }
 }
+

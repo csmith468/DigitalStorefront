@@ -1,6 +1,6 @@
 using API.Database;
 
-namespace API.Models.Dbo;
+namespace API.Models.DboTables;
 
 [DbTable("dbo.product")]
 public class Product
@@ -31,9 +31,11 @@ public class Product
     
     [DbColumn] public decimal PremiumPrice { get; set; }
     
-    [DbColumn] public string? ImageUrl { get; set; }
-
-    [DbColumn] public DateTime CreatedAt { get; set; } = DateTime.Now;
-
+    [DbColumn] public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    
     [DbColumn] public DateTime? UpdatedAt { get; set; }
+    
+    [DbColumn] public int CreatedBy { get; set; }
+    
+    [DbColumn] public int? UpdatedBy { get; set; }
 }

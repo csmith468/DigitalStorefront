@@ -13,7 +13,10 @@ CREATE TABLE [dsf].[user] (
     [firstName] NVARCHAR(50) NULL,
     [lastName] NVARCHAR(50) NULL,
     [email] NVARCHAR(50) NULL,
-    [isActive] BIT NOT NULL DEFAULT 1
+    [isActive] BIT NOT NULL DEFAULT 1,
+    [isAdmin] BIT NOT NULL DEFAULT 0,
+    [createdAt] DATETIME NOT NULL DEFAULT GETUTCDATE(),
+    [updatedAt] DATETIME NULL
 );
 GO
 

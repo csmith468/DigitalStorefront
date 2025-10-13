@@ -1,0 +1,48 @@
+using System.Reflection;
+using API.Database;
+using API.Services.Images;
+using API.Setup;
+using API.Utils;
+
+namespace API.Extensions;
+
+public static class DependencyInjectionExtensions
+{
+    public static IServiceCollection AddAutoRegistration(this IServiceCollection services, Assembly assembly)
+    {
+        var types = assembly.GetTypes()
+            .Where(t => t is { IsClass: true, IsAbstract: false, IsGenericType: false })
+            .Where(t => t.Name.EndsWith("Service") || t.Name.EndsWith("Repository"))
+            .ToList();
+
+        foreach (var implementationType in types)
+        {
+            var interfaceType = implementationType.GetInterfaces()
+                .FirstOrDefault(i => i.Name == $"I{implementationType.Name}");
+
+            if (interfaceType != null)
+                services.AddScoped(interfaceType, implementationType);
+        }
+
+        return services;
+    }
+
+    public static IServiceCollection AddManualRegistrations(this IServiceCollection services)
+    {
+        services.AddScoped<IDataContextDapper, DataContextDapper>();
+        services.AddScoped<ISharedContainer, SharedContainer>();
+        
+        services.AddScoped<IImageStorageService, LocalImageStorageService>();
+        services.AddScoped<TokenGenerator>();
+        services.AddScoped<PasswordHasher>();
+        return services;
+    }
+
+    public static IServiceCollection AddMappings(this IServiceCollection services)
+    {
+        // Scans all loaded assemblies for AutoMapper Profile classes
+        services.AddAutoMapper(typeof(Program).Assembly);
+
+        return services;
+    }
+}

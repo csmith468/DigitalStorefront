@@ -5,12 +5,15 @@ DELETE FROM dbo.product
 DELETE FROM dbo.productType
 DELETE FROM dbo.priceType
 DELETE FROM dbo.category
+DELETE FROM dsf.auth
+DELETE FROM dsf.[user]
 
-
-DROP TABLE dbo.productSubcategory
-DROP TABLE dbo.subcategory
-DROP TABLE dbo.productImage
-DROP TABLE dbo.product
-DROP TABLE dbo.productType
-DROP TABLE dbo.priceType
-DROP TABLE dbo.category
+DROP TABLE IF EXISTS dbo.productSubcategory 
+DROP TABLE IF EXISTS dbo.subcategory
+DROP TABLE IF EXISTS dbo.productImage
+DROP TABLE IF EXISTS dbo.product
+DROP TABLE IF EXISTS dbo.productType
+DROP TABLE IF EXISTS dbo.priceType
+DROP TABLE IF EXISTS dbo.category
+DROP TABLE IF EXISTS dsf.auth
+DROP TABLE IF EXISTS dsf.[user]

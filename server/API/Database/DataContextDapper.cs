@@ -18,12 +18,16 @@ public interface IDataContextDapper : IDisposable
 
     Task<int> InsertAsync<T>(T obj) where T : class;
     Task UpdateAsync<T>(T obj) where T : class;
+    Task DeleteByIdAsync<T>(int id) where T : class;
+    
     Task<IEnumerable<T>> GetAllAsync<T>() where T : class;
     Task<T?> GetByIdAsync<T>(int id) where T : class;
     Task<IEnumerable<T>> GetWhereAsync<T>(Dictionary<string, object> whereConditions) where T : class;
     Task<IEnumerable<T>> GetByFieldAsync<T>(string fieldName, object value) where T : class;
+    Task<IEnumerable<T>> GetWhereInAsync<T>(string fieldName, List<int> values) where T : class;
     Task<bool> ExistsAsync<T>(int id) where T : class;
     Task<bool> ExistsByFieldAsync<T>(string fieldName, object value) where T : class;
+    Task<int> GetCountByFieldAsync<T>(string fieldName, object value) where T : class;
     
     string? Database { get; }
     IDbTransaction? Transaction { get; }
@@ -33,11 +37,13 @@ public class DataContextDapper : IDataContextDapper
 {
       private readonly IDbConnection _db;
       private IDbTransaction? _transaction;
+      private readonly IHttpContextAccessor _httpContextAccessor;
 
-      public DataContextDapper(IConfiguration config)
+      public DataContextDapper(IConfiguration config, IHttpContextAccessor httpContextAccessor)
       {
           _db = new SqlConnection(config.GetConnectionString("DefaultConnection"));
           _db.Open();
+          _httpContextAccessor = httpContextAccessor;
       }
 
       public async Task<IEnumerable<T>> QueryAsync<T>(string sql, object? parameters = null)
@@ -96,14 +102,20 @@ public class DataContextDapper : IDataContextDapper
 
       public async Task<int> InsertAsync<T>(T obj) where T : class
       {
-          var tableName = DbAttributes.GetTableName(typeof(T));
-          var columns = DbAttributes.GetDbColumnProperties(typeof(T));
+          var metadata = DbAttributes.GetTableMetadata<T>();
           
-          var columnNames = string.Join(",", columns.Select(c => $"[{c.Name}]"));
-          var parameterNames = string.Join(",", columns.Select(c => $"@{c.Name}"));
+          if (metadata.Columns.Any(c => c.Name == "CreatedAt"))
+              obj = SetEntityProp(obj, "CreatedAt", DateTime.UtcNow);
           
-          var parameters = DbAttributes.CreateParameters(obj, columns);
-          var sql = $"INSERT INTO {tableName} ({columnNames}) VALUES ({parameterNames}); SELECT CAST(SCOPE_IDENTITY() AS INT);";
+          var userId = GetCurrentUserId();
+          if (userId != null && metadata.Columns.Any(c => c.Name == "CreatedBy"))
+              obj = SetEntityProp(obj, "CreatedBy", userId.Value);
+          
+          var columnNames = string.Join(",", metadata.Columns.Select(c => $"[{c.Name}]"));
+          var parameterNames = string.Join(",", metadata.Columns.Select(c => $"@{c.Name}"));
+          
+          var parameters = DbAttributes.CreateParameters(obj, metadata.Columns);
+          var sql = $"INSERT INTO {metadata.TableName} ({columnNames}) VALUES ({parameterNames}); SELECT CAST(SCOPE_IDENTITY() AS INT);";
           
           var result = (await QueryAsync<int>(sql, parameters)).FirstOrDefault();
           return result == 0 ? throw new InvalidOperationException("Insert failed - no identity returned") : result;
@@ -111,33 +123,40 @@ public class DataContextDapper : IDataContextDapper
 
       public async Task UpdateAsync<T>(T obj) where T : class
       {
-          var tableName = DbAttributes.GetTableName(typeof(T));
-          var columns = DbAttributes.GetDbColumnProperties(typeof(T));
-          var primaryKey = DbAttributes.GetPrimaryKeyProperty(typeof(T));
+          var metadata = DbAttributes.GetTableMetadata<T>();
+
+          if (metadata.Columns.Any(c => c.Name == "UpdatedAt"))
+              obj = SetEntityProp(obj, "UpdatedAt", DateTime.UtcNow);
+
+          var userId = GetCurrentUserId();
+          if (userId != null && metadata.Columns.Any(c => c.Name == "UpdatedBy"))
+              obj = SetEntityProp(obj, "UpdatedBy", userId.Value);
           
-          if (tableName is null || columns.Count == 0 || primaryKey is null)
-              throw new InvalidOperationException("Invalid table.");
+          var columnUpdates = string.Join(",", metadata.Columns.Select(c => $"[{c.Name}] = @{c.Name}"));
+          var parameters = DbAttributes.CreateParameters(obj, metadata.Columns);
+          parameters[metadata.PrimaryKey.Name] = metadata.PrimaryKey.GetValue(obj)!;
           
-          var columnUpdates = string.Join(",", columns.Select(c => $"[{c.Name}] = @{c.Name}"));
-          var parameters = DbAttributes.CreateParameters(obj, columns);
-          parameters[primaryKey.Name] = primaryKey.GetValue(obj)!;
-          
-          var sql = $"UPDATE {tableName} SET {columnUpdates} WHERE [{primaryKey.Name}] = @{primaryKey.Name}";
+          var sql = $"UPDATE {metadata.TableName} SET {columnUpdates} WHERE [{metadata.PrimaryKey.Name}] = @{metadata.PrimaryKey.Name}";
           await ExecuteAsync(sql, parameters);
+      }
+
+      public async Task DeleteByIdAsync<T>(int id) where T : class
+      {
+          var metadata = DbAttributes.GetTableMetadata<T>();
+          var sql = $"DELETE FROM {metadata.TableName} WHERE [{metadata.PrimaryKey.Name}] = @id";
+          await ExecuteAsync(sql, new { id });
       }
 
       public async Task<IEnumerable<T>> GetAllAsync<T>() where T : class
       {
-          var tableName = DbAttributes.GetTableName(typeof(T));
-          return await QueryAsync<T>($"SELECT * FROM {tableName}");
+          var metadata = DbAttributes.GetTableMetadata<T>();
+          return await QueryAsync<T>($"SELECT * FROM {metadata.TableName}");
       }
 
       public async Task<T?> GetByIdAsync<T>(int id) where T : class
       {
-          var tableName = DbAttributes.GetTableName(typeof(T));
-          var primaryKey = DbAttributes.GetPrimaryKeyProperty(typeof(T));
-          
-          var sql = $"SELECT * FROM {tableName} WHERE [{primaryKey.Name}] = @id";
+          var metadata = DbAttributes.GetTableMetadata<T>();
+          var sql = $"SELECT * FROM {metadata.TableName} WHERE [{metadata.PrimaryKey.Name}] = @id";
           return await FirstOrDefaultAsync<T>(sql, new { id });
       }
 
@@ -146,15 +165,31 @@ public class DataContextDapper : IDataContextDapper
           if (whereConditions == null || !whereConditions.Any())
               throw new ArgumentException("At least one condition is required");
           
-          var tableName = DbAttributes.GetTableName(typeof(T));
+          var metadata = DbAttributes.GetTableMetadata<T>();
           var whereClause = string.Join(" AND ", whereConditions.Keys.Select(key => $"[{key}] = @{key}"));
-          var sql = $"SELECT * FROM {tableName} WHERE {whereClause}";
+          var sql = $"SELECT * FROM {metadata.TableName} WHERE {whereClause}";
           return await QueryAsync<T>(sql, whereConditions);
       }
 
       public async Task<IEnumerable<T>> GetByFieldAsync<T>(string fieldName, object value) where T : class
       {
+          if (string.IsNullOrWhiteSpace(fieldName))
+              throw new ArgumentException("Field name is required", nameof(fieldName));
           return await GetWhereAsync<T>(new Dictionary<string, object>{ { fieldName, value } });
+      }
+
+      public async Task<IEnumerable<T>> GetWhereInAsync<T>(string fieldName, List<int> values) where T : class
+      {
+          if (string.IsNullOrWhiteSpace(fieldName))
+              throw new ArgumentException("Field name is required", nameof(fieldName));
+          
+          if (values.Count == 0)
+              return [];
+          
+          var metadata = DbAttributes.GetTableMetadata<T>();
+          var sql = $"SELECT * FROM {metadata.TableName} WHERE [{fieldName}] IN @values";
+    
+          return await QueryAsync<T>(sql, new { values });
       }
 
       public async Task<bool> ExistsAsync<T>(int id) where T : class
@@ -166,6 +201,28 @@ public class DataContextDapper : IDataContextDapper
       {
           return (await GetWhereAsync<T>(new Dictionary<string, object> { { fieldName, value } })).Any();
       }
+
+      public async Task<int> GetCountByFieldAsync<T>(string fieldName, object value) where T : class
+      {
+          return (await GetWhereAsync<T>(new Dictionary<string, object> { { fieldName, value } })).Count();
+      }
+      
+      private int? GetCurrentUserId()
+      {
+          var userIdClaim = _httpContextAccessor.HttpContext?.User?.FindFirst("userId")?.Value;
+          return userIdClaim != null ? int.Parse(userIdClaim!) : null;
+      }
+
+      private T SetEntityProp<T>(T obj, string field, object value) where T : class
+      {
+          var type = typeof(T);
+          var prop = type.GetProperty(field);
+          if (prop == null) return obj;
+
+          prop.SetValue(obj, value);
+          return obj;
+      }
+
 
       public IDbTransaction? Transaction => _transaction;
       

@@ -1,20 +1,25 @@
 .app {
   min-height: 100vh;
-  background-color: var(--color-gray-50);
+  background-color: var(--color-app-bg);
 }
 
 .app-header {
-  background-color: var(--color-white);
-  border-bottom: 1px solid var(--color-gray-200);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 50%, var(--color-accent) 100%);
+  border-bottom: 2px solid var(--color-border);
   padding: 1.5rem;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-lg);
+  position: sticky;
+  top: 0;
+  z-index: 20;
 }
 
 .app-header h1 {
   max-width: 1200px;
   margin: 0 auto;
-  color: var(--color-gray-800);
+  color: var(--color-white);
   font-size: 1.5rem;
+  font-weight: 700;
+  text-shadow: 0 2px 4px var(--color-text-shadow);
 }
 
 .app-layout {
@@ -23,6 +28,7 @@
   padding: 1.5rem;
   max-width: 1200px;
   margin: 0 auto;
+  width: 100%;
 }
 
 .app-main {
@@ -30,5 +36,6 @@
   background-color: var(--color-white);
   border-radius: 0.5rem;
   padding: 1.5rem;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-md);
+  min-height: 100vh;
 }
