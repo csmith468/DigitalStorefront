@@ -9,6 +9,29 @@ namespace API.Setup;
 
 public static class ServiceCollectionExtensions
 {
+    public static IServiceCollection AddCorsConfiguration(this IServiceCollection services)
+    {
+        services.AddCors((options) =>
+        {
+            options.AddPolicy("DevCors", (corsBuilder) =>
+            {
+                corsBuilder.WithOrigins("http://localhost:5173")
+                    .AllowAnyMethod()
+                    .AllowAnyHeader()
+                    .AllowCredentials();
+            });
+            // options.AddPolicy("ProdCors", (corsBuilder) =>
+            //     {
+            //         corsBuilder.WithOrigins("eventual link")
+            //             .AllowAnyMethod()
+            //             .AllowAnyHeader()
+            //             .AllowCredentials();
+            //     });
+        });
+
+        return services;
+    }
+
     public static IServiceCollection AddAutoRegistration(this IServiceCollection services, Assembly assembly)
     {
         var types = assembly.GetTypes()
@@ -32,6 +55,7 @@ public static class ServiceCollectionExtensions
     {
         services.AddScoped<IDataContextDapper, DataContextDapper>();
         services.AddScoped<ISharedContainer, SharedContainer>();
+        services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
         return services;
     }
 
