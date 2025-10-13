@@ -96,14 +96,13 @@ public class DataContextDapper : IDataContextDapper
 
       public async Task<int> InsertAsync<T>(T obj) where T : class
       {
-          var tableName = DbAttributes.GetTableName(typeof(T));
-          var columns = DbAttributes.GetDbColumnProperties(typeof(T));
+          var metadata = DbAttributes.GetTableMetadata<T>();
           
-          var columnNames = string.Join(",", columns.Select(c => $"[{c.Name}]"));
-          var parameterNames = string.Join(",", columns.Select(c => $"@{c.Name}"));
+          var columnNames = string.Join(",", metadata.Columns.Select(c => $"[{c.Name}]"));
+          var parameterNames = string.Join(",", metadata.Columns.Select(c => $"@{c.Name}"));
           
-          var parameters = DbAttributes.CreateParameters(obj, columns);
-          var sql = $"INSERT INTO {tableName} ({columnNames}) VALUES ({parameterNames}); SELECT CAST(SCOPE_IDENTITY() AS INT);";
+          var parameters = DbAttributes.CreateParameters(obj, metadata.Columns);
+          var sql = $"INSERT INTO {metadata.TableName} ({columnNames}) VALUES ({parameterNames}); SELECT CAST(SCOPE_IDENTITY() AS INT);";
           
           var result = (await QueryAsync<int>(sql, parameters)).FirstOrDefault();
           return result == 0 ? throw new InvalidOperationException("Insert failed - no identity returned") : result;
@@ -111,33 +110,26 @@ public class DataContextDapper : IDataContextDapper
 
       public async Task UpdateAsync<T>(T obj) where T : class
       {
-          var tableName = DbAttributes.GetTableName(typeof(T));
-          var columns = DbAttributes.GetDbColumnProperties(typeof(T));
-          var primaryKey = DbAttributes.GetPrimaryKeyProperty(typeof(T));
+          var metadata = DbAttributes.GetTableMetadata<T>();
           
-          if (tableName is null || columns.Count == 0 || primaryKey is null)
-              throw new InvalidOperationException("Invalid table.");
+          var columnUpdates = string.Join(",", metadata.Columns.Select(c => $"[{c.Name}] = @{c.Name}"));
+          var parameters = DbAttributes.CreateParameters(obj, metadata.Columns);
+          parameters[metadata.PrimaryKey.Name] = metadata.PrimaryKey.GetValue(obj)!;
           
-          var columnUpdates = string.Join(",", columns.Select(c => $"[{c.Name}] = @{c.Name}"));
-          var parameters = DbAttributes.CreateParameters(obj, columns);
-          parameters[primaryKey.Name] = primaryKey.GetValue(obj)!;
-          
-          var sql = $"UPDATE {tableName} SET {columnUpdates} WHERE [{primaryKey.Name}] = @{primaryKey.Name}";
+          var sql = $"UPDATE {metadata.TableName} SET {columnUpdates} WHERE [{metadata.PrimaryKey.Name}] = @{metadata.PrimaryKey.Name}";
           await ExecuteAsync(sql, parameters);
       }
 
       public async Task<IEnumerable<T>> GetAllAsync<T>() where T : class
       {
-          var tableName = DbAttributes.GetTableName(typeof(T));
-          return await QueryAsync<T>($"SELECT * FROM {tableName}");
+          var metadata = DbAttributes.GetTableMetadata<T>();
+          return await QueryAsync<T>($"SELECT * FROM {metadata.TableName}");
       }
 
       public async Task<T?> GetByIdAsync<T>(int id) where T : class
       {
-          var tableName = DbAttributes.GetTableName(typeof(T));
-          var primaryKey = DbAttributes.GetPrimaryKeyProperty(typeof(T));
-          
-          var sql = $"SELECT * FROM {tableName} WHERE [{primaryKey.Name}] = @id";
+          var metadata = DbAttributes.GetTableMetadata<T>();
+          var sql = $"SELECT * FROM {metadata.TableName} WHERE [{metadata.PrimaryKey.Name}] = @id";
           return await FirstOrDefaultAsync<T>(sql, new { id });
       }
 
@@ -146,9 +138,9 @@ public class DataContextDapper : IDataContextDapper
           if (whereConditions == null || !whereConditions.Any())
               throw new ArgumentException("At least one condition is required");
           
-          var tableName = DbAttributes.GetTableName(typeof(T));
+          var metadata = DbAttributes.GetTableMetadata<T>();
           var whereClause = string.Join(" AND ", whereConditions.Keys.Select(key => $"[{key}] = @{key}"));
-          var sql = $"SELECT * FROM {tableName} WHERE {whereClause}";
+          var sql = $"SELECT * FROM {metadata.TableName} WHERE {whereClause}";
           return await QueryAsync<T>(sql, whereConditions);
       }
 
@@ -166,6 +158,7 @@ public class DataContextDapper : IDataContextDapper
       {
           return (await GetWhereAsync<T>(new Dictionary<string, object> { { fieldName, value } })).Any();
       }
+
 
       public IDbTransaction? Transaction => _transaction;
       

@@ -4,20 +4,20 @@ using API.Setup;
 
 var builder = WebApplication.CreateBuilder(args);
 
- // Framework Services
-  builder.Services.AddControllers();
-  builder.Services.AddEndpointsApiExplorer();
+// Framework Services
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
 
-  // Application Services
-  builder.Services.AddAutoRegistration(typeof(Program).Assembly);
-  builder.Services.AddSharedContainer();
+// Application Services
+builder.Services.AddAutoRegistration(typeof(Program).Assembly);
+builder.Services.AddSharedContainer();
 
-  // Security & CORS
-  builder.Services.AddAuthentication(builder.Configuration);
-  builder.Services.AddCorsConfiguration();
+// Security & CORS
+builder.Services.AddAuthentication(builder.Configuration);
+builder.Services.AddCorsConfiguration();
 
-  // Swagger
-  builder.Services.AddSwaggerAuth();
+// Swagger
+builder.Services.AddSwaggerAuth();
 
 var app = builder.Build();
 
@@ -44,3 +44,4 @@ app.MapControllers();
 
 app.Run();
 
+public partial class Program { }

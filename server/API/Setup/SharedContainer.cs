@@ -4,24 +4,18 @@ namespace API.Setup;
 
 public interface ISharedContainer
 {
-    T DepInj<T>() where T : class;
+    T? DepInj<T>() where T : class;
     IConfiguration Config { get; }
     IDataContextDapper Dapper { get; }
 }
 
-public class SharedContainer : ISharedContainer
+public class SharedContainer(IServiceProvider serviceProvider) : ISharedContainer
 {
-    private readonly IServiceProvider _serviceProvider;
-
-    public SharedContainer(IServiceProvider serviceProvider)
+    public T? DepInj<T>() where T : class
     {
-        _serviceProvider = serviceProvider;
+        return serviceProvider.GetService<T>();
     }
-    public T DepInj<T>() where T : class
-    {
-        return _serviceProvider.GetService<T>();
-    }
-    public IConfiguration Config => _serviceProvider.GetService<IConfiguration>();
-    public IDataContextDapper Dapper => _serviceProvider.GetService<IDataContextDapper>();
+    public IConfiguration Config => serviceProvider.GetService<IConfiguration>()!;
+    public IDataContextDapper Dapper => serviceProvider.GetService<IDataContextDapper>()!;
 
 }

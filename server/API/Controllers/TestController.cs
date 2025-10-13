@@ -10,6 +10,12 @@ namespace API.Controllers;
 [Route("test")]
 public class TestController(ISharedContainer container) : BaseController(container)
 {
+    [HttpGet("valid")]
+    public ActionResult GetValid()
+    {
+        return Ok("Success!");
+    }
+    
     [Authorize]
     [HttpGet("auth")]
     public ActionResult<string> GetSecret()
@@ -20,13 +26,13 @@ public class TestController(ISharedContainer container) : BaseController(contain
     [HttpGet("not-found")]
     public ActionResult<string> GetNotFound()
     {
-        return NotFound("Not found.");
+        return NotFound("Not Found");
     }
 
     [HttpGet("bad-request")]
     public ActionResult<string> GetBadRequest()
     {
-        return BadRequest("Bad request.");
+        return BadRequest("Bad Request");
     }
 
     [HttpGet("unauthorized")]
@@ -38,7 +44,7 @@ public class TestController(ISharedContainer container) : BaseController(contain
     [HttpGet("throw-exception")]
     public ActionResult<string> ThrowException()
     {
-        throw new Exception("Test exception.");
+        throw new Exception("Test Exception");
     }
 
     [HttpGet("null-reference")]
