@@ -3,8 +3,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
-using API.Database;
-using API.Models;
+using API.Models.Dsf;
 using API.Services;
 using API.Setup;
 using Microsoft.AspNetCore.Authorization;
@@ -23,66 +22,85 @@ public class AuthController(ISharedContainer container) : BaseController(contain
     
     [AllowAnonymous]
     [HttpPost("register")]
-    public int Register(UserRegisterDto userDto)
+    public async Task<ActionResult<AuthResponseDto>> Register(UserRegisterDto userDto)
     {
-        ValidateRegistration(userDto);
+        await ValidateRegistrationAsync(userDto);
         var userId = 0;
 
-        Dapper.WithTransaction(() =>
+        await Dapper.WithTransactionAsync(async () =>
         {
-            userId = Dapper.Insert(new User
+            userId = await Dapper.InsertAsync(new User
             {
                 Username = userDto.Username,
                 Email = userDto.Email,
                 FirstName = userDto.FirstName,
                 LastName = userDto.LastName,
             });
-            CreateAuth(userId, userDto.Password);
+            await CreateAuthAsync(userId, userDto.Password);
         });
         
-        return userId;
+        var token = CreateToken(userId);
+        var response = new AuthResponseDto
+        {
+            UserId = userId,
+            Username = userDto.Username,
+            Token = token
+        };
+        
+        return StatusCode(StatusCodes.Status201Created, response);
     }
 
     [AllowAnonymous]
     [HttpPost("login")]
-    public Dictionary<string, string> Login(UserLoginDto userDto)
+    public async Task<ActionResult<AuthResponseDto>> Login(UserLoginDto userDto)
     {
-        var user = UserService.GetUserByUsername(userDto.Username);
-        if (user == null) throw new Exception("User not found.");
+        var user = await UserService.GetUserByUsernameAsync(userDto.Username);
+        if (user == null) return NotFound("User not found.");
 
-        var userAuth = Dapper.GetByField<Auth>("userId", user.UserId).FirstOrDefault();
-        if (userAuth == null) throw new Exception("User not found.");
+        var userAuth = (await Dapper.GetByFieldAsync<Auth>("userId", user.UserId)).FirstOrDefault();
+        if (userAuth == null) return NotFound("User not found.");
         
         var passwordHash = GetPasswordHash(userDto.Password, userAuth.PasswordSalt);
         if (passwordHash.Where((t, index) => t != userAuth.PasswordHash[index]).Any())
-            throw new Exception("Incorrect password.");
+            return BadRequest("Incorrect password.");
 
-        return new Dictionary<string, string> { { "token", CreateToken(user.UserId) } };
+        var response = new AuthResponseDto
+        {
+            UserId = user.UserId,
+            Username = user.Username,
+            Token = CreateToken(user.UserId)
+        };
+        
+        return Ok(response);
     }
 
     [HttpPost("refresh-token")]
-    public Dictionary<string, string> RefreshToken()
+    public async Task<ActionResult<AuthResponseDto>> RefreshToken()
     {
         var userIdStr = User.FindFirst("userId")?.Value;
-        if (userIdStr == null) throw new Exception("User not found.");
+        if (userIdStr == null) return Unauthorized("Invalid token.");
         var userId = int.Parse(userIdStr);
         
-        if (UserService.GetUserById(userId) == null) 
-            throw new Exception("User not found.");
+        var user = await UserService.GetUserByIdAsync(userId);
+        if (user == null) return NotFound("User not found.");
 
-        return new Dictionary<string, string>
+        var response = new AuthResponseDto
         {
-            { "token", CreateToken(userId) }
+            UserId = user.UserId,
+            Username = user.Username,
+            Token = CreateToken(user.UserId)
         };
+        
+        return Ok(response);
     }
 
-    private void ValidateRegistration(UserRegisterDto user)
+    private async Task ValidateRegistrationAsync(UserRegisterDto user)
     {
         if (user.Password != user.ConfirmPassword)
             throw new ValidationException("Passwords do not match.");
-        if (Dapper.ExistsByField<User>("email", user.Email))
+        if (user.Email is not null && await Dapper.ExistsByFieldAsync<User>("email", user.Email))
             throw new ValidationException("Email already exists.");
-        if (Dapper.ExistsByField<User>("username", user.Username))
+        if (await Dapper.ExistsByFieldAsync<User>("username", user.Username))
             throw new ValidationException("Username already exists.");
     }
 
@@ -98,7 +116,7 @@ public class AuthController(ISharedContainer container) : BaseController(contain
         );
     }
 
-    private void CreateAuth(int userId, string password)
+    private async Task CreateAuthAsync(int userId, string password)
     {
         var passwordSalt = new byte[128 / 8];
         using var rng = RandomNumberGenerator.Create();
@@ -106,7 +124,7 @@ public class AuthController(ISharedContainer container) : BaseController(contain
 
         var passwordHash = GetPasswordHash(password, passwordSalt);
 
-        Dapper.Insert(new Auth
+        await Dapper.InsertAsync(new Auth
         {
             UserId = userId,
             PasswordHash = passwordHash,
@@ -123,7 +141,7 @@ public class AuthController(ISharedContainer container) : BaseController(contain
         var tokenKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configTokenKey));
         
         var credentials = new SigningCredentials(tokenKey, SecurityAlgorithms.HmacSha256);
-        var descriptor = new SecurityTokenDescriptor()
+        var descriptor = new SecurityTokenDescriptor
         {
             Subject = new ClaimsIdentity(claims),
             SigningCredentials = credentials,
@@ -134,19 +152,26 @@ public class AuthController(ISharedContainer container) : BaseController(contain
         return tokenHandler.WriteToken(token);
     }
 
+    public class AuthResponseDto
+    {
+        public int UserId { get; set; }
+        public string Username { get; set; } = "";
+        public string Token { get; set; } = "";
+    }
+
     public class UserRegisterDto
     {
-        public string Username { get; set; }
-        public string FirstName { get; set; } = null;
-        public string LastName { get; set; } = null;
-        public string Email { get; set; } = null;
-        public string Password { get; set; }
-        public string ConfirmPassword { get; set; }
+        public string Username { get; set; } = "";
+        public string? FirstName { get; set; } = null;
+        public string? LastName { get; set; } = null;
+        public string? Email { get; set; } = null;
+        public string Password { get; set; } = "";
+        public string ConfirmPassword { get; set; } = "";
     }
 
     public class UserLoginDto
     {
-        public string Username { get; set; }
-        public string Password { get; set; }
+        public string Username { get; set; } = "";
+        public string Password { get; set; } = "";
     }
 }

@@ -60,6 +60,7 @@ CREATE TABLE dbo.product (
     priceTypeId INT NOT NULL,
     price DECIMAL(10,2) NOT NULL,
     premiumPrice DECIMAL(10,2) NOT NULL,
+    imageUrl NVARCHAR(200) NULL,
     createdAt DATETIME DEFAULT GETDATE(),
     updatedAt DATETIME DEFAULT GETDATE(),
     FOREIGN KEY (productTypeId) REFERENCES dbo.productType(productTypeId),
@@ -76,15 +77,5 @@ CREATE TABLE dbo.productSubcategory (
     PRIMARY KEY (productId, subcategoryId),
     FOREIGN KEY (productId) REFERENCES dbo.product(productId),
     FOREIGN KEY (subcategoryId) REFERENCES dbo.subcategory(subcategoryId)
-);
-GO
-
-CREATE TABLE dbo.productImage (
-    imageId INT IDENTITY(1,1) PRIMARY KEY,
-    productId INT NOT NULL,
-    imageUrl NVARCHAR(500) NOT NULL,
-    imageType NVARCHAR(50),
-    altText NVARCHAR(200),
-    FOREIGN KEY (productId) REFERENCES dbo.product(productId)
 );
 GO
