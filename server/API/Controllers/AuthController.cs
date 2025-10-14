@@ -3,7 +3,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
-using API.Models.Dsf;
+using API.Models.DsfTables;
 using API.Services;
 using API.Setup;
 using Microsoft.AspNetCore.Authorization;

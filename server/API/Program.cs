@@ -1,6 +1,5 @@
-using API.Database;
+using API.Extensions;
 using API.Middleware;
-using API.Setup;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,15 +8,17 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
 // Application Services
-builder.Services.AddAutoRegistration(typeof(Program).Assembly);
-builder.Services.AddSharedContainer();
-
-// Security & CORS
-builder.Services.AddAuthentication(builder.Configuration);
 builder.Services.AddCorsConfiguration();
-
-// Swagger
+builder.Services.AddAuthentication(builder.Configuration);
+builder.Services.AddApiVersioningConfig();
 builder.Services.AddSwaggerAuth();
+
+// Dependency Injection
+builder.Services.AddAutoRegistration(typeof(Program).Assembly);
+builder.Services.AddManualRegistrations();
+
+// Resilience
+builder.Services.AddPollyPolicies();
 
 var app = builder.Build();
 

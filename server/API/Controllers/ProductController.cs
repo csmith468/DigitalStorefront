@@ -1,4 +1,4 @@
-using API.Models.Dbo;
+using API.Models.DboTables;
 using API.Setup;
 using Microsoft.AspNetCore.Mvc;
 

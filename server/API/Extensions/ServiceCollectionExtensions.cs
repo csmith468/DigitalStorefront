@@ -1,19 +1,19 @@
-using System.Reflection;
 using System.Text;
-using API.Database;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Versioning;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
-namespace API.Setup;
+namespace API.Extensions;
 
 public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddCorsConfiguration(this IServiceCollection services)
     {
-        services.AddCors((options) =>
+        services.AddCors(options =>
         {
-            options.AddPolicy("DevCors", (corsBuilder) =>
+            options.AddPolicy("DevCors", corsBuilder =>
             {
                 corsBuilder.WithOrigins("http://localhost:5173")
                     .AllowAnyMethod()
@@ -29,33 +29,6 @@ public static class ServiceCollectionExtensions
             //     });
         });
 
-        return services;
-    }
-
-    public static IServiceCollection AddAutoRegistration(this IServiceCollection services, Assembly assembly)
-    {
-        var types = assembly.GetTypes()
-            .Where(t => t.IsClass && !t.IsAbstract && !t.IsGenericType)
-            .Where(t => t.Name.EndsWith("Service") || t.Name.EndsWith("Repository"))
-            .ToList();
-
-        foreach (var implementationType in types)
-        {
-            var interfaceType = implementationType.GetInterfaces()
-                .FirstOrDefault(i => i.Name == $"I{implementationType.Name}");
-
-            if (interfaceType != null)
-                services.AddScoped(interfaceType, implementationType);
-        }
-
-        return services;
-    }
-
-    public static IServiceCollection AddSharedContainer(this IServiceCollection services)
-    {
-        services.AddScoped<IDataContextDapper, DataContextDapper>();
-        services.AddScoped<ISharedContainer, SharedContainer>();
-        services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
         return services;
     }
 
@@ -116,4 +89,31 @@ public static class ServiceCollectionExtensions
         
         return services;
     }
+
+    public static IServiceCollection AddApiVersioningConfig(this IServiceCollection services)
+    {
+        services.AddApiVersioning(options =>
+        {
+            options.DefaultApiVersion = new ApiVersion(1, 0);
+            options.AssumeDefaultVersionWhenUnspecified = true;
+            options.ReportApiVersions = true;
+            
+            // Allow path /api/v1/products OR HTTP header api-version: 1.0
+            options.ApiVersionReader = ApiVersionReader.Combine(
+                new UrlSegmentApiVersionReader(),
+                new HeaderApiVersionReader("api-version")
+            );
+        });
+
+        services.AddVersionedApiExplorer(options =>
+        {
+            // VVV: major.minor.patch (v1.0)
+            options.GroupNameFormat = "'v'VVV";
+            options.SubstituteApiVersionInUrl = true;
+        });
+
+        return services;
+    }
+
+    
 }

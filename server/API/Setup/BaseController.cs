@@ -3,6 +3,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace API.Setup;
 
+[ApiController]
+[Route("api/v{version:apiVersion}/[controller]")]
+[ApiVersion("1.0")]
 public class BaseController(ISharedContainer container) : ControllerBase
 {
     protected readonly IDataContextDapper Dapper = container.Dapper;

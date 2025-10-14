@@ -1,12 +1,9 @@
-using API.Models.Dbo;
-using API.Models.Dsf;
 using API.Setup;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace API.Controllers;
+namespace API.Controllers.Tests;
 
-[ApiController]
 [Route("test")]
 public class TestController(ISharedContainer container) : BaseController(container)
 {
