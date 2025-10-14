@@ -1,6 +1,6 @@
 using API.Database;
 
-namespace API.Models.Dbo;
+namespace API.Models.DboTables;
 
 [DbTable("dbo.productType")]
 public class ProductType

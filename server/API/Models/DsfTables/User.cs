@@ -1,6 +1,6 @@
 using API.Database;
 
-namespace API.Models.Dsf;
+namespace API.Models.DsfTables;
 
 [DbTable("dsf.[user]")]
 public class User

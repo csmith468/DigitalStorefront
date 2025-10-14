@@ -1,6 +1,6 @@
 using API.Controllers;
 using API.Database;
-using API.Models.Dbo;
+using API.Models.DboTables;
 using API.Setup;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;

@@ -1,17 +1,21 @@
 using API.Database;
 
-namespace API.Models.Dbo;
+namespace API.Models.DboTables;
 
-[DbTable("dbo.category")]
-public class Category
+[DbTable("dbo.subcategory")]
+public class Subcategory
 {
-    [DbPrimaryKey] public int CategoryId { get; set; }
+    [DbPrimaryKey] public int SubcategoryId { get; set; }
 
+    [DbColumn] public int CategoryId { get; set; }
+    
     [DbColumn] public string Name { get; set; } = "";
     
     [DbColumn] public string Slug { get; set; } = "";
 
     [DbColumn] public int DisplayOrder { get; set; } = 0;
+    
+    [DbColumn] public string? ImageUrl { get; set; }
 
     [DbColumn] public bool IsActive { get; set; } = true;
     
