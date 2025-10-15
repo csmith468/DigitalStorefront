@@ -11,7 +11,7 @@ public interface IProductService
     Task<Result<List<Product>>> GetProductsBySubcategoryAsync(string subcategorySlug);
 }
 
-public class ProductService(ISharedContainer container) : BaseService(container)
+public class ProductService(ISharedContainer container) : BaseService(container), IProductService
 {
     public async Task<Result<List<Product>>> GetAllProductsAsync()
     {
