@@ -33,7 +33,11 @@ public class Product
     
     [DbColumn] public string? ImageUrl { get; set; }
 
-    [DbColumn] public DateTime CreatedAt { get; set; } = DateTime.Now;
-
+    [DbColumn] public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    
     [DbColumn] public DateTime? UpdatedAt { get; set; }
+    
+    [DbColumn] public int CreatedBy { get; set; }
+    
+    [DbColumn] public int? UpdatedBy { get; set; }
 }

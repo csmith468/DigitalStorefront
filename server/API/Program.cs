@@ -6,6 +6,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Framework Services
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddHttpContextAccessor();
 
 // Application Services
 builder.Services.AddCorsConfiguration();

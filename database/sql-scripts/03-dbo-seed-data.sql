@@ -1,7 +1,11 @@
 USE DigitalStorefront;
 GO
 
+-- Create seed user for initial inserts
+INSERT INTO [dsf].[user] (username, firstName, lastName, email, isActive, isAdmin)
+VALUES ('seedUser', 'Seed', 'User', NULL, 0, 1);
 
+DECLARE @userId INT = SCOPE_IDENTITY();
 
 -- Insert Product Types
 INSERT INTO dbo.productType (typeName, typeCode, description) VALUES
@@ -10,26 +14,28 @@ INSERT INTO dbo.productType (typeName, typeCode, description) VALUES
   ('Clothing', 'clothing', 'Outfits and accessories'),
   ('Food', 'food', 'Pet food and treats'),
   ('Bundle', 'bundle', 'Product bundles and packages');
-GO
 
 -- Insert Category
-INSERT INTO dbo.category (name, slug, displayOrder) VALUES 
+INSERT INTO dbo.category (name, slug, displayOrder, createdBy) 
+SELECT name, slug, displayOrder, @userId
+FROM (VALUES 
   ('Virtual Pets', 'virtual-pets', 1),
   ('Seasonal', 'seasonal', 2),
   ('Pet Clothing', 'pet-clothing', 3),
   ('Room Themes', 'room-themes', 4),
-  ('Room Items', 'room-items', 5);
-GO
+  ('Room Items', 'room-items', 5)
+) AS v(name, slug, displayOrder);
+
 
 -- Insert Price Type
 INSERT INTO dbo.priceType (priceTypeName, priceTypeCode) VALUES
   ('Coins', 'coins'),
   ('US Dollars', 'usd');
-GO
+
 
 -- Insert Subcategory with inline category lookups
-INSERT INTO dbo.subcategory (categoryId, name, slug, displayOrder) 
-SELECT c.categoryId, s.name, s.slug, s.displayOrder
+INSERT INTO dbo.subcategory (categoryId, name, slug, displayOrder, createdBy) 
+SELECT c.categoryId, s.name, s.slug, s.displayOrder, @userId
 FROM (VALUES
   -- Virtual Pets subcategory
   ('Virtual Pets', 'Regular Pets', 'regular-pets', 1),
@@ -59,7 +65,7 @@ FROM (VALUES
   ('Room Items', 'Carpets & Rugs', 'carpets-rugs', 5)
 ) AS s(categoryName, name, slug, displayOrder)
 JOIN dbo.category c ON c.name = s.categoryName;
-GO
+
 
 -- Create temporary table for products to simplify insertion
 DECLARE @ProductData TABLE (
@@ -154,7 +160,7 @@ INSERT INTO @ProductData VALUES
   ('Bunk Bed Fort', 'bunk-bed-fort', 'furniture', 'coins', 1500, 1200, 1, 'A fun bunk bed with built-in ladder, string lights, and colorful blankets draped to create cozy fort spaces.');
 
 -- Insert products using the temp table and lookup joins
-INSERT INTO dbo.product (name, slug, productTypeId, priceTypeId, price, premiumPrice, isTradeable, isNew, isPromotional, isExclusive, description, sku)
+INSERT INTO dbo.product (name, slug, productTypeId, priceTypeId, price, premiumPrice, isTradeable, isNew, isPromotional, isExclusive, description, sku, createdBy)
 SELECT 
   pd.name,
   pd.slug,
@@ -163,19 +169,20 @@ SELECT
   pd.price,
   pd.premiumPrice,
   pd.isTradeable,
-  1, -- isNew
-  0, -- isPromotional
-  0, -- isExclusive
+  1 AS isNew,
+  0 AS isPromotional,
+  0 AS isExclusive,
   pd.description,
-  UPPER(LEFT(pd.slug, 3)) + '-' + FORMAT(ROW_NUMBER() OVER (ORDER BY pd.slug), '00000') -- Generate SKU with sequential numbering
+  UPPER(LEFT(pd.slug, 3)) + '-' + FORMAT(ROW_NUMBER() OVER (ORDER BY pd.slug), '00000'), -- Generate SKU with sequential numbering
+  @userId AS createdBy
 FROM @ProductData pd
 JOIN dbo.productType pt ON pt.typeCode = pd.productType
 JOIN dbo.priceType prt ON prt.priceTypeCode = pd.priceType;
-GO
+
 
 -- Product to Subcategory mappings using VALUES constructor
-INSERT INTO dbo.productSubcategory (productId, subcategoryId)
-SELECT p.productId, s.subcategoryId
+INSERT INTO dbo.productSubcategory (productId, subcategoryId, createdBy)
+SELECT p.productId, s.subcategoryId, @userId
 FROM (VALUES
   -- Virtual Pets mappings
   ('cocoa-corgi', 'regular-pets'),

@@ -33,11 +33,13 @@ public class DataContextDapper : IDataContextDapper
 {
       private readonly IDbConnection _db;
       private IDbTransaction? _transaction;
+      private readonly IHttpContextAccessor _httpContextAccessor;
 
-      public DataContextDapper(IConfiguration config)
+      public DataContextDapper(IConfiguration config, IHttpContextAccessor httpContextAccessor)
       {
           _db = new SqlConnection(config.GetConnectionString("DefaultConnection"));
           _db.Open();
+          _httpContextAccessor = httpContextAccessor;
       }
 
       public async Task<IEnumerable<T>> QueryAsync<T>(string sql, object? parameters = null)
@@ -98,6 +100,13 @@ public class DataContextDapper : IDataContextDapper
       {
           var metadata = DbAttributes.GetTableMetadata<T>();
           
+          if (metadata.Columns.Any(c => c.Name == "CreatedAt"))
+              obj = SetEntityProp(obj, "CreatedAt", DateTime.UtcNow);
+          
+          var userId = GetCurrentUserId();
+          if (userId != null && metadata.Columns.Any(c => c.Name == "CreatedBy"))
+              obj = SetEntityProp(obj, "CreatedBy", userId.Value);
+          
           var columnNames = string.Join(",", metadata.Columns.Select(c => $"[{c.Name}]"));
           var parameterNames = string.Join(",", metadata.Columns.Select(c => $"@{c.Name}"));
           
@@ -111,6 +120,13 @@ public class DataContextDapper : IDataContextDapper
       public async Task UpdateAsync<T>(T obj) where T : class
       {
           var metadata = DbAttributes.GetTableMetadata<T>();
+
+          if (metadata.Columns.Any(c => c.Name == "UpdatedAt"))
+              obj = SetEntityProp(obj, "UpdatedAt", DateTime.UtcNow);
+
+          var userId = GetCurrentUserId();
+          if (userId != null && metadata.Columns.Any(c => c.Name == "UpdatedBy"))
+              obj = SetEntityProp(obj, "UpdatedBy", userId.Value);
           
           var columnUpdates = string.Join(",", metadata.Columns.Select(c => $"[{c.Name}] = @{c.Name}"));
           var parameters = DbAttributes.CreateParameters(obj, metadata.Columns);
@@ -157,6 +173,22 @@ public class DataContextDapper : IDataContextDapper
       public async Task<bool> ExistsByFieldAsync<T>(string fieldName, object value) where T : class
       {
           return (await GetWhereAsync<T>(new Dictionary<string, object> { { fieldName, value } })).Any();
+      }
+      
+      private int? GetCurrentUserId()
+      {
+          var userIdClaim = _httpContextAccessor.HttpContext?.User?.FindFirst("userId")?.Value;
+          return userIdClaim != null ? int.Parse(userIdClaim!) : null;
+      }
+
+      private T SetEntityProp<T>(T obj, string field, object value) where T : class
+      {
+          var type = typeof(T);
+          var prop = type.GetProperty(field);
+          if (prop == null) return obj;
+
+          prop.SetValue(obj, value);
+          return obj;
       }
 
 
