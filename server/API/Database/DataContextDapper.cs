@@ -18,12 +18,16 @@ public interface IDataContextDapper : IDisposable
 
     Task<int> InsertAsync<T>(T obj) where T : class;
     Task UpdateAsync<T>(T obj) where T : class;
+    Task DeleteByIdAsync<T>(int id) where T : class;
+    
     Task<IEnumerable<T>> GetAllAsync<T>() where T : class;
     Task<T?> GetByIdAsync<T>(int id) where T : class;
     Task<IEnumerable<T>> GetWhereAsync<T>(Dictionary<string, object> whereConditions) where T : class;
     Task<IEnumerable<T>> GetByFieldAsync<T>(string fieldName, object value) where T : class;
+    Task<IEnumerable<T>> GetWhereInAsync<T>(string fieldName, List<int> values) where T : class;
     Task<bool> ExistsAsync<T>(int id) where T : class;
     Task<bool> ExistsByFieldAsync<T>(string fieldName, object value) where T : class;
+    Task<int> GetCountByFieldAsync<T>(string fieldName, object value) where T : class;
     
     string? Database { get; }
     IDbTransaction? Transaction { get; }
@@ -136,6 +140,13 @@ public class DataContextDapper : IDataContextDapper
           await ExecuteAsync(sql, parameters);
       }
 
+      public async Task DeleteByIdAsync<T>(int id) where T : class
+      {
+          var metadata = DbAttributes.GetTableMetadata<T>();
+          var sql = $"DELETE FROM {metadata.TableName} WHERE [{metadata.PrimaryKey.Name}] = @id";
+          await ExecuteAsync(sql, new { id });
+      }
+
       public async Task<IEnumerable<T>> GetAllAsync<T>() where T : class
       {
           var metadata = DbAttributes.GetTableMetadata<T>();
@@ -162,7 +173,23 @@ public class DataContextDapper : IDataContextDapper
 
       public async Task<IEnumerable<T>> GetByFieldAsync<T>(string fieldName, object value) where T : class
       {
+          if (string.IsNullOrWhiteSpace(fieldName))
+              throw new ArgumentException("Field name is required", nameof(fieldName));
           return await GetWhereAsync<T>(new Dictionary<string, object>{ { fieldName, value } });
+      }
+
+      public async Task<IEnumerable<T>> GetWhereInAsync<T>(string fieldName, List<int> values) where T : class
+      {
+          if (string.IsNullOrWhiteSpace(fieldName))
+              throw new ArgumentException("Field name is required", nameof(fieldName));
+          
+          if (values.Count == 0)
+              return [];
+          
+          var metadata = DbAttributes.GetTableMetadata<T>();
+          var sql = $"SELECT * FROM {metadata.TableName} WHERE [{fieldName}] IN @values";
+    
+          return await QueryAsync<T>(sql, new { values });
       }
 
       public async Task<bool> ExistsAsync<T>(int id) where T : class
@@ -173,6 +200,11 @@ public class DataContextDapper : IDataContextDapper
       public async Task<bool> ExistsByFieldAsync<T>(string fieldName, object value) where T : class
       {
           return (await GetWhereAsync<T>(new Dictionary<string, object> { { fieldName, value } })).Any();
+      }
+
+      public async Task<int> GetCountByFieldAsync<T>(string fieldName, object value) where T : class
+      {
+          return (await GetWhereAsync<T>(new Dictionary<string, object> { { fieldName, value } })).Count();
       }
       
       private int? GetCurrentUserId()

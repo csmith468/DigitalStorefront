@@ -17,11 +17,15 @@ builder.Services.AddSwaggerAuth();
 // Dependency Injection
 builder.Services.AddAutoRegistration(typeof(Program).Assembly);
 builder.Services.AddManualRegistrations();
+builder.Services.AddMappings();
 
 // Resilience
 builder.Services.AddPollyPolicies();
 
 var app = builder.Build();
+
+// Configure Static Files
+builder.Services.AddDirectoryBrowser();
 
 // Exception Handling
 app.UseMiddleware<ExceptionMiddleware>();
@@ -38,6 +42,8 @@ else
     app.UseCors("ProdCors");
     app.UseHttpsRedirection();
 }
+
+app.UseStaticFiles();
 
 app.UseAuthentication();
 app.UseAuthorization();
