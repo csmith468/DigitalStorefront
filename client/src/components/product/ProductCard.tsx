@@ -13,8 +13,16 @@ function ProductCard({ product }: { product: Product }) {
   return (
    <li className="product-card">
       <div className="product-container">
-        <div className="product-image">
-          <img className="object-cover" src={product.imageUrl} alt={product.name} width={120} height={120} />
+        <div className="product-image"> {product.productId}
+          {product.primaryImage ? (
+            <img 
+              src={product.primaryImage.imageUrl} 
+              alt={product.primaryImage.altText ||  product.name}
+              width={120} height={120}
+            />
+          ) : (
+            <div className="placeholder-image">No Image</div>
+          )}
 
           <Link className="product-image-overlay" title="More Info" to={`/product/${product.slug}`}>
             <span className="sr-only">View {product.name}</span>

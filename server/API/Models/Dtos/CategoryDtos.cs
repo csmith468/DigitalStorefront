@@ -2,7 +2,7 @@ namespace API.Models.Dtos;
 
 public class CategoryDto
 {
-    public int CategoryId { get; set; }
+    public int? CategoryId { get; set; }
     public string Name { get; set; } = "";
     public string Slug { get; set; } = "";
     public int DisplayOrder { get; set; } = 0;
@@ -11,7 +11,7 @@ public class CategoryDto
 
 public class SubcategoryDto
 {
-    public int SubcategoryId { get; set; }
+    public int? SubcategoryId { get; set; }
     public string Name { get; set; } = "";
     public string Slug { get; set; } = "";
     public int DisplayOrder { get; set; } = 0;

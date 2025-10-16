@@ -102,7 +102,6 @@ CREATE TABLE dbo.productImage (
     productId INT NOT NULL,
     imageUrl VARCHAR(500) NOT NULL,
     altText VARCHAR(255),
-    isPrimary BIT DEFAULT 0,
     displayOrder INT,
     createdAt DATETIME DEFAULT GETUTCDATE(),
     updatedAt DATETIME NULL,

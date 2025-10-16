@@ -24,8 +24,9 @@ public class CategoryService(ISharedContainer container) : BaseService(container
                  SELECT subcategoryId, [name], slug, displayOrder, imageUrl 
                  FROM dbo.subcategory 
                  WHERE isActive = 1 
-                   AND categoryId = {category.CategoryId}
-                 """)).OrderBy(s => s.DisplayOrder).ToList();
+                   AND categoryId = @categoryId
+                 """, new { categoryId = category.CategoryId })
+                ).OrderBy(s => s.DisplayOrder).ToList();
         }
         return Result<List<CategoryDto>>.Success(categories);
     }

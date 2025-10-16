@@ -31,8 +31,6 @@ public class Product
     
     [DbColumn] public decimal PremiumPrice { get; set; }
     
-    [DbColumn] public string? ImageUrl { get; set; }
-
     [DbColumn] public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     
     [DbColumn] public DateTime? UpdatedAt { get; set; }

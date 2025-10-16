@@ -28,10 +28,19 @@ public static class DependencyInjectionExtensions
 
     public static IServiceCollection AddManualRegistrations(this IServiceCollection services)
     {
-        services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
         services.AddScoped<IDataContextDapper, DataContextDapper>();
         services.AddScoped<ISharedContainer, SharedContainer>();
         
+        services.AddScoped<IImageStorageService, LocalImageStorageService>();
+        
+        return services;
+    }
+
+    public static IServiceCollection AddMappings(this IServiceCollection services)
+    {
+        // Scans all loaded assemblies for AutoMapper Profile classes
+        services.AddAutoMapper(typeof(Program).Assembly);
+
         return services;
     }
 }
