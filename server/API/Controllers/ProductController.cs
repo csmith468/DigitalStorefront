@@ -12,6 +12,12 @@ namespace API.Controllers;
 public class ProductController(ISharedContainer container) : BaseController(container)
 {
     private IProductService _productService => DepInj<IProductService>();
+    
+    [HttpGet("category/{categorySlug}")]
+    public async Task<ActionResult<List<ProductDto>>> GetProductsByCategory(string categorySlug)
+    {
+        return (await _productService.GetProductsByCategoryAsync(categorySlug)).ToActionResult();
+    }
 
     [HttpGet("subcategory/{subcategorySlug}")]
     public async Task<ActionResult<List<ProductDto>>> GetProductsBySubcategory(string subcategorySlug)

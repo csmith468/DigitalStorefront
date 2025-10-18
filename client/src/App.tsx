@@ -1,6 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import CategorySidebar from './components/CategorySidebar'
-import ProductSubcategory from './pages/ProductSubcategory'
+import ProductsView from './pages/ProductsView'
 import './App.css'
 
 function App() {
@@ -9,7 +9,7 @@ function App() {
     <Router>
       <div className="app">
         <header className="app-header">
-          <h1>Digital Collectibles Marketplace</h1>
+          <h1 className="pl-16 lg:pl-0">Digital Collectibles Marketplace</h1>
         </header>
 
         <div className="app-layout">
@@ -23,7 +23,7 @@ function App() {
                   <p>Select a category from the sidebar to browse products.</p>
                 </div>
               } />
-              <Route path="/subcategory/:slug" element={<ProductSubcategory />} />
+              <Route path="/products/:categorySlug/:subcategorySlug" element={<ProductsView />} />
             </Routes>
           </main>
         </div>

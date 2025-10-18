@@ -28,9 +28,9 @@ FROM (VALUES
 
 
 -- Insert Price Type
-INSERT INTO dbo.priceType (priceTypeName, priceTypeCode) VALUES
-  ('Coins', 'coins'),
-  ('US Dollars', 'usd');
+INSERT INTO dbo.priceType (priceTypeName, priceTypeCode, icon) VALUES
+  ('Coins', 'coins', N'★'),
+  ('US Dollars', 'usd', N'$');
 
 
 -- Insert Subcategory with inline category lookups

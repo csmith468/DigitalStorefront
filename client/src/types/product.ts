@@ -12,6 +12,7 @@ export interface Product {
   price: number;
   premiumPrice: number;
   primaryImage: ProductImage | null;
+  priceIcon: string;
 }
 
 export interface ProductImage {

@@ -18,7 +18,7 @@ public static class Guard
     // If validation is false, return failure result, otherwise success result 
     // Usage: Dapper.ExistsAsync, Dapper.ExistsByFieldAsync
     public static async Task<Result<bool>> Against(Func<Task<bool>> dapperValidation, string? failureMessage = null,
-        int statusCode = 400)
+        int statusCode = 404)
     {
         return !await dapperValidation() 
             ? Result<bool>.Failure(failureMessage ?? "Not found", statusCode)

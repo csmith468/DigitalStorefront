@@ -1,29 +1,72 @@
 :root {
-  /* Color Variables */
-  --color-primary: #38BDF8;
-  --color-secondary: #84CC16;
-  --color-accent: #EC4899;
+  --color-primary: #8B5CF6;
+  --color-primary-light: #A78BFA;
+  --color-primary-dark: #7C3AED;
+  --color-secondary: #10B981;
+  --color-secondary-light: #34D399;
+  --color-secondary-dark: #059669;
+  --color-accent: #FB923C;
+  --color-accent-light: #FED7AA;
+  --color-accent-dark: #EA580C;
+  --color-link-hover: #6D28D9;
 
-  --color-warning: #FDE047;
-  --color-info: #A855F7;
+  --color-warning: #FCD34D;
+  --color-warning-light: #FEF08A;
+  --color-info: #60A5FA;
+  --color-info-light: #93C5FD;
   --color-success: #34D399;
-  --color-danger: #FF6B6B;
+  --color-success-light: #6EE7B7;
+  --color-danger: #FB7185;
+  --color-danger-light: #FDA4AF;
+
+  --color-sidebar-bg: #FFFEF7;
+  --color-app-bg: #FAF5FF;
+  --color-card-bg: #FFFFFF;
+  --color-hover-bg: #F3E8FF;
+  --color-active-bg: #E9D5FF;
 
   --color-white: #FFFFFF;
-  --color-gray-50: #F9FAFB;
-  --color-gray-100: #F3F4F6;
-  --color-gray-200: #E5E7EB;
-  --color-gray-300: #D1D5DB;
-  --color-gray-400: #9CA3AF;
-  --color-gray-500: #6B7280;
-  --color-gray-600: #4B5563;
-  --color-gray-700: #374151;
-  --color-gray-800: #1F2937;
-  --color-gray-900: #111827;
+  --color-text-primary: #4C1D95;
+  --color-text-secondary: #6B7280;
+  --color-text-light: #9333EA;
+  --color-border: #E9D5FF;
+  --color-border-light: #F3E8FF;
+  --color-bg-subtle: #FDFBFF;
 
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
-  --shadow-md: 0 2px 8px rgba(0,0,0,0.15);
-  --shadow-lg: 0 4px 16px rgba(0,0,0,0.2);
+  --shadow-sm: 0 1px 3px rgba(139, 92, 246, 0.12);
+  --shadow-md: 0 4px 12px rgba(139, 92, 246, 0.15);
+  --shadow-lg: 0 8px 24px rgba(139, 92, 246, 0.18);
+  --shadow-xl: 0 12px 36px rgba(139, 92, 246, 0.22);
+
+  --color-overlay-light: rgba(139, 92, 246, 0.1);
+  --color-overlay-dark: rgba(0, 0, 0, 0.5);
+  --color-text-shadow: rgba(0, 0, 0, 0.1);
+
+    /* Spacing System */
+  --spacing-xs: 0.25rem;   /* 4px */
+  --spacing-sm: 0.5rem;    /* 8px */
+  --spacing-md: 1rem;      /* 16px */
+  --spacing-lg: 1.5rem;    /* 24px */
+  --spacing-xl: 2rem;      /* 32px */
+  --spacing-2xl: 3rem;     /* 48px */
+
+  /* Border Radius */
+  --radius-sm: 0.25rem;    /* 4px - subtle rounding */
+  --radius-md: 0.5rem;     /* 8px - cards, buttons */
+  --radius-lg: 0.75rem;    /* 12px - modals, large cards */
+  --radius-xl: 1rem;       /* 16px - hero sections */
+  --radius-full: 9999px;   /* pills, circular badges */
+
+  /* Transitions */
+  --transition-fast: 150ms ease-in-out;
+  --transition-base: 250ms ease-in-out;
+  --transition-slow: 350ms ease-in-out;
+
+  /* Z-Index System */
+  --z-dropdown: 10;
+  --z-modal: 50;
+  --z-popover: 60;
+  --z-tooltip: 70;
 
   /* Typography */
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
@@ -38,18 +81,18 @@
 
 a {
   font-weight: 500;
-  color: #646cff;
+  color: var(--color-primary);
   text-decoration: inherit;
 }
 a:hover {
-  color: #535bf2;
+  color: var(--color-link-hover);
 }
 
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background-color: var(--color-gray-50);
+  background-color: var(--color-app-bg);
 }
 
 h1 {

@@ -13,6 +13,7 @@ public class ProductDto
     public string Sku { get; set; } = "";
     public decimal Price { get; set; }
     public decimal PremiumPrice { get; set; }
+    public string PriceIcon { get; set; } = "";
     public ProductImageDto? PrimaryImage { get; set; }
 }
 

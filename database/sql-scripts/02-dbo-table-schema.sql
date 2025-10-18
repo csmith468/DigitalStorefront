@@ -16,7 +16,8 @@ GO
 CREATE TABLE dbo.priceType (
     priceTypeId INT IDENTITY(1,1) PRIMARY KEY,
     priceTypeName NVARCHAR(20) NOT NULL UNIQUE,
-    priceTypeCode NVARCHAR(10) NOT NULL UNIQUE
+    priceTypeCode NVARCHAR(10) NOT NULL UNIQUE,
+    icon NCHAR NOT NULL
 );
 GO
   

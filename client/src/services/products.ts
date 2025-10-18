@@ -12,6 +12,11 @@ export const productsService = {
     return response.data;
   },
 
+  async getProductsByCategory(categorySlug: string): Promise<Product[]> {
+    const response = await apiClient.get<Product[]>(`/product/category/${categorySlug}`);
+    return response.data;
+  },
+
   async getProductsBySubcategory(subcategorySlug: string): Promise<Product[]> {
     const response = await apiClient.get<Product[]>(`/product/subcategory/${subcategorySlug}`);
     return response.data;
