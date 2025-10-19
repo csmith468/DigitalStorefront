@@ -60,3 +60,4 @@ API/appsettings.Production.json
 .vscode/*
 Vue/.vscode/*
 server/API/wwwroot/images/*
+client/package-lock.json

@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import CategorySidebar from './components/CategorySidebar'
 import ProductsView from './pages/ProductsView'
+import { Header } from './components/common/Header'
 import './App.css'
 
 function App() {
@@ -8,9 +9,7 @@ function App() {
   return (
     <Router>
       <div className="app">
-        <header className="app-header">
-          <h1 className="pl-16 lg:pl-0">Digital Collectibles Marketplace</h1>
-        </header>
+        <Header />
 
         <div className="app-layout">
           <CategorySidebar />

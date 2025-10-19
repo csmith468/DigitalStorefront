@@ -66,7 +66,7 @@ const CategorySidebar = () => {
 
       {mobileMenuOpen && (
         <div
-          className="mobile-overlay lg:hidden"
+          className="fixed inset-0 bg-overlay-dark z-30 lg:hidden"
           onClick={() => setMobileMenuOpen(false)}
         />
       )}
@@ -76,7 +76,9 @@ const CategorySidebar = () => {
       }`}>
         <div className="category-sidebar__header">
           <div className="flex items-center justify-between">
-            <h2 className="category-sidebar__title">Browse Categories</h2>
+            <h2 className="font-semibold text-primary text-sm uppercase tracking-wider">
+              Browse Categories
+            </h2>
             <button
               onClick={() => setMobileMenuOpen(false)}
               className="lg:hidden p-1 hover:bg-hover-bg rounded"
@@ -91,15 +93,15 @@ const CategorySidebar = () => {
           {categories.map(category => {
             const isExpanded = expanded.has(category.categoryId);
             return (
-              <div key={category.categoryId} className="category-item">
+              <div key={category.categoryId} className="mb-1">
                 <button 
                   onClick={() => toggleCategory(category.categoryId)} 
                   className="category-item__button"
                 >
-                  <span className="category-item__name">{category.name}</span>
+                  <span className="font-medium text-text-primary">{category.name}</span>
                   <ChevronDownIcon 
-                    className={`category-item__icon ${
-                      isExpanded ? 'category-item__icon--expanded' : ''
+                    className={`w-4 h-4 text-text-secondary transition-transform duration-200 flex-shrink-0 ${
+                      isExpanded ? 'rotate-180' : ''
                     }`}
                   />
                 </button>
@@ -130,7 +132,7 @@ const CategorySidebar = () => {
           <a href="https://github.com/csmith468"
             target="_blank"
             rel="noopener noreferrer"
-            className="social-link"
+            className="text-text-secondary hover:text-primary transition-colors flex items-center justify-center"
             aria-label="GitHub"
           >
             <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -140,7 +142,7 @@ const CategorySidebar = () => {
           <a href="https://www.linkedin.com/in/chapin-smith/"
             target="_blank"
             rel="noopener noreferrer"
-            className="social-link"
+            className="text-text-secondary hover:text-primary transition-colors flex items-center justify-center"
             aria-label="LinkedIn"
           >
             <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">

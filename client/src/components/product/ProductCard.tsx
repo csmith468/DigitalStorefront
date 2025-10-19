@@ -20,7 +20,7 @@ function ProductCard({ product }: { product: Product; }) {
   };
 
   return (
-   <li className='bg-white rounded-lg shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] flex flex-col h-full overflow-hidden'>
+   <li className='bg-white rounded-lg shadow-lg hover:shadow-2xl transition-[transform,shadow] duration-300 hover:scale-[1.02] flex flex-col h-full overflow-hidden'>
       <div className='p-4 flex flex-col flex-grow'>
          <div className='relative w-full aspect-square border-2 border-border rounded-md overflow-hidden mb-3'>
           {product.primaryImage ? (
@@ -30,7 +30,7 @@ function ProductCard({ product }: { product: Product; }) {
               className="w-full h-full object-cover"
             />
           ) : (
-            <div className="w-full h-full bg-border rounded-md flex items-center justify-center text-text-secondary">No Image</div>
+            <div className="w-full h-full bg-border flex items-center justify-center text-text-secondary">No Image</div>
           )}
 
           {product.isTradeable && (
@@ -70,18 +70,19 @@ function ProductCard({ product }: { product: Product; }) {
           </div>
           <div className="flex justify-between items-center gap-2">
             <span className="text-sm text-text-secondary flex-shrink-0">Premium:</span>
-            <span className="text-sm font-semibold text-[var(--color-link-hover)] text-right">{formatPrice(product.premiumPrice, product.priceIcon)}</span>
+            <span className="text-sm font-semibold text-[var(--color-link-hover)] text-right">
+              {formatPrice(product.premiumPrice, product.priceIcon)}
+            </span>
           </div>
         </div>
 
         { product.isPromotional ? (
           <Link
-              to={`/product/${product.slug}`}
-              className="w-full px-4 py-2 text-sm bg-[var(--color-accent)] text-white hover:text-white rounded-md
-            hover:opacity-90 transition-opacity font-medium text-center block no-underline"
-            >
-              Promotional
-            </Link>
+            to={`/product/${product.slug}`}
+            className="w-full px-4 py-2 text-sm bg-[var(--color-accent)] text-white rounded-md hover:opacity-90 transition-opacity font-medium text-center block no-underline"
+          >
+            Promotional
+          </Link>
           ) : (
             <button onClick={() => handleAddToCart(product.productId)} className="w-full px-4 py-2 text-sm bg-[var(--color-primary)] text-white rounded-md hover:opacity-90 transition-opacity font-medium">
               Add To Cart
