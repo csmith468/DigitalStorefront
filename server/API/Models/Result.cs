@@ -17,6 +17,6 @@ public class Result<T>
         StatusCode = statusCode;
     }
 
-    public static Result<T> Success(T data) => new(true, data, null, 200);
+    public static Result<T> Success(T data, int statusCode = 200) => new(true, data, null, statusCode);
     public static Result<T> Failure(string error, int statusCode = 404) => new(false, default!, error, statusCode);
 }

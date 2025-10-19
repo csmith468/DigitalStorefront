@@ -2,6 +2,7 @@ using System.Reflection;
 using API.Database;
 using API.Services.Images;
 using API.Setup;
+using API.Utils;
 
 namespace API.Extensions;
 
@@ -32,7 +33,8 @@ public static class DependencyInjectionExtensions
         services.AddScoped<ISharedContainer, SharedContainer>();
         
         services.AddScoped<IImageStorageService, LocalImageStorageService>();
-        
+        services.AddScoped<TokenGenerator>();
+        services.AddScoped<PasswordHasher>();
         return services;
     }
 

@@ -6,10 +6,10 @@ public static class Guard
 {
     // If null, return failure not found result, otherwise return success result
     // Usage: Any get dapper method
-    public static async Task<Result<T>> AgainstNull<T>(Func<Task<T?>> dapperOperation, string? failureMessage = null,
+    public static async Task<Result<T>> AgainstNull<T>(Func<Task<T?>> operation, string? failureMessage = null,
         int statusCode = 404) where T : class
     {
-        var result = await dapperOperation();
+        var result = await operation();
         return result == null
             ? Result<T>.Failure(failureMessage ?? $"{typeof(T).Name} not found", statusCode)
             : Result<T>.Success(result);
@@ -17,19 +17,19 @@ public static class Guard
 
     // If validation is false, return failure result, otherwise success result 
     // Usage: Dapper.ExistsAsync, Dapper.ExistsByFieldAsync
-    public static async Task<Result<bool>> Against(Func<Task<bool>> dapperValidation, string? failureMessage = null,
+    public static async Task<Result<bool>> Against(Func<Task<bool>> validation, string? failureMessage = null,
         int statusCode = 404)
     {
-        return !await dapperValidation() 
+        return !await validation() 
             ? Result<bool>.Failure(failureMessage ?? "Not found", statusCode)
             : Result<bool>.Success(true);
     }
 
     // If list is empty (should use on final step of service since converting to list here)
     // Only use this if it should error if results are empty
-    public static async Task<Result<List<T>>> AgainstEmpty<T>(Func<Task<List<T>>> dapperOperation, string? emptyMessage = null) where T : class
+    public static async Task<Result<List<T>>> AgainstEmpty<T>(Func<Task<List<T>>> operation, string? emptyMessage = null) where T : class
     {
-        var result = (await dapperOperation()).ToList();
+        var result = (await operation()).ToList();
         
         if (emptyMessage != null && result.Count == 0)
             return  Result<List<T>>.Failure(emptyMessage, 404);
