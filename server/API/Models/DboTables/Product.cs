@@ -23,6 +23,8 @@ public class Product
 
     [DbColumn] public bool IsExclusive { get; set; } = false;
     
+    [DbColumn] public bool IsActive { get; set; } = true;
+    
     [DbColumn] public string Sku { get; set; } = "";
     
     [DbColumn] public int PriceTypeId { get; set; }

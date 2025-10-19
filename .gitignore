@@ -1,7 +1,7 @@
 # macOS
 .DS_Store
 
-# Vue.js / Node.js
+# React / Node.js
 node_modules/
 dist/
 dist-ssr/
@@ -58,5 +58,6 @@ logs/
 API/appsettings.Development.json
 API/appsettings.Production.json
 .vscode/*
-Vue/.vscode/*
 server/API/wwwroot/images/*
+client/package-lock.json
+server/API/appsettings.Development.json

@@ -1,3 +1,4 @@
+using System.Net;
 using API.Database;
 using API.Models;
 using API.Utils;
@@ -13,24 +14,25 @@ public class BaseService(ISharedContainer container)
     protected readonly IMapper Mapper = container.Mapper;
     protected T DepInj<T>() where T : class => container.DepInj<T>()!;
 
-    // Shorthand of guard for getting by ID
-    protected Task<Result<T>> GetOrFailAsync<T>(int id, string? message = null) where T : class
-        => Guard.AgainstNull(
-            () => Dapper.GetByIdAsync<T>(id),
-            message ?? $"{typeof(T).Name}Id = {id.ToString()} not found"
-        );
-    
-    // Shorthand of guard for checking if exists by ID
-    protected Task<Result<bool>> ValidateExistsAsync<T>(int id, string? message = null) where T : class
-        => Guard.Against(
-            () => Dapper.ExistsAsync<T>(id),
-            message ?? $"{typeof(T).Name}Id = {id.ToString()} not found"
-        );
-    
-    // Shorthand of guard for checking if exists by field
-    protected Task<Result<bool>> ValidateExistsByFieldAsync<T>(string fieldName, object value, string? message = null) where T : class
-        => Guard.Against(
-            () => Dapper.ExistsByFieldAsync<T>(fieldName, value),
-            message ?? $"{typeof(T).Name}.{fieldName} = {value} not found"
-        );
+    protected async Task<Result<T>> GetOrFailAsync<T>(int id, string? message = null) where T : class
+    {
+        var entity = await Dapper.GetByIdAsync<T>(id);
+        return entity == null
+            ? Result<T>.Failure(message ?? $"{typeof(T).Name}Id = {id} not found", HttpStatusCode.NotFound)
+            : Result<T>.Success(entity);
+    }
+
+    protected async Task<Result<bool>> ValidateExistsAsync<T>(int id, string? message = null) where T : class
+    {
+        return await Dapper.ExistsAsync<T>(id)
+            ? Result<bool>.Success(true)
+            : Result<bool>.Failure(message ?? $"{typeof(T).Name}Id = {id} not found", HttpStatusCode.NotFound);
+    }
+
+    protected async Task<Result<bool>> ValidateExistsByFieldAsync<T>(string fieldName, object value, string? message = null) where T : class
+    {
+        return await Dapper.ExistsByFieldAsync<T>(fieldName, value)
+            ? Result<bool>.Success(true)
+            : Result<bool>.Failure(message ?? $"{typeof(T).Name}.{fieldName} = {value} not found", HttpStatusCode.NotFound);
+    }
 }

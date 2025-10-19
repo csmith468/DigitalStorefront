@@ -1,3 +1,4 @@
+using System.Net;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Models;
@@ -7,9 +8,9 @@ public class Result<T>
     public bool IsSuccess { get; }
     public T Data { get; }
     public string? Error { get; }
-    public int StatusCode { get; }
+    public HttpStatusCode StatusCode { get; }
 
-    private Result(bool isSuccess, T data, string? error, int statusCode = 200)
+    private Result(bool isSuccess, T data, string? error, HttpStatusCode statusCode = HttpStatusCode.OK)
     {
         IsSuccess = isSuccess;
         Data = data;
@@ -17,6 +18,6 @@ public class Result<T>
         StatusCode = statusCode;
     }
 
-    public static Result<T> Success(T data, int statusCode = 200) => new(true, data, null, statusCode);
-    public static Result<T> Failure(string error, int statusCode = 404) => new(false, default!, error, statusCode);
+    public static Result<T> Success(T data, HttpStatusCode statusCode = HttpStatusCode.OK) => new(true, data, null, statusCode);
+    public static Result<T> Failure(string error, HttpStatusCode statusCode = HttpStatusCode.NotFound) => new(false, default!, error, statusCode);
 }
