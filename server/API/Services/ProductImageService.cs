@@ -15,7 +15,7 @@ public interface IProductImageService
     Task<Result<List<ProductImageDto>>> GetPrimaryImagesForProductIds(List<int> productIds);
     Task<Result<ProductImageDto>> AddProductImageAsync(int productId, AddProductImageDto dto);
     Task<Result<bool>> SetPrimaryImageAsync(int productId, int productImageId);
-    Task<Result<bool>> DeleteProductImageAsync(int productImageId);
+    Task<Result<bool>> DeleteProductImageAsync(int productId, int productImageId);
 }
 
 public class ProductImageService(ISharedContainer container) : BaseService(container), IProductImageService
@@ -103,7 +103,7 @@ public class ProductImageService(ISharedContainer container) : BaseService(conta
     public async Task<Result<bool>> SetPrimaryImageAsync(int productId, int productImageId)
     {
         var image = await Dapper.GetByIdAsync<ProductImage>(productImageId);
-        if (image == null)
+        if (image == null || image.ProductId != productId)
             return Result<bool>.Failure("Image not found", HttpStatusCode.NotFound);
 
         if (image.DisplayOrder == 0)
@@ -124,10 +124,10 @@ public class ProductImageService(ISharedContainer container) : BaseService(conta
         }
     }
 
-    public async Task<Result<bool>> DeleteProductImageAsync(int productImageId)
+    public async Task<Result<bool>> DeleteProductImageAsync(int productId, int productImageId)
     {
         var image = await Dapper.GetByIdAsync<ProductImage>(productImageId);
-        if (image == null)
+        if (image == null || image.ProductId != productId)
             return Result<bool>.Failure("Image not found", HttpStatusCode.NotFound);
 
         try

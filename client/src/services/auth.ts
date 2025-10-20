@@ -1,17 +1,17 @@
 import apiClient from './api';
-import type { AuthResponse, LoginDto, RegisterDto } from '../types/auth';
+import type { Auth, LoginRequest, RegisterRequest } from '../types/auth';
 
 export const authService = {
-  login: async (dto: LoginDto): Promise<AuthResponse> => {
-    const response = await apiClient.post<AuthResponse>('/auth/login', dto);
+  login: async (dto: LoginRequest): Promise<Auth> => {
+    const response = await apiClient.post<Auth>('/auth/login', dto);
     return response.data;
   },
-  register: async (dto: RegisterDto): Promise<AuthResponse> => {
-    const response = await apiClient.post<AuthResponse>('/auth/register', dto);
+  register: async (dto: RegisterRequest): Promise<Auth> => {
+    const response = await apiClient.post<Auth>('/auth/register', dto);
     return response.data;
   },
-  refreshToken: async (): Promise<AuthResponse> => {
-    const response = await apiClient.post<AuthResponse>('/auth/refresh-token');
+  refreshToken: async (): Promise<Auth> => {
+    const response = await apiClient.post<Auth>('/auth/refresh-token');
     return response.data;
   },
   logout: () => {

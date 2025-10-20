@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useUser } from "../../contexts/UserContext";
-import type { RegisterDto } from "../../types/auth";
+import type { RegisterRequest } from "../../types/auth";
 import { FormInput } from "../primitives/FormInput";
 
 interface RegisterFormProps {
@@ -26,7 +26,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onSwitchT
     setIsSubmitting(true);
 
     try {
-      const dto: RegisterDto = {
+      const dto: RegisterRequest = {
         username: username,
         password: password,
         confirmPassword: confirmPassword,

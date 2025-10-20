@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
-import type { User, AuthResponse, LoginDto, RegisterDto } from '../types/auth';
+import type { User, Auth, LoginRequest, RegisterRequest } from '../types/auth';
 import { authService } from '../services/auth';
 
 
@@ -11,8 +11,8 @@ interface UserContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (dto: LoginDto) => Promise<void>;
-  register: (dto: RegisterDto) => Promise<void>;
+  login: (dto: LoginRequest) => Promise<void>;
+  register: (dto: RegisterRequest) => Promise<void>;
   logout: () => void;
 }
 
@@ -40,17 +40,17 @@ export const UserProvider: React.FC<{ children: ReactNode }>  = ({ children }) =
     initAuth();
   }, []);
 
-  const setUserAndTokenFromAuthResponse = (response: AuthResponse) => {
+  const setUserAndTokenFromAuthResponse = (response: Auth) => {
     authService.setStoredToken(response.token);
     setUser({ userId: response.userId, username: response.username });
   };
 
-  const login = async (dto: LoginDto) => {
+  const login = async (dto: LoginRequest) => {
     const response = await authService.login(dto);
     setUserAndTokenFromAuthResponse(response);
   };
 
-  const register = async (dto: RegisterDto) => {
+  const register = async (dto: RegisterRequest) => {
     const response = await authService.register(dto);
     setUserAndTokenFromAuthResponse(response);
   };

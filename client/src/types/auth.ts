@@ -1,15 +1,15 @@
-export interface AuthResponse {
+export interface Auth {
   userId: number;
   username: string;
   token: string;
 }
 
-export interface LoginDto {
+export interface LoginRequest {
   username: string;
   password: string;
 }
 
-export interface RegisterDto {
+export interface RegisterRequest {
   username: string;
   password: string;
   confirmPassword: string;
