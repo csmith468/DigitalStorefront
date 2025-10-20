@@ -1,9 +1,10 @@
+using System.Net;
+using API.Extensions;
 using API.Models;
 using API.Models.DboTables;
 using API.Models.Dtos;
 using API.Services.Images;
 using API.Setup;
-using ProductImageListResult = API.Models.Result<System.Collections.Generic.List<API.Models.Dtos.ProductImageDto>>;
 
 namespace API.Services;
 
@@ -11,7 +12,7 @@ public interface IProductImageService
 {
     Task<Result<ProductImageDto?>> GetPrimaryProductImageAsync(int productId);
     Task<Result<List<ProductImageDto>>> GetAllProductImagesAsync(int productId);
-    Task<ProductImageListResult> GetPrimaryImagesForProductIds(List<int> productIds);
+    Task<Result<List<ProductImageDto>>> GetPrimaryImagesForProductIds(List<int> productIds);
     Task<Result<ProductImageDto>> AddProductImageAsync(int productId, AddProductImageDto dto);
     Task<Result<bool>> SetPrimaryImageAsync(int productId, int productImageId);
     Task<Result<bool>> DeleteProductImageAsync(int productImageId);
@@ -25,7 +26,7 @@ public class ProductImageService(ISharedContainer container) : BaseService(conta
     {
         var validateProduct = await ValidateExistsAsync<Product>(productId);
         if (!validateProduct.IsSuccess)
-            return Result<ProductImageDto?>.Failure(validateProduct.Error!, validateProduct.StatusCode);
+            return validateProduct.ToFailure<bool, ProductImageDto?>();
 
         var productImage = await Dapper.FirstOrDefaultAsync<ProductImage>(
             """
@@ -35,32 +36,32 @@ public class ProductImageService(ISharedContainer container) : BaseService(conta
         return Result<ProductImageDto?>.Success(productImage != null ? MapToDto(productImage) : null);
     }
 
-    public async Task<ProductImageListResult> GetAllProductImagesAsync(int productId)
+    public async Task<Result<List<ProductImageDto>>> GetAllProductImagesAsync(int productId)
     {
         var validateProduct = await ValidateExistsAsync<Product>(productId);
         if (!validateProduct.IsSuccess)
-            return ProductImageListResult.Failure(validateProduct.Error!, validateProduct.StatusCode);
+            return validateProduct.ToFailure<bool, List<ProductImageDto>>();
 
         var result = (await Dapper.GetByFieldAsync<ProductImage>("productId", productId))
             .Select(MapToDto).OrderBy(pi => pi.DisplayOrder).ToList();
-        return ProductImageListResult.Success(result);
+        return Result<List<ProductImageDto>>.Success(result);
     }
 
-    public async Task<ProductImageListResult> GetPrimaryImagesForProductIds(List<int> productIds)
+    public async Task<Result<List<ProductImageDto>>> GetPrimaryImagesForProductIds(List<int> productIds)
     {
         var result = (await Dapper.GetWhereInAsync<ProductImage>("productId", productIds))
             .Where(img => img.DisplayOrder == 0)
             .Select(MapToDto)
             .OrderBy(pi => pi.ProductId)
             .ToList();
-        return ProductImageListResult.Success(result);
+        return Result<List<ProductImageDto>>.Success(result);
     }
 
     public async Task<Result<ProductImageDto>> AddProductImageAsync(int productId, AddProductImageDto dto)
     {
         var validateProduct = await ValidateExistsAsync<Product>(productId);
         if (!validateProduct.IsSuccess)
-            return Result<ProductImageDto>.Failure(validateProduct.Error!, validateProduct.StatusCode);
+            return validateProduct.ToFailure<bool, ProductImageDto>();
 
         try
         {
@@ -94,7 +95,7 @@ public class ProductImageService(ISharedContainer container) : BaseService(conta
         }
         catch (Exception ex)
         {
-            return Result<ProductImageDto>.Failure($"Failed to add image: {ex.Message}", 500);
+            return Result<ProductImageDto>.Failure($"Failed to add image: {ex.Message}", HttpStatusCode.InternalServerError);
         }
     }
 
@@ -103,7 +104,7 @@ public class ProductImageService(ISharedContainer container) : BaseService(conta
     {
         var image = await Dapper.GetByIdAsync<ProductImage>(productImageId);
         if (image == null)
-            return Result<bool>.Failure("Image not found", 404);
+            return Result<bool>.Failure("Image not found", HttpStatusCode.NotFound);
 
         if (image.DisplayOrder == 0)
             return Result<bool>.Success(true);
@@ -119,7 +120,7 @@ public class ProductImageService(ISharedContainer container) : BaseService(conta
         }
         catch (Exception ex)
         {
-            return Result<bool>.Failure($"Failed to set primary image: {ex.Message}", 500);
+            return Result<bool>.Failure($"Failed to set primary image: {ex.Message}", HttpStatusCode.InternalServerError);
         }
     }
 
@@ -127,7 +128,7 @@ public class ProductImageService(ISharedContainer container) : BaseService(conta
     {
         var image = await Dapper.GetByIdAsync<ProductImage>(productImageId);
         if (image == null)
-            return Result<bool>.Failure("Image not found", 404);
+            return Result<bool>.Failure("Image not found", HttpStatusCode.NotFound);
 
         try
         {
@@ -146,7 +147,7 @@ public class ProductImageService(ISharedContainer container) : BaseService(conta
         }
         catch (Exception ex)
         {
-            return Result<bool>.Failure($"Failed to delete image: {ex.Message}", 500);
+            return Result<bool>.Failure($"Failed to delete image: {ex.Message}", HttpStatusCode.InternalServerError);
         }
     }
 

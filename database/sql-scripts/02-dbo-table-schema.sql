@@ -12,14 +12,6 @@ CREATE TABLE dbo.productType (
     description NVARCHAR(200)
 );
 GO
-
-CREATE TABLE dbo.priceType (
-    priceTypeId INT IDENTITY(1,1) PRIMARY KEY,
-    priceTypeName NVARCHAR(20) NOT NULL UNIQUE,
-    priceTypeCode NVARCHAR(10) NOT NULL UNIQUE,
-    icon NCHAR NOT NULL
-);
-GO
   
 CREATE TABLE dbo.category (
     categoryId INT IDENTITY(1,1) PRIMARY KEY,
@@ -64,6 +56,7 @@ CREATE TABLE dbo.product (
     isNew BIT DEFAULT 0,
     isPromotional BIT DEFAULT 0,
     isExclusive BIT DEFAULT 0,
+    isActive BIT DEFAULT 1,
     parentProductId INT NULL,
     sku NVARCHAR(50) NOT NULL,
     priceTypeId INT NOT NULL,
@@ -75,7 +68,6 @@ CREATE TABLE dbo.product (
     createdBy INT NOT NULL,
     updatedBy INT NULL,
     FOREIGN KEY (productTypeId) REFERENCES dbo.productType(productTypeId),
-    FOREIGN KEY (priceTypeId) REFERENCES dbo.priceType(priceTypeId),
     FOREIGN KEY (createdBy) REFERENCES dsf.[user](userId),
     FOREIGN KEY (updatedBy) REFERENCES dsf.[user](userId)
 );
