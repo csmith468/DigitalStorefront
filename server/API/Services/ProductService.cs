@@ -14,8 +14,8 @@ public interface IProductService
     Task<Result<ProductDetailDto>> GetProductByIdAsync(int productId);
     Task<Result<List<ProductDto>>> GetProductsBySubcategoryAsync(string subcategorySlug);
     Task<Result<List<ProductDto>>> GetProductsByCategoryAsync(string categorySlug);
-    Task<Result<int>> CreateProductAsync(ProductFormDto dto, int userId);
-    Task<Result<bool>> UpdateProductAsync(int productId, ProductFormDto dto, int userId);
+    Task<Result<ProductDetailDto>> CreateProductAsync(ProductFormDto dto, int userId);
+    Task<Result<ProductDetailDto>> UpdateProductAsync(int productId, ProductFormDto dto, int userId);
     bool CanUserEditProduct(Product product, int userId);
 }
 
@@ -29,13 +29,8 @@ public class ProductService(ISharedContainer container) : BaseService(container)
         if (!productResult.IsSuccess)
             return productResult.ToFailure<Product, ProductDetailDto>();
         
-        var detailDto = Mapper.Map<Product, ProductDetailDto>(productResult.Data);
-
-        var imagesResult = await _productImageService.GetAllProductImagesAsync(productId);
-        if (imagesResult.IsSuccess)
-            detailDto.Images = imagesResult.Data;
-        
-        return Result<ProductDetailDto>.Success(detailDto);
+        var productDetailDto = await ConvertProductToProductDetailDto(productResult.Data);
+        return Result<ProductDetailDto>.Success(productDetailDto);
     }
 
     public async Task<Result<List<ProductDto>>> GetProductsBySubcategoryAsync(string subcategorySlug)
@@ -77,51 +72,50 @@ public class ProductService(ISharedContainer container) : BaseService(container)
         return await ConvertProductsToProductDtos(products);
     }
 
-    public async Task<Result<int>> CreateProductAsync(ProductFormDto dto, int userId)
+    public async Task<Result<ProductDetailDto>> CreateProductAsync(ProductFormDto dto, int userId)
     {
         if (!await CanUserCreateProduct(userId))
-            return Result<int>.Failure("You do not have permission to create a product", HttpStatusCode.Unauthorized);
+            return Result<ProductDetailDto>.Failure("You do not have permission to create a product", HttpStatusCode.Unauthorized);
         
         if (await Dapper.ExistsByFieldAsync<Product>("slug", dto.Slug))
-            return Result<int>.Failure($"Product slug {dto.Slug} already exists", HttpStatusCode.BadRequest);
+            return Result<ProductDetailDto>.Failure($"Product slug {dto.Slug} already exists", HttpStatusCode.BadRequest);
 
         var validationResult = await ValidateProduct(dto);
         if (!validationResult.IsSuccess)
-            return validationResult.ToFailure<bool, int>();
+            return validationResult.ToFailure<bool, ProductDetailDto>();
 
-        var productId = 0;
+        var product = Mapper.Map<ProductFormDto, Product>(dto);
         await Dapper.WithTransactionAsync(async () =>
         {
-            var product = Mapper.Map<ProductFormDto, Product>(dto);
-            productId = await Dapper.InsertAsync(product);
+            product.ProductId = await Dapper.InsertAsync(product);
             
-            var sku = GenerateSku(productId, product.Slug);
+            product.Sku = GenerateSku(product.ProductId, product.Slug);
             await Dapper.ExecuteAsync(
                 "UPDATE dbo.Product SET sku = @sku WHERE productId = @productId",
-                new { sku, productId } 
+                new { sku = product.Sku, product.ProductId } 
             );
-
-            await SetProductSubcategoriesAsync(productId, dto.SubcategoryIds);
+            await SetProductSubcategoriesAsync(product.ProductId, dto.SubcategoryIds);
         });
 
-        if (productId == 0)
-            return Result<int>.Failure("Product could not be created.", HttpStatusCode.InternalServerError);
-        return Result<int>.Success(productId, HttpStatusCode.Created);
+        if (product.ProductId == 0)
+            return Result<ProductDetailDto>.Failure("Product could not be created.", HttpStatusCode.InternalServerError);
+        var productDetailDto = await ConvertProductToProductDetailDto(product);
+        return Result<ProductDetailDto>.Success(productDetailDto, HttpStatusCode.Created);
     }
 
-    public async Task<Result<bool>> UpdateProductAsync(int productId, ProductFormDto dto, int userId)
+    public async Task<Result<ProductDetailDto>> UpdateProductAsync(int productId, ProductFormDto dto, int userId)
     {
         var product = await Dapper.GetByIdAsync<Product>(productId);
         if (product == null)
-            return Result<bool>.Failure("Product could not be found");
+            return Result<ProductDetailDto>.Failure("Product could not be found");
         if (!CanUserEditProduct(product, userId))
-            return Result<bool>.Failure("You do not have permission to edit this product", HttpStatusCode.Unauthorized);
+            return Result<ProductDetailDto>.Failure("You do not have permission to edit this product", HttpStatusCode.Unauthorized);
         if (product.Slug != dto.Slug && await Dapper.ExistsByFieldAsync<Product>("slug", dto.Slug))
-            return Result<bool>.Failure($"Slug {dto.Slug} already exists", HttpStatusCode.BadRequest);
+            return Result<ProductDetailDto>.Failure($"Slug {dto.Slug} already exists", HttpStatusCode.BadRequest);
 
         var validationResult = await ValidateProduct(dto);
         if (!validationResult.IsSuccess)
-            return validationResult.ToFailure<bool, bool>();
+            return validationResult.ToFailure<bool, ProductDetailDto>();
 
         await Dapper.WithTransactionAsync(async () =>
         {
@@ -130,7 +124,9 @@ public class ProductService(ISharedContainer container) : BaseService(container)
 
             await SetProductSubcategoriesAsync(productId, dto.SubcategoryIds);
         });
-        return Result<bool>.Success(true, HttpStatusCode.NoContent);
+        
+        var productDetailDto = await ConvertProductToProductDetailDto(product);
+        return Result<ProductDetailDto>.Success(productDetailDto);
     }
     
     public bool CanUserEditProduct(Product product, int userId)
@@ -160,6 +156,21 @@ public class ProductService(ISharedContainer container) : BaseService(container)
 
         foreach (var subcategory in subcategoriesToRemove)
             await Dapper.DeleteByIdAsync<ProductSubcategory>(subcategory.ProductSubcategoryId);
+    }
+
+    private async Task<ProductDetailDto> ConvertProductToProductDetailDto(Product product)
+    {
+        var detailDto = Mapper.Map<Product, ProductDetailDto>(product);
+
+        var imagesResult = await _productImageService.GetAllProductImagesAsync(product.ProductId);
+        if (imagesResult.IsSuccess)
+            detailDto.Images = imagesResult.Data;
+
+        var productSubcategories = await Dapper.GetByFieldAsync<ProductSubcategory>("productId", product.ProductId);
+        var subcategories = await Dapper.GetWhereInAsync<Subcategory>("subcategoryId", productSubcategories.Select(s => s.SubcategoryId).ToList());
+        detailDto.Subcategories = subcategories.Select(s => Mapper.Map<Subcategory, SubcategoryDto>(s)).ToList();
+        
+        return detailDto;
     }
 
     private async Task<Result<List<ProductDto>>> ConvertProductsToProductDtos(List<Product> products)
