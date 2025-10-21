@@ -6,9 +6,22 @@ interface ModalProps {
   onClose: () => void;
   title: string;
   children: React.ReactNode;
+  size?: 'sm' | 'md' | 'lg' | 'xl';
 }
 
-export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
+export const Modal: React.FC<ModalProps> = ({ 
+  isOpen, 
+  onClose, 
+  title, 
+  children, 
+  size = 'md' 
+}) => {
+  const sizeClasses = {
+    sm: 'max-w-md',
+    md: 'max-w-lg',
+    lg: 'max-w-2xl',
+    xl: 'max-w-4xl'
+  };
   return (
     <Transition show={isOpen}>
       <Dialog as="div" className="relative z-50" onClose={onClose}>
@@ -35,7 +48,7 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <DialogPanel className="w-full max-w-md overflow-hidden rounded-2xl bg-white p-6 shadow-xl">
+              <DialogPanel className={`w-full ${sizeClasses[size]} overflow-hidden rounded-2xl bg-white p-6 shadow-xl`}>
                 {/* Header */}
                 <div className="flex items-center justify-between mb-4">
                   <DialogTitle className="text-lg font-medium leading-6 text-gray-900">{title}</DialogTitle>
