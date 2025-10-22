@@ -32,11 +32,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMo
   const title = (mode === 'login' ? 'Sign In' : 'Create Account');
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title={title}>
+    <Modal isOpen={isOpen} onClose={onClose} title={title}>
       {mode === 'login' ? (
-        <LoginForm onSuccess={handleSuccess} onSwitchToRegister={() => setMode('register')} />
+        <LoginForm onSuccess={handleSuccess} onCancel={handleClose} 
+          onSwitchToRegister={() => setMode('register')} 
+        />
       ) : (
-        <RegisterForm onSuccess={handleSuccess} onSwitchToLogin={() => setMode('login')} />
+        <RegisterForm onSuccess={handleSuccess} onCancel={handleClose} 
+          onSwitchToLogin={() => setMode('login')} 
+        />
       )}
     </Modal>
   );
