@@ -24,5 +24,7 @@ public class ProductMappingProfile : Profile
             .ForMember(dest => dest.CreatedBy, opt => opt.Ignore())
             .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore())
             .ForMember(dest => dest.UpdatedBy, opt => opt.Ignore());
+
+        CreateMap<ProductType, ProductTypeDto>();
     }
 }

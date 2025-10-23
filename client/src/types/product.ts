@@ -9,6 +9,7 @@ export interface Product {
   isNew: boolean;
   isPromotional: boolean;
   isExclusive: boolean;
+  isDemoProduct: boolean;
   sku: string;
   priceTypeId: number;
   price: number;

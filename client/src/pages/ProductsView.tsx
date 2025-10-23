@@ -1,77 +1,36 @@
-import { useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
-import ProductGrid from "../components/product/ProductGrid";
-import { productsService } from "../services/products";
-import type { Product } from "../types/product";
+import ProductsGrid from "../components/product/ProductsGrid";
 import { isViewAllSubcategory } from "../types/subcategory";
+import { useProductsByCategory, useProductsBySubcategory } from "../hooks/useProducts";
+import { useCategories } from "../hooks/useCategories";
+import { usePagination } from "../hooks/usePagination";
+import { ProductsShell } from "../components/product/ProductsShell";
 
-function ProductsView() {
+export default function ProductsView() {
   const { categorySlug, subcategorySlug } = useParams();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: categories } = useCategories();
+  const pagination = usePagination();
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        console.log('here')
+  const isViewAllInCategory = categorySlug && subcategorySlug && isViewAllSubcategory(subcategorySlug);
 
-        let data: Product[] = [];
-        
-        if (categorySlug && subcategorySlug && isViewAllSubcategory(subcategorySlug))
-          data = await productsService.getProductsByCategory(categorySlug);
-        else if (subcategorySlug)
-          data = await productsService.getProductsBySubcategory(subcategorySlug) 
+  const pageTitle = useMemo(() => {
+    if (!categories || !categorySlug) return 'Products';
+    const category = categories.find(c => c.slug === categorySlug);
+    if (!category) return 'Products';
+    if (!subcategorySlug || isViewAllInCategory)
+      return category.name;
+    const subcategory = category.subcategories.find(s => s.slug === subcategorySlug);
+    return subcategory ? `${category.name}: ${subcategory.name}` : category.name;
+  }, [categories, categorySlug, subcategorySlug, isViewAllInCategory]);
 
-        console.log('Fetched products:', data);
-        setProducts(data);
-      } catch (err) {
-        console.error("Failed to fetch products:", err);
-        setError("Failed to load products. Please try again later.");
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchProducts();
-  }, [categorySlug, subcategorySlug]);
-
-  if (loading) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-center items-center min-h-[400px]">
-          <div className="text-lg text-text-secondary">Loading products...</div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-center items-center min-h-[400px]">
-          <div className="text-danger text-center">
-            <p className="text-lg font-semibold mb-2">Error</p>
-            <p>{error}</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const { data, isLoading, error } = isViewAllInCategory
+      ? useProductsByCategory(categorySlug || '', pagination.page, pagination.pageSize)
+      : useProductsBySubcategory(subcategorySlug || '', pagination.page, pagination.pageSize);
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-2 text-text-primary">
-          Products
-        </h1>
-        <div className="w-24 h-1 rounded-full" style={{ background: `linear-gradient(90deg, var(--color-primary) 0%, var(--color-accent) 100%)` }}></div>
-      </div>
-      <ProductGrid products={products} />
-    </div>
-  );
+    <ProductsShell title={pageTitle} data={data} isLoading={isLoading} error={error} {...pagination}>
+      { (products) => <ProductsGrid products={products} /> }
+    </ProductsShell>
+  )
 }
-
-export default ProductsView;

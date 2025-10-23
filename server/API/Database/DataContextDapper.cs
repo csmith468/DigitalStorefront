@@ -1,4 +1,5 @@
 using System.Data;
+using API.Models.Dtos;
 using Microsoft.Data.SqlClient;
 using Dapper;
 
@@ -25,6 +26,8 @@ public interface IDataContextDapper : IDisposable
     Task<IEnumerable<T>> GetWhereAsync<T>(Dictionary<string, object> whereConditions) where T : class;
     Task<IEnumerable<T>> GetByFieldAsync<T>(string fieldName, object value) where T : class;
     Task<IEnumerable<T>> GetWhereInAsync<T>(string fieldName, List<int> values) where T : class;
+    Task<(IEnumerable<T> items, int totalCount)> GetPaginatedWithSqlAsync<T>(string baseQuery, 
+        PaginationParams paginationParams, object? parameters = null, string orderBy = "1 DESC") where T : class;
     Task<bool> ExistsAsync<T>(int id) where T : class;
     Task<bool> ExistsByFieldAsync<T>(string fieldName, object value) where T : class;
     Task<int> GetCountByFieldAsync<T>(string fieldName, object value) where T : class;
@@ -190,6 +193,32 @@ public class DataContextDapper : IDataContextDapper
           var sql = $"SELECT * FROM {metadata.TableName} WHERE [{fieldName}] IN @values";
     
           return await QueryAsync<T>(sql, new { values });
+      }
+
+      public async Task<(IEnumerable<T> items, int totalCount)> GetPaginatedWithSqlAsync<T>(string baseQuery,
+          PaginationParams paginationParams, object? parameters = null, string orderBy = "1 DESC") where T : class
+      {
+          var countSql = $"SELECT COUNT(*) FROM ({baseQuery}) AS CountQuery";
+          Console.WriteLine($"COUNT SQL: {countSql}");
+          var totalCount = await _db.ExecuteScalarAsync<int>(countSql, parameters, _transaction);
+          Console.WriteLine($"Total Count: {totalCount}");
+
+          var paginatedSql = $"""
+                              {baseQuery}
+                              ORDER BY {orderBy}
+                              OFFSET @skip ROWS
+                              FETCH NEXT @pageSize ROWS ONLY
+                              """;
+          Console.WriteLine($"PAGINATED SQL: {paginatedSql}");
+          Console.WriteLine($"Skip: {paginationParams.Skip}, PageSize: {paginationParams.PageSize}");
+
+          var allParms = new DynamicParameters(parameters);
+          allParms.Add("skip", paginationParams.Skip);
+          allParms.Add("pageSize", paginationParams.PageSize);
+
+          var items = await _db.QueryAsync<T>(paginatedSql, allParms);
+          Console.WriteLine($"Items returned: {items.Count()}");
+          return (items, totalCount);
       }
 
       public async Task<bool> ExistsAsync<T>(int id) where T : class

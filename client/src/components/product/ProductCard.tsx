@@ -3,7 +3,6 @@ import type { Product } from "../../types/product";
 
 function ProductCard({ product }: { product: Product; }) {
   const formatPrice = (price: number, priceType: string) => {
-    console.log('pricetype', priceType)
     return priceType + price.toLocaleString();
   }
 

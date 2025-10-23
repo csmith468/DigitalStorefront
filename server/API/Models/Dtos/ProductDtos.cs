@@ -1,3 +1,5 @@
+using API.Models.DboTables;
+
 namespace API.Models.Dtos;
 
 public class ProductDto
@@ -14,6 +16,7 @@ public class ProductDto
     public decimal Price { get; set; }
     public decimal PremiumPrice { get; set; }
     public string PriceIcon { get; set; } = "";
+    public bool IsDemoProduct { get; set; }
     public ProductImageDto? PrimaryImage { get; set; }
 }
 
@@ -39,4 +42,14 @@ public class ProductFormDto
     public decimal PremiumPrice { get; set; }
     public int PriceTypeId { get; set; }
     public List<int> SubcategoryIds { get; set; } = [];
+}
+
+public class ProductTypeDto: ProductType;
+
+public class ProductFilterParams : PaginationParams
+{
+    public string? Search { get; set; }
+    public int? ProductTypeId { get; set; }
+    public string? CategorySlug { get; set; }
+    public string? SubcategorySlug { get; set; }
 }

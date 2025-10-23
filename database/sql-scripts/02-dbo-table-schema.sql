@@ -62,7 +62,7 @@ CREATE TABLE dbo.product (
     priceTypeId INT NOT NULL,
     price DECIMAL(10,2) NOT NULL,
     premiumPrice DECIMAL(10,2) NOT NULL,
-    imageUrl NVARCHAR(200) NULL,
+    isDemoProduct BIT DEFAULT 0,
     createdAt DATETIME DEFAULT GETUTCDATE(),
     updatedAt DATETIME NULL,
     createdBy INT NOT NULL,
