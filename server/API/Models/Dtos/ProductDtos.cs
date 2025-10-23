@@ -1,3 +1,5 @@
+using API.Models.DboTables;
+
 namespace API.Models.Dtos;
 
 public class ProductDto
@@ -40,3 +42,5 @@ public class ProductFormDto
     public int PriceTypeId { get; set; }
     public List<int> SubcategoryIds { get; set; } = [];
 }
+
+public class ProductTypeDto: ProductType;

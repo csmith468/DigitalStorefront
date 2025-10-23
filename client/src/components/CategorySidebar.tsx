@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { categoryService } from "../services/categories";
+import { getCategories } from "../services/categories";
 import { ChevronDownIcon, Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 import './CategorySidebar.css'
 import type { Category } from '../types/category';
@@ -15,7 +15,7 @@ const CategorySidebar = () => {
   useEffect(() => {
     const loadCategories = async () => {
       try {
-        const categories = await categoryService.getCategories();
+        const categories = await getCategories();
         categories.forEach(cat => {
           cat.subcategories = [VIEW_ALL_SUBCATEGORY, ...(cat.subcategories || [])];
         });

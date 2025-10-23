@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import ProductGrid from "../components/product/ProductGrid";
-import { productsService } from "../services/products";
+import { getProductsByCategory, getProductsBySubcategory } from "../services/products";
 import type { Product } from "../types/product";
 import { isViewAllSubcategory } from "../types/subcategory";
+import { LoadingScreen } from "../components/primitives/LoadingScreen";
 
 function ProductsView() {
   const { categorySlug, subcategorySlug } = useParams();
@@ -16,14 +17,13 @@ function ProductsView() {
       try {
         setLoading(true);
         setError(null);
-        console.log('here')
 
         let data: Product[] = [];
         
         if (categorySlug && subcategorySlug && isViewAllSubcategory(subcategorySlug))
-          data = await productsService.getProductsByCategory(categorySlug);
+          data = await getProductsByCategory(categorySlug);
         else if (subcategorySlug)
-          data = await productsService.getProductsBySubcategory(subcategorySlug) 
+          data = await getProductsBySubcategory(subcategorySlug) 
 
         console.log('Fetched products:', data);
         setProducts(data);
@@ -39,13 +39,7 @@ function ProductsView() {
   }, [categorySlug, subcategorySlug]);
 
   if (loading) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-center items-center min-h-[400px]">
-          <div className="text-lg text-text-secondary">Loading products...</div>
-        </div>
-      </div>
-    );
+    return ( <LoadingScreen message="Loading Products..." /> );
   }
 
   if (error) {
