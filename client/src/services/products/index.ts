@@ -1,23 +1,28 @@
 import apiClient from '../api';
 import type { Product, ProductDetail, ProductFormRequest } from '../../types/product';
-
-export const getAllProducts = async (): Promise<Product[]> => {
-  const response = await apiClient.get<Product[]>('/product/all');
-  return response.data;
-};
+import type { PaginatedResponse, ProductFilterParams } from '../../types/pagination';
 
 export const getProductById = async (productId: number): Promise<Product> => {
   const response = await apiClient.get<Product>(`/product/${productId}`);
   return response.data;
 };
 
-export const getProductsByCategory = async (categorySlug: string): Promise<Product[]> => {
-  const response = await apiClient.get<Product[]>(`/product/category/${categorySlug}`);
+export const getProducts = async (params: ProductFilterParams): Promise<PaginatedResponse<Product>> => {
+  const response = await apiClient.get<PaginatedResponse<Product>>('/product', { params });
   return response.data;
 };
 
-export const getProductsBySubcategory = async (subcategorySlug: string): Promise<Product[]> => {
-  const response = await apiClient.get<Product[]>(`/product/subcategory/${subcategorySlug}`);
+export const getProductsByCategory = async (categorySlug: string, page: number, pageSize: number): Promise<PaginatedResponse<Product>> => {
+  const response = await apiClient.get<PaginatedResponse<Product>>(`/product/category/${categorySlug}`, {
+    params: { page, pageSize }
+  });
+  return response.data;
+};
+
+export const getProductsBySubcategory = async (subcategorySlug: string, page: number, pageSize: number): Promise<PaginatedResponse<Product>> => {
+  const response = await apiClient.get<PaginatedResponse<Product>>(`/product/subcategory/${subcategorySlug}`, {
+    params: { page, pageSize }
+  });
   return response.data;
 };
 

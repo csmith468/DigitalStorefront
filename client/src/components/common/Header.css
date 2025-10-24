@@ -3,6 +3,9 @@
   border-bottom: 2px solid var(--color-border);
   padding: 1.5rem;
   box-shadow: var(--shadow-lg);
+  position: sticky;
+  top: 0;
+  z-index: 50;
 }
 
 .header-h1 {

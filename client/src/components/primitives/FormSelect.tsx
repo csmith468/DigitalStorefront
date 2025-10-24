@@ -9,15 +9,17 @@ interface FormSelectProps<T = any> {
   value: string | number | null;
   onChange: (field: string, value: string | number | null) => void;
   placeholder?: string;
+  disablePlaceholder?: boolean;
   options: T[];
   getOptionValue: (option: T) => string | number;
   getOptionLabel: (option: T) => string;
   type?: 'string' | 'number';
+  overrideClass?: string;
 }
 
 export function FormSelect<T>({ 
-  id, label, required = false, value, onChange, placeholder = 'Select an option...', 
-  options, getOptionValue, getOptionLabel, type = 'string' 
+  id, label, required = false, value, onChange, placeholder = 'Select an option...', disablePlaceholder = false,
+  options, getOptionValue, getOptionLabel, type = 'string', overrideClass, 
 }: FormSelectProps<T>) {
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const rawValue = e.target.value;
@@ -38,9 +40,9 @@ export function FormSelect<T>({
         required={required} 
         value={value ?? ''} 
         onChange={handleChange} 
-        className={formStyles.input}
+        className={overrideClass || formStyles.input}
       >
-        <option value="">{placeholder}</option>
+        (!disablePlaceholder && <option value="">{placeholder}</option>)
         {options?.map((option, index) => {
           const optionValue = getOptionValue(option);
           const optionLabel = getOptionLabel(option);

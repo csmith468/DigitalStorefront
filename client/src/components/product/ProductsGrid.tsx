@@ -1,12 +1,12 @@
 import ProductCard from './ProductCard';
 import type { Product } from '../../types/product';
 
-interface ProductGridProps {
+interface ProductsGridProps {
   products: Product[];
   view?: 'grid' | 'list';
 }
 
-function ProductGrid({ products }: ProductGridProps) {
+export default function ProductsGrid({ products }: ProductsGridProps) {
   if (!products || products.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 px-4">
@@ -25,4 +25,3 @@ function ProductGrid({ products }: ProductGridProps) {
   );
 }
 
-export default ProductGrid;
