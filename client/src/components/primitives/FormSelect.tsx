@@ -1,6 +1,6 @@
-import React from 'react';
-import { formStyles } from './primitive-constants';
-import { FormLabel } from './FormLabel';
+import React from "react";
+import { formStyles } from "./primitive-constants";
+import { FormLabel } from "./FormLabel";
 
 interface FormSelectProps<T = any> {
   id: string;
@@ -13,36 +13,45 @@ interface FormSelectProps<T = any> {
   options: T[];
   getOptionValue: (option: T) => string | number;
   getOptionLabel: (option: T) => string;
-  type?: 'string' | 'number';
+  type?: "string" | "number";
   overrideClass?: string;
 }
 
-export function FormSelect<T>({ 
-  id, label, required = false, value, onChange, placeholder = 'Select an option...', disablePlaceholder = false,
-  options, getOptionValue, getOptionLabel, type = 'string', overrideClass, 
+export function FormSelect<T>({
+  id,
+  label,
+  required = false,
+  value,
+  onChange,
+  placeholder = "Select an option...",
+  disablePlaceholder = false,
+  options,
+  getOptionValue,
+  getOptionLabel,
+  type = "string",
+  overrideClass,
 }: FormSelectProps<T>) {
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const rawValue = e.target.value;
-    if (rawValue === '') {
+    if (rawValue === "") {
       onChange(id, null);
       return;
     }
 
-    const newValue = type === 'number' ? parseInt(rawValue) : rawValue;
+    const newValue = type === "number" ? parseInt(rawValue) : rawValue;
     onChange(id, newValue);
-  }
+  };
 
   return (
     <div>
       <FormLabel htmlFor={id} label={label} required={required} />
-      <select 
-        id={id} 
-        required={required} 
-        value={value ?? ''} 
-        onChange={handleChange} 
-        className={overrideClass || formStyles.input}
-      >
-        (!disablePlaceholder && <option value="">{placeholder}</option>)
+      <select
+        id={id}
+        required={required}
+        value={value ?? ""}
+        onChange={handleChange}
+        className={overrideClass || formStyles.input}>
+        {!disablePlaceholder && <option value="">{placeholder}</option>}
         {options?.map((option, index) => {
           const optionValue = getOptionValue(option);
           const optionLabel = getOptionLabel(option);
@@ -50,9 +59,9 @@ export function FormSelect<T>({
             <option key={optionValue || index} value={optionValue}>
               {optionLabel}
             </option>
-          )
+          );
         })}
       </select>
     </div>
   );
-};
+}

@@ -32,13 +32,11 @@ const CategorySidebar = () => {
   const toggleCategory = (categoryId: number) => {
     setExpanded(prev => {
       const next = new Set(prev);
-      if (next.has(categoryId))
-        next.delete(categoryId);
-      else
-        next.add(categoryId);
+      if (next.has(categoryId)) next.delete(categoryId);
+      else next.add(categoryId);
       return next;
     });
-  }
+  };
 
   if (loading) {
     return (
@@ -49,7 +47,7 @@ const CategorySidebar = () => {
         <div className="skeleton skeleton--item"></div>
         <div className="skeleton skeleton--item"></div>
       </aside>
-    )
+    );
   }
 
   return (
@@ -58,8 +56,7 @@ const CategorySidebar = () => {
         <button
           onClick={() => setMobileMenuOpen(true)}
           className="mobile-menu-button lg:hidden"
-          aria-label="Open menu"
-        >
+          aria-label="Open Menu">
           <Bars3Icon className="w-6 h-6 text-text-primary" />
         </button>
       )}
@@ -82,8 +79,7 @@ const CategorySidebar = () => {
             <button
               onClick={() => setMobileMenuOpen(false)}
               className="lg:hidden p-1 hover:bg-hover-bg rounded"
-              aria-label="Close menu"
-            >
+              aria-label="Close Menu">
               <XMarkIcon className="w-5 h-5 text-text-primary" />
             </button>
           </div>
@@ -96,8 +92,7 @@ const CategorySidebar = () => {
               <div key={category.categoryId} className="mb-1">
                 <button 
                   onClick={() => toggleCategory(category.categoryId)} 
-                  className="category-item__button"
-                >
+                  className="category-item__button">
                   <span className="font-medium text-text-primary">{category.name}</span>
                   <ChevronDownIcon 
                     className={`w-4 h-4 text-text-secondary transition-transform duration-200 flex-shrink-0 ${
@@ -116,8 +111,7 @@ const CategorySidebar = () => {
                         key={sub.subcategoryId}
                         to={`/products/${category.slug}/${sub.slug}`}
                         className="subcategory-link"
-                        onClick={() => setMobileMenuOpen(false)}
-                      >
+                        onClick={() => setMobileMenuOpen(false)}>
                         {sub.name}
                       </Link>
                     ))}
@@ -153,6 +147,6 @@ const CategorySidebar = () => {
       </aside>
     </>
   );
-}
+};
 
 export default CategorySidebar;

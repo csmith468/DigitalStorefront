@@ -29,6 +29,7 @@ export interface ProductImage {
 
 export interface ProductDetail extends Product {
   description?: string;
+  priceTypeId: number;
   images: ProductImage[];
   subcategories: Subcategory[];
 }

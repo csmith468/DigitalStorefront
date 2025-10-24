@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { useUser } from "../../contexts/UserContext";
+import { useUser } from "../../hooks/useUser";
 import { FormInput } from "../primitives/FormInput";
 import { FormShell } from "../primitives/FormShell";
 
@@ -9,7 +8,11 @@ interface LoginFormProps {
   onSwitchToRegister: () => void;
 }
 
-export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onCancel, onSwitchToRegister }) => {
+export const LoginForm: React.FC<LoginFormProps> = ({
+  onSuccess,
+  onCancel,
+  onSwitchToRegister,
+}) => {
   const { login } = useUser();
 
   const onSubmit = async (form: { username: string; password: string }) => {
@@ -17,7 +20,10 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onCancel, onSwi
     onSuccess();
   };
 
-  const validate = (data: { username: string, password: string }): string | null => {
+  const validate = (data: {
+    username: string;
+    password: string;
+  }): string | null => {
     if (!data.username.trim()) return "Username is required";
     if (!data.password) return "Password is required";
     return null;
@@ -29,19 +35,35 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onCancel, onSwi
       onSubmit={onSubmit}
       onCancel={onCancel}
       validate={validate}
-      submitText="Login"
-    >
+      submitText="Login">
       {({ data, updateField }) => (
         <>
-          <FormInput id="username" label="Username" required value={data.username} onChange={(f, v) => updateField(f, v)} />
-          <FormInput id="password" label="Password" type="password" required value={data.password} onChange={(f, v) => updateField(f, v)} />
+          <FormInput
+            id="username"
+            label="Username"
+            required
+            value={data.username}
+            onChange={(f, v) => updateField(f, v)}
+          />
+          <FormInput
+            id="password"
+            label="Password"
+            type="password"
+            required
+            value={data.password}
+            onChange={(f, v) => updateField(f, v)}
+          />
 
-          {/* Switch to Register */}
           <div className="text-center text-sm">
             <span className="text-gray-600">Don't have an account? </span>
-            <button type="button" onClick={onSwitchToRegister} className="text-blue-600 hover:text-blue-500 font-medium">Register</button>
+            <button
+              type="button"
+              onClick={onSwitchToRegister}
+              className="text-blue-600 hover:text-blue-500 font-medium">
+              Register
+            </button>
           </div>
-            </>
+        </>
       )}
     </FormShell>
   );

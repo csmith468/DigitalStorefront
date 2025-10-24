@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap');
+
 :root {
   --color-primary: #8B5CF6;
   --color-primary-light: #A78BFA;
@@ -69,7 +71,7 @@
   --z-tooltip: 70;
 
   /* Typography */
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: 'Quicksand', system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
@@ -77,15 +79,6 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-a {
-  font-weight: 500;
-  color: var(--color-primary);
-  text-decoration: inherit;
-}
-a:hover {
-  color: var(--color-link-hover);
 }
 
 body {

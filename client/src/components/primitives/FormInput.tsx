@@ -1,32 +1,45 @@
-import React from 'react';
-import { formStyles } from './primitive-constants';
-import { FormLabel } from './FormLabel';
+import React from "react";
+import { formStyles } from "./primitive-constants";
+import { FormLabel } from "./FormLabel";
 
 interface FormInputProps {
   id: string;
   label: string;
-  type?: 'text' | 'email' | 'password' | 'number';
+  type?: "text" | "email" | "password" | "number";
   required?: boolean;
   value: string | number;
   onChange: (field: string, value: string | number | null) => void;
   placeholder?: string;
-  step?: string;  // number type only
-  min?: string;  // number type only
+  step?: string; // number type only
+  min?: string; // number type only
 }
 
-export const FormInput: React.FC<FormInputProps> = (
-  { id, label, type = 'text', required = false, value, onChange, placeholder, step, min }
-  
-) => {
+export const FormInput: React.FC<FormInputProps> = ({
+  id,
+  label,
+  type = "text",
+  required = false,
+  value,
+  onChange,
+  placeholder,
+  step,
+  min,
+}) => {
   return (
     <div>
       <FormLabel htmlFor={id} label={label} required={required} />
-      <input 
-        id={id} 
-        type={type} 
-        required={required} 
-        value={type !== 'number' ? value : (value == 0 ? '' : value.toString())} 
-        onChange={(e) => onChange(id, type !== 'number' ? e.target.value : (parseFloat(e.target.value as string) || 0))} 
+      <input
+        id={id}
+        type={type}
+        required={required}
+        value={type !== "number" ? value : value == 0 ? "" : value.toString()}
+        onChange={(e) =>
+          onChange(id,
+            type !== "number"
+              ? e.target.value
+              : parseFloat(e.target.value as string) || 0
+          )
+        }
         placeholder={placeholder}
         className={formStyles.input}
         step={step}
