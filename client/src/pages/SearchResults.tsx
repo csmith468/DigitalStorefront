@@ -2,8 +2,7 @@ import { useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useProducts } from "../hooks/useProducts";
 import { usePagination } from "../hooks/usePagination";
-import { ProductsShell } from "../components/product/ProductsShell";
-import ProductsGrid from "../components/product/ProductsGrid";
+import { ProductsGrid } from "../components/product/ProductsGrid";
 
 export default function SearchResults() {
   const [searchParams] = useSearchParams();
@@ -21,13 +20,12 @@ export default function SearchResults() {
   });
 
   return (
-    <ProductsShell
+    <ProductsGrid
       title={`Search Results for "${query}"`}
       data={data}
       isLoading={isLoading}
       error={error}
-      {...pagination}>
-      {(products) => <ProductsGrid products={products} />}
-    </ProductsShell>
-  );
+      {...pagination}
+    />
+  )
 }

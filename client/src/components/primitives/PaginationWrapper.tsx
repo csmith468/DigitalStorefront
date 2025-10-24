@@ -1,10 +1,10 @@
 import type { ReactNode } from "react";
 import { FormSelect } from "./FormSelect";
-import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
+import { ChevronDoubleLeftIcon, ChevronDoubleRightIcon, ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 
 interface PaginationProps {
   children: ReactNode;
-  currentPage: number;
+  page: number;
   totalPages: number;
   pageSize: number;
   totalCount: number;
@@ -14,9 +14,9 @@ interface PaginationProps {
   isLoading?: boolean;
 }
 
-export function PaginationWrapper({
+export function PaginationWrapper({ 
   children,
-  currentPage,
+  page,
   totalPages,
   pageSize,
   totalCount,
@@ -25,10 +25,10 @@ export function PaginationWrapper({
   pageSizeOptions = [12, 24, 48],
   isLoading = false,
 }: PaginationProps) {
-  const hasPrevious = currentPage > 1;
-  const hasNext = currentPage < totalPages;
-  const startItem = Math.min((currentPage - 1) * pageSize + 1, totalCount);
-  const endItem = Math.min(currentPage * pageSize, totalCount);
+  const hasPrevious = page > 1;
+  const hasNext = page < totalPages;
+  const startItem = Math.min((page - 1) * pageSize + 1, totalCount);
+  const endItem = Math.min(page * pageSize, totalCount);
   const buttonStyle = "w-10 h-10 flex items-center justify-center bg-[var(--color-primary)] text-white rounded-md disabled:opacity-30 disabled:cursor-not-allowed hover:opacity-90 transition-opacity";
 
   return (
@@ -61,9 +61,16 @@ export function PaginationWrapper({
       <div>{children}</div>
 
       {totalPages > 1 && (
-        <div className="flex justify-center items-center gap-4 mt-4">
+        <div className="flex justify-center items-center gap-2 mt-4">
+          <button 
+            onClick={() => onPageChange(1)}
+            disabled={page === 1 || isLoading}
+            aria-label="First Page"
+            className={buttonStyle}>
+            <ChevronDoubleLeftIcon className="h-4 w-4" />
+          </button>
           <button
-            onClick={() => onPageChange(currentPage - 1)}
+            onClick={() => onPageChange(page - 1)}
             disabled={!hasPrevious || isLoading}
             aria-label="Previous Page"
             className={buttonStyle}>
@@ -71,15 +78,22 @@ export function PaginationWrapper({
           </button>
 
           <span className="text-text-primary font-medium min-w-[120px] text-center">
-            Page {currentPage} of {totalPages}
+            Page {page} of {totalPages}
           </span>
 
           <button
-            onClick={() => onPageChange(currentPage + 1)}
+            onClick={() => onPageChange(page + 1)}
             disabled={!hasNext || isLoading}
             aria-label="Next Page"
             className={buttonStyle}>
             <ChevronRightIcon className="h-4 w-4" />
+          </button>
+          <button 
+            onClick={() => onPageChange(totalPages)}
+            disabled={page === totalPages || isLoading}
+            aria-label="Last Page"
+            className={buttonStyle}>
+            <ChevronDoubleRightIcon className="h-4 w-4" />
           </button>
         </div>
       )}

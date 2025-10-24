@@ -2,8 +2,8 @@ import apiClient from '../api';
 import type { Product, ProductDetail, ProductFormRequest } from '../../types/product';
 import type { PaginatedResponse, ProductFilterParams } from '../../types/pagination';
 
-export const getProductById = async (productId: number): Promise<Product> => {
-  const response = await apiClient.get<Product>(`/product/${productId}`);
+export const getProductById = async (productId: number): Promise<ProductDetail> => {
+  const response = await apiClient.get<ProductDetail>(`/product/${productId}`);
   return response.data;
 };
 

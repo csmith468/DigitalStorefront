@@ -23,6 +23,7 @@ public class ProductDto
 public class ProductDetailDto : ProductDto
 {
     public string? Description { get; set; }
+    public int PriceTypeId { get; set; }
     public List<ProductImageDto> Images { get; set; } = [];
     public List<SubcategoryDto> Subcategories { get; set; } = [];
 }
