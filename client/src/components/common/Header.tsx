@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useUser } from '../../hooks/useUser';
-import { useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AuthModal } from '../auth/AuthModal';
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
 import { 
@@ -15,6 +15,9 @@ export const Header: React.FC = () => {
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const isAdminPage = location.pathname.startsWith('/admin');
 
   const openLogin = () => {
     setAuthMode('login');
@@ -26,47 +29,55 @@ export const Header: React.FC = () => {
     setAuthModalOpen(true);
   };
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
-      setMobileSearchOpen(false);
-      setSearchQuery('');
-    }
-  };
+    const handleSearch = (e: React.FormEvent) => {
+      e.preventDefault();
+      if (searchQuery.trim()) {
+        navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+        setMobileSearchOpen(false);
+        setSearchQuery('');
+      }
+    };
+
+    const dropdownStyle = "w-full text-left px-4 py-2 text-sm text-gray-700 hover:text-gray-900";
 
   return (
     <>
       <header className="app-header">
         <div className="flex justify-between items-center pl-16 lg:pl-0">
-          <h1 className="header-h1">Digital Collectibles</h1>
+          <Link to="/" className="header-h1 cursor-pointer">
+            Digital Collectibles
+          </Link>
           <div className="flex items-center gap-1 md:gap-3">
-            <form onSubmit={handleSearch} className="hidden md:flex gap-2">
-              <input
-                type="text"
-                placeholder="Search Products..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
-              />
-              <button
-                type="submit"
-                aria-label="Search"
-                className="px-4 py-2 bg-[var(--color-primary)] text-white rounded-md hover:opacity-90">
-                <MagnifyingGlassIcon className="h-5 w-5" />
-              </button>
-            </form>
+            {!isAdminPage && (
+              <>
+                <form onSubmit={handleSearch} className="hidden md:flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Search Products..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                  />
+                  <button
+                    type="submit"
+                    aria-label="Search"
+                    className="px-4 py-2 bg-[var(--color-primary)] text-white rounded-md hover:opacity-90">
+                    <MagnifyingGlassIcon className="h-5 w-5" />
+                  </button>
+                </form>
 
-            <button
-              onClick={() => setMobileSearchOpen(!mobileSearchOpen)}
-              aria-label={mobileSearchOpen ? "Close search" : "Open search"}
-              className="md:hidden px-3 py-2 text-white hover:bg-white/10 rounded-md transition-colors">
-              {mobileSearchOpen ? (
-                <XMarkIcon className="h-6 w-6" />
-              ) : (
-                <MagnifyingGlassIcon className="h-6 w-6" />
-              )}
-            </button>
+                <button
+                  onClick={() => setMobileSearchOpen(!mobileSearchOpen)}
+                  aria-label={mobileSearchOpen ? "Close search" : "Open search"}
+                  className="md:hidden px-3 py-2 text-white hover:bg-white/10 rounded-md transition-colors">
+                  {mobileSearchOpen ? (
+                    <XMarkIcon className="h-6 w-6" />
+                  ) : (
+                    <MagnifyingGlassIcon className="h-6 w-6" />
+                  )}
+                </button>
+              </>
+            )}
 
             {user ? (
               <Menu as="div" className="relative">
@@ -79,46 +90,42 @@ export const Header: React.FC = () => {
                 </MenuButton>
 
                 <MenuItems className="absolute right-0 mt-2 w-48 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
-                  <div className="py-1">
-                    <MenuItem>
-                      {({ focus }) => (
-                        <button
-                          disabled
-                          className={`${focus ? "bg-gray-100" : ""} w-full text-left px-4 py-2 text-sm text-gray-400 cursor-not-allowed`}>
-                          Admin Console (Coming Soon)
+                    <div className="py-1">
+                      <MenuItem>{({ focus }) => (
+                        <button onClick={() => navigate('/admin/products')} 
+                          className={`${focus ? 'bg-gray-100' : ''} ${dropdownStyle}`}>
+                          Admin Console
                         </button>
                       )}
-                    </MenuItem>
-                    <MenuItem>
-                      {({ focus }) => (
-                        <button
-                          onClick={logout}
-                          className={`${focus ? "bg-gray-100" : ""} w-full text-left px-4 py-2 text-sm text-gray-700 hover:text-gray-900`}>
+                      </MenuItem>
+                      <MenuItem>{({ focus }) => (
+                        <button onClick={logout}
+                          className={`${focus ? 'bg-gray-100' : ''} ${dropdownStyle}`}>
                           Logout
                         </button>
                       )}
-                    </MenuItem>
-                  </div>
-                </MenuItems>
-              </Menu>
-            ) : (
-              <>
+                      </MenuItem>
+                    </div>
+                  </MenuItems>
+                </Menu>
+              ) : (
+                <>
                 <button
                   onClick={openLogin}
                   className="px-3 md:px-4 py-2 text-sm font-medium text-white hover:bg-white/10 rounded-md transition-colors flex items-center gap-2">
-                  <ArrowRightEndOnRectangleIcon className="h-6 w-6" />
-                  <span className="hidden md:inline">Login</span>
-                </button>
+                    <ArrowRightEndOnRectangleIcon className="h-6 w-6" />
+                    <span className="hidden md:inline">Login</span>
+                  </button>
                 <button
                   onClick={openRegister}
                   className="px-3 md:px-4 py-2 text-sm font-medium text-white bg-white/20 rounded-md hover:bg-white/30 transition-colors border border-white/30 flex items-center gap-2">
-                  <UserPlusIcon className="h-6 w-6" />
-                  <span className="hidden md:inline">Register</span>
-                </button>
-              </>
-            )}
+                    <UserPlusIcon className="h-6 w-6" />
+                    <span className="hidden md:inline">Register</span>
+                  </button>
+                </>
+              )}
+            </div>
           </div>
-        </div>
 
         {mobileSearchOpen && (
           <div className="md:hidden mt-4 pl-16">
