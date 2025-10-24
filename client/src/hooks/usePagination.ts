@@ -6,10 +6,7 @@ interface UsePaginationOptions {
 }
 
 export function usePagination(options: UsePaginationOptions = {}) {
-  const {
-    initialPageSize = 12,
-    pageSizeOptions = [12, 24, 48]
-  } = options;
+  const { initialPageSize = 12, pageSizeOptions = [12, 24, 48] } = options;
 
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(initialPageSize);
@@ -17,11 +14,16 @@ export function usePagination(options: UsePaginationOptions = {}) {
   const handlePageSizeChange = (newPageSize: number) => {
     setPageSize(newPageSize);
     setPage(1);
-  }
+  };
 
   const resetToFirstPage = () => setPage(1);
 
   return {
-    page, pageSize, onPageChange: setPage, onPageSizeChange: handlePageSizeChange, pageSizeOptions, resetToFirstPage
+    page,
+    pageSize,
+    onPageChange: setPage,
+    onPageSizeChange: handlePageSizeChange,
+    pageSizeOptions,
+    resetToFirstPage,
   };
 }

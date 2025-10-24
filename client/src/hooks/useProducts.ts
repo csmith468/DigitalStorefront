@@ -1,15 +1,20 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createProduct, getProducts, getProductById, getProductsByCategory, getProductsBySubcategory, updateProduct } from '../services/products';
-import { uploadProductImage, deleteProductImage, setImageAsPrimary } from '../services/products/images';
+import { createProduct,
+  getProducts,
+  getProductById,
+  getProductsByCategory,
+  getProductsBySubcategory,
+  updateProduct,
+} from "../services/products";
+import { uploadProductImage, deleteProductImage, setImageAsPrimary } from "../services/products/images";
 import type { ProductFormRequest, AddProductImageRequest } from "../types/product";
 import type { ProductFilterParams } from "../types/pagination";
 
-
 export const useProduct = (productId: number) => {
   return useQuery({
-    queryKey: ['product', productId],
+    queryKey: ["product", productId],
     queryFn: () => getProductById(productId),
-    enabled: !!productId
+    enabled: !!productId,
   });
 };
 
@@ -20,7 +25,11 @@ export const useProducts = (filters: ProductFilterParams) => {
   });
 };
 
-export const useProductsByCategory = (categorySlug: string, page: number, pageSize: number) => {
+export const useProductsByCategory = (
+  categorySlug: string,
+  page: number,
+  pageSize: number
+) => {
   return useQuery({
     queryKey: ['categoryProducts', categorySlug, page, pageSize],
     queryFn: () => getProductsByCategory(categorySlug, page, pageSize),
@@ -28,7 +37,11 @@ export const useProductsByCategory = (categorySlug: string, page: number, pageSi
   });
 };
 
-export const useProductsBySubcategory = (subcategorySlug: string, page: number, pageSize: number) => {
+export const useProductsBySubcategory = (
+  subcategorySlug: string,
+  page: number,
+  pageSize: number
+) => {
   return useQuery({
     queryKey: ['subcategoryProducts', subcategorySlug, page, pageSize],
     queryFn: () => getProductsBySubcategory(subcategorySlug, page, pageSize),
@@ -55,7 +68,10 @@ export const useCreateProduct = () => {
 export const useUpdateProduct = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ productId, product }: { productId: number; product: ProductFormRequest }) => updateProduct(productId, product),
+    mutationFn: ({ productId, product }: {
+      productId: number;
+      product: ProductFormRequest;
+    }) => updateProduct(productId, product),
     onSuccess: (data) => {
       queryClient.setQueryData(['product', data.productId], data);
       queryClient.invalidateQueries({ queryKey: ['products'] });
@@ -66,10 +82,14 @@ export const useUpdateProduct = () => {
 export const useUploadProductImage = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ productId, imageData }: { productId: number, imageData: AddProductImageRequest }) => 
-      uploadProductImage(productId, imageData),
+    mutationFn: ({ productId, imageData }: {
+      productId: number;
+      imageData: AddProductImageRequest;
+    }) => uploadProductImage(productId, imageData),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['product', variables.productId] });
+      queryClient.invalidateQueries({
+        queryKey: ['product', variables.productId],
+      });
     },
   });
 };
@@ -77,10 +97,14 @@ export const useUploadProductImage = () => {
 export const useDeleteProductImage = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ productId, productImageId }: { productId: number, productImageId: number }) => 
-      deleteProductImage(productId, productImageId),
+    mutationFn: ({ productId, productImageId }: {
+      productId: number;
+      productImageId: number;
+    }) => deleteProductImage(productId, productImageId),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['product', variables.productId] });
+      queryClient.invalidateQueries({
+        queryKey: ['product', variables.productId],
+      });
     },
   });
 };
@@ -88,10 +112,14 @@ export const useDeleteProductImage = () => {
 export const useSetImageAsPrimary = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ productId, productImageId }: { productId: number, productImageId: number }) => 
-      setImageAsPrimary(productId, productImageId),
+    mutationFn: ({ productId, productImageId }: {
+      productId: number;
+      productImageId: number;
+    }) => setImageAsPrimary(productId, productImageId),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['product', variables.productId] });
+      queryClient.invalidateQueries({
+        queryKey: ['product"', variables.productId],
+      });
     },
   });
 };

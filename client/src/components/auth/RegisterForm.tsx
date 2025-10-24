@@ -9,7 +9,11 @@ interface RegisterFormProps {
   onSwitchToLogin: () => void;
 }
 
-export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onCancel, onSwitchToLogin }) => {
+export const RegisterForm: React.FC<RegisterFormProps> = ({
+  onSuccess,
+  onCancel,
+  onSwitchToLogin,
+}) => {
   const { register } = useUser();
 
   const initial: RegisterRequest = {
@@ -39,40 +43,79 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onCancel,
     if (!form.password) return "Password is required";
     if (!form.confirmPassword) return "Please confirm your password";
     if (form.password !== form.confirmPassword) return "Passwords do not match";
-    if (form.email && !/^\S+@\S+\.\S+$/.test(form.email)) return "Enter a valid email";
+    if (form.email && !/^\S+@\S+\.\S+$/.test(form.email))
+      return "Enter a valid email";
     return null;
   };
 
   const row: string = "grid grid-cols-1 md:grid-cols-2 gap-4";
-  
+
   return (
     <FormShell<RegisterRequest>
       initial={initial}
       validate={validate}
       onSubmit={onSubmit}
       onCancel={onCancel}
-      submitText="Register"
-    >
+      submitText="Register">
       {({ data: form, updateField }) => (
         <>
           <div className={row}>
-            <FormInput id="username" label="Username" required value={form.username} onChange={(field, value) => updateField(field, value)} />
-            <FormInput id="email" label="Email" type="email" value={form.email ?? ''} onChange={(field, value) => updateField(field, value)} />
-          </div>
-          <div className={row}>
-            <FormInput id="password" label="Password" type="password" required value={form.password} onChange={(field, value) => updateField(field, value)} />
-            <FormInput id="confirmPassword" label="Confirm Password" type="password" required value={form.confirmPassword} 
-              onChange={(field, value) => updateField(field, value)} 
+            <FormInput
+              id="username"
+              label="Username"
+              required
+              value={form.username}
+              onChange={(field, value) => updateField(field, value)}
+            />
+            <FormInput
+              id="email"
+              label="Email"
+              type="email"
+              value={form.email ?? ""}
+              onChange={(field, value) => updateField(field, value)}
             />
           </div>
           <div className={row}>
-            <FormInput id="firstName" label="First Name" value={form.firstName ?? ''} onChange={(field, value) => updateField(field, value)} />
-            <FormInput id="lastName" label="Last Name" value={form.lastName ?? ''} onChange={(field, value) => updateField(field, value)} />
+            <FormInput
+              id="password"
+              label="Password"
+              type="password"
+              required
+              value={form.password}
+              onChange={(field, value) => updateField(field, value)}
+            />
+            <FormInput
+              id="confirmPassword"
+              label="Confirm Password"
+              type="password"
+              required
+              value={form.confirmPassword}
+              onChange={(field, value) => updateField(field, value)}
+            />
+          </div>
+          <div className={row}>
+            <FormInput
+              id="firstName"
+              label="First Name"
+              value={form.firstName ?? ""}
+              onChange={(field, value) => updateField(field, value)}
+            />
+            <FormInput
+              id="lastName"
+              label="Last Name"
+              value={form.lastName ?? ""}
+              onChange={(field, value) => updateField(field, value)}
+            />
           </div>
 
           <div className="text-center text-sm">
             <span className="text-gray-600">Already have an account? </span>
-            <button type="button" onClick={onSwitchToLogin} className="text-blue-600 hover:text-blue-500 font-medium">Login</button>
+            <button
+              type="button"
+              onClick={onSwitchToLogin}
+              className="text-blue-600 hover:text-blue-500 font-medium">
+              Login
+            </button>
           </div>
         </>
       )}

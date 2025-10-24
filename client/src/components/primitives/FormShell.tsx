@@ -15,7 +15,6 @@ export interface FormShellProps<T> {
   header?: React.ReactNode;
   footer?: React.ReactNode;
   disableSubmit?: boolean;
-  showButtons?: boolean;
   children: (ctx: {
     data: T;
     setData: React.Dispatch<React.SetStateAction<T>>;
@@ -24,14 +23,23 @@ export interface FormShellProps<T> {
 }
 
 export function FormShell<T>({
-  initial, onSubmit, onCancel, validate, loading = false, submitText = 'Save', 
-  cancelText = 'Cancel', header, footer, children, disableSubmit = false, showButtons = true,
+  initial,
+  onSubmit,
+  onCancel,
+  validate,
+  loading = false,
+  submitText = "Save",
+  cancelText = "Cancel",
+  header,
+  footer,
+  children,
+  disableSubmit = false,
 }: FormShellProps<T>) {
   const [data, setData] = useState<T>(initial);
   const [error, setError] = useState<string | null>(null);
 
   const updateField = (field: string, value: any) => {
-    setData(prev => ({ ...prev, [field]: value }));
+    setData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -39,7 +47,10 @@ export function FormShell<T>({
     setError(null);
 
     const message = validate?.(data) ?? null;
-    if (message) { setError(message); return; }
+    if (message) {
+      setError(message);
+      return;
+    }
 
     try {
       await onSubmit(data);
@@ -55,7 +66,7 @@ export function FormShell<T>({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      { header }
+      {header}
 
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded">
@@ -67,14 +78,20 @@ export function FormShell<T>({
 
       { footer }
 
-        <div className="flex justify-end gap-3 pt-4 border-t">
-          <button type="button" onClick={onCancel} className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500" >
-            {cancelText}
-          </button>
-          <button type="submit" disabled={loading || disableSubmit} className="px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
-              { loading ? 'Saving...' : submitText }
-          </button>
-        </div>
+      <div className="flex justify-end gap-3 pt-4 border-t">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          {cancelText}
+        </button>
+        <button
+          type="submit"
+          disabled={loading || disableSubmit}
+          className="px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
+          {loading ? "Saving..." : submitText}
+        </button>
+      </div>
     </form>
-  )
+  );
 }

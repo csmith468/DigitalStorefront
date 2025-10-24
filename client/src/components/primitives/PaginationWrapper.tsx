@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { FormSelect } from "./FormSelect";
+import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 
 interface PaginationProps {
   children: ReactNode;
@@ -13,9 +14,16 @@ interface PaginationProps {
   isLoading?: boolean;
 }
 
-export function PaginationWrapper({ 
-  children, currentPage, totalPages, pageSize, totalCount, onPageChange, onPageSizeChange, 
-  pageSizeOptions = [12, 24, 48], isLoading = false
+export function PaginationWrapper({
+  children,
+  currentPage,
+  totalPages,
+  pageSize,
+  totalCount,
+  onPageChange,
+  onPageSizeChange,
+  pageSizeOptions = [12, 24, 48],
+  isLoading = false,
 }: PaginationProps) {
   const hasPrevious = currentPage > 1;
   const hasNext = currentPage < totalPages;
@@ -35,8 +43,16 @@ export function PaginationWrapper({
         </div>
 
         <div className="flex items-center gap-2">
-          <FormSelect id="pageSize" label="Items per Page" value={pageSize} onChange={(_, value) => onPageSizeChange(Number(value))}
-            disablePlaceholder options={pageSizeOptions} type="number" getOptionLabel={(v) => v.toString()} getOptionValue={(v) => v}
+          <FormSelect
+            id="pageSize"
+            label="Items per Page"
+            value={pageSize}
+            onChange={(_, value) => onPageSizeChange(Number(value))}
+            disablePlaceholder
+            options={pageSizeOptions}
+            type="number"
+            getOptionLabel={(v) => v.toString()}
+            getOptionValue={(v) => v}
             overrideClass="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] disabled:opacity-50 disabled:cursor-not-allowed"
           />
         </div>
@@ -44,21 +60,26 @@ export function PaginationWrapper({
 
       <div>{children}</div>
 
-
       {totalPages > 1 && (
         <div className="flex justify-center items-center gap-4 mt-4">
-          <button onClick={() => onPageChange(currentPage - 1)} disabled={!hasPrevious || isLoading} aria-label="Previous Page" className={buttonStyle}>
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
-            </svg>
+          <button
+            onClick={() => onPageChange(currentPage - 1)}
+            disabled={!hasPrevious || isLoading}
+            aria-label="Previous Page"
+            className={buttonStyle}>
+            <ChevronLeftIcon className="h-4 w-4" />
           </button>
 
-          <span className="text-text-primary font-medium min-w-[120px] text-center">Page {currentPage} of {totalPages}</span>
+          <span className="text-text-primary font-medium min-w-[120px] text-center">
+            Page {currentPage} of {totalPages}
+          </span>
 
-          <button onClick={() => onPageChange(currentPage + 1)} disabled={!hasNext || isLoading} aria-label="Next Page" className={buttonStyle}>
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-            </svg>
+          <button
+            onClick={() => onPageChange(currentPage + 1)}
+            disabled={!hasNext || isLoading}
+            aria-label="Next Page"
+            className={buttonStyle}>
+            <ChevronRightIcon className="h-4 w-4" />
           </button>
         </div>
       )}

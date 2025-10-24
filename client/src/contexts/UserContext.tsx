@@ -1,12 +1,11 @@
 // State: user, isAuthenticated, isLoading
 // Actions: login(dto), register(dto), logout()
 
-import React, { createContext, useState, useEffect } from 'react';
-import type { ReactNode } from 'react';
-import type { User, Auth, LoginRequest, RegisterRequest } from '../types/auth';
-import { authService } from '../services/auth';
-import { AuthModal } from '../components/auth/AuthModal';
-
+import React, { createContext, useState, useEffect } from "react";
+import type { ReactNode } from "react";
+import type { User, Auth, LoginRequest, RegisterRequest } from "../types/auth";
+import { authService } from "../services/auth";
+import { AuthModal } from "../components/auth/AuthModal";
 
 export interface UserContextType {
   user: User | null;
@@ -21,12 +20,13 @@ export interface UserContextType {
 
 export const UserContext = createContext<UserContextType | undefined>(undefined); // store
 
-export const UserProvider: React.FC<{ children: ReactNode }>  = ({ children }) => { // component wrapper
+export const UserProvider: React.FC<{ children: ReactNode }> = ({
+  children,
+}) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [authModalOpen, setAuthModalOpen] = useState(false);
 
-  // like created()
   useEffect(() => {
     const initAuth = async () => {
       const token = authService.getStoredToken();
@@ -40,7 +40,7 @@ export const UserProvider: React.FC<{ children: ReactNode }>  = ({ children }) =
       }
 
       setIsLoading(false);
-    }
+    };
     initAuth();
   }, []);
 
@@ -73,14 +73,16 @@ export const UserProvider: React.FC<{ children: ReactNode }>  = ({ children }) =
     register,
     logout,
     openAuthModal: () => setAuthModalOpen(true),
-    closeAuthModal: () => setAuthModalOpen(false)
+    closeAuthModal: () => setAuthModalOpen(false),
   };
 
   return (
     <UserContext.Provider value={value}>
       {children}
-      <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+      />
     </UserContext.Provider>
   );
 };
-

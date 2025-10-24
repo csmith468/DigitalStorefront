@@ -9,8 +9,8 @@ export const uploadProductImage = async (productId: number, imageData: AddProduc
     formData.append('altText', imageData.altText);
   formData.append('setAsPrimary', String(imageData.setAsPrimary));
 
-  const response = await apiClient.post<ProductImage>(`/product/${productId}`, formData, 
-    { headers: { 'Content-Type': 'multipart/form-data' }}
+  const response = await apiClient.post<ProductImage>(`/product/${productId}`, formData,
+    { headers: { 'Content-Type': 'multipart/form-data' } }
   );
   return response.data;
 };
