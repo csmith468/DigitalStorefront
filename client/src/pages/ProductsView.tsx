@@ -1,11 +1,10 @@
 import { useMemo } from "react";
 import { useParams } from "react-router-dom";
-import ProductsGrid from "../components/product/ProductsGrid";
 import { isViewAllSubcategory } from "../types/subcategory";
 import { useProductsByCategory, useProductsBySubcategory } from "../hooks/useProducts";
 import { useCategories } from "../hooks/useCategories";
 import { usePagination } from "../hooks/usePagination";
-import { ProductsShell } from "../components/product/ProductsShell";
+import { ProductsGrid } from "../components/product/ProductsGrid";
 
 export default function ProductsView() {
   const { categorySlug, subcategorySlug } = useParams();
@@ -28,13 +27,12 @@ export default function ProductsView() {
       : useProductsBySubcategory(subcategorySlug || '', pagination.page, pagination.pageSize);
 
   return (
-    <ProductsShell
+    <ProductsGrid
       title={pageTitle}
       data={data}
       isLoading={isLoading}
       error={error}
-      {...pagination}>
-      {(products) => <ProductsGrid products={products} />}
-    </ProductsShell>
+      {...pagination}
+    />
   );
 }

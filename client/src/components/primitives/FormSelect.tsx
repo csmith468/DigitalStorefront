@@ -51,7 +51,7 @@ export function FormSelect<T>({
         value={value ?? ""}
         onChange={handleChange}
         className={overrideClass || formStyles.input}>
-        (!disablePlaceholder && <option value="">{placeholder}</option>)
+        {!disablePlaceholder && <option value="">{placeholder}</option>}
         {options?.map((option, index) => {
           const optionValue = getOptionValue(option);
           const optionLabel = getOptionLabel(option);
