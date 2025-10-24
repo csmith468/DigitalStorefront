@@ -1,5 +1,6 @@
 using API.Extensions;
 using API.Models;
+using API.Models.Constants;
 using API.Models.Dtos;
 using API.Services;
 using API.Setup;
@@ -14,17 +15,37 @@ public class ProductController(ISharedContainer container) : BaseController(cont
 {
     private IProductService _productService => DepInj<IProductService>();
     private IProductImageService _productImageService => DepInj<IProductImageService>();
+
+    [HttpGet]
+    public async Task<ActionResult<PaginatedResponse<ProductDto>>> GetProductsAsync([FromQuery] ProductFilterParams filterParams)
+    {
+        return (await _productService.GetProductsAsync(filterParams)).ToActionResult();
+    }
     
     [HttpGet("category/{categorySlug}")]
-    public async Task<ActionResult<List<ProductDto>>> GetProductsByCategory(string categorySlug)
+    public async Task<ActionResult<PaginatedResponse<ProductDto>>> GetProductsByCategory(string categorySlug, 
+        [FromQuery] PaginationParams pagination)
     {
-        return (await _productService.GetProductsByCategoryAsync(categorySlug)).ToActionResult();
+        var filterParams = new ProductFilterParams
+        {
+            CategorySlug = categorySlug,
+            Page = pagination.Page,
+            PageSize = pagination.PageSize
+        };
+        return (await _productService.GetProductsAsync(filterParams)).ToActionResult();
     }
 
     [HttpGet("subcategory/{subcategorySlug}")]
-    public async Task<ActionResult<List<ProductDto>>> GetProductsBySubcategory(string subcategorySlug)
+    public async Task<ActionResult<PaginatedResponse<ProductDto>>> GetProductsBySubcategory(string subcategorySlug, 
+        [FromQuery] PaginationParams pagination)
     {
-        return (await _productService.GetProductsBySubcategoryAsync(subcategorySlug)).ToActionResult();
+        var filterParams = new ProductFilterParams
+        {
+            SubcategorySlug = subcategorySlug,
+            Page = pagination.Page,
+            PageSize = pagination.PageSize
+        };
+        return (await _productService.GetProductsAsync(filterParams)).ToActionResult();
     }
     
     [HttpGet("{productId}")]

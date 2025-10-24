@@ -171,6 +171,12 @@
   background-color: var(--color-bg-subtle);
 }
 
+@media (min-width: 490px) {
+  .mobile-menu-button {
+    top: 1.5rem;
+  }
+}
+
 @media (min-width: 1024px) {
   .mobile-menu-button {
     display: none;

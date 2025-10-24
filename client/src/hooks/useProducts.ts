@@ -1,15 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createProduct, getAllProducts, getProductById, getProductsByCategory, getProductsBySubcategory, updateProduct } from '../services/products';
+import { createProduct, getProducts, getProductById, getProductsByCategory, getProductsBySubcategory, updateProduct } from '../services/products';
 import { uploadProductImage, deleteProductImage, setImageAsPrimary } from '../services/products/images';
 import type { ProductFormRequest, AddProductImageRequest } from "../types/product";
+import type { ProductFilterParams } from "../types/pagination";
 
-
-export const useProducts = () => {
-  return useQuery({
-    queryKey: ['products'],
-    queryFn: getAllProducts
-  });
-};
 
 export const useProduct = (productId: number) => {
   return useQuery({
@@ -19,18 +13,25 @@ export const useProduct = (productId: number) => {
   });
 };
 
-export const useProductsByCategory = (categorySlug: string) => {
+export const useProducts = (filters: ProductFilterParams) => {
   return useQuery({
-    queryKey: ['categoryProducts', categorySlug],
-    queryFn: () => getProductsByCategory(categorySlug),
+    queryKey: ['products', filters],
+    queryFn: () => getProducts(filters)
+  });
+};
+
+export const useProductsByCategory = (categorySlug: string, page: number, pageSize: number) => {
+  return useQuery({
+    queryKey: ['categoryProducts', categorySlug, page, pageSize],
+    queryFn: () => getProductsByCategory(categorySlug, page, pageSize),
     enabled: !!categorySlug
   });
 };
 
-export const useProductsBySubcategory = (subcategorySlug: string) => {
+export const useProductsBySubcategory = (subcategorySlug: string, page: number, pageSize: number) => {
   return useQuery({
-    queryKey: ['subcategoryProducts', subcategorySlug],
-    queryFn: () => getProductsBySubcategory(subcategorySlug),
+    queryKey: ['subcategoryProducts', subcategorySlug, page, pageSize],
+    queryFn: () => getProductsBySubcategory(subcategorySlug, page, pageSize),
     enabled: !!subcategorySlug
   });
 };

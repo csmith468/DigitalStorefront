@@ -23,7 +23,7 @@ SELECT name, slug, displayOrder, @userId
 FROM (VALUES 
   ('Virtual Pets', 'virtual-pets', 1),
   ('Seasonal', 'seasonal', 2),
-  ('Pet Clothing', 'pet-clothing', 3),
+  ('Clothing', 'clothing', 3),
   ('Room Themes', 'room-themes', 4),
   ('Room Items', 'room-items', 5)
 ) AS v(name, slug, displayOrder);
@@ -40,12 +40,12 @@ FROM (VALUES
   -- Seasonal subcategory
   ('Seasonal', 'Fall Room Items', 'fall-room-items', 1),
   ('Seasonal', 'Fall Clothes', 'fall-clothes', 3),
-  -- Pet Clothing subcategory
-  ('Pet Clothing', 'Tops', 'tops', 1),
-  ('Pet Clothing', 'Bottoms & Skirts', 'bottoms-skirts', 2),
-  ('Pet Clothing', 'Dresses & Jumpers', 'dresses-jumpers', 2),
-  ('Pet Clothing', 'Shoes', 'shoes', 4),
-  ('Pet Clothing', 'Accessories', 'accessories', 5),
+  -- Clothing subcategory
+  ('Clothing', 'Tops', 'tops', 1),
+  ('Clothing', 'Bottoms & Skirts', 'bottoms-skirts', 2),
+  ('Clothing', 'Dresses & Jumpers', 'dresses-jumpers', 2),
+  ('Clothing', 'Shoes', 'shoes', 4),
+  ('Clothing', 'Accessories', 'accessories', 5),
   -- Room Themes subcategory
   ('Room Themes', 'Beach', 'beach-theme', 1),
   ('Room Themes', 'Farmhouse', 'farmhouse-theme', 2),
@@ -90,7 +90,7 @@ INSERT INTO @ProductData VALUES
   ('Cherry Blossom Panda', 'cherry-blossom-panda', 'pet', @coinsPriceTypeId, 12000, 10000, 0, 'Adorned with delicate pink flower markings, this gentle panda practices tai chi movements! It loves munching bamboo shoots and rolling playfully on soft grass.'),
   ('Red Velvet Cat', 'red-velvet-cat', 'pet', @coinsPriceTypeId, 9000, 7000, 0, 'This cuddly cat looks like its favorite dish - a red velvet cake slice with cream cheese icing! You may find it baking in the kitchen in its free time.'),
 
-  -- Pet Clothing (clothing type, coins)
+  -- Clothing (clothing type, coins)
   ('Star Sweater', 'star-sweater', 'clothing', @coinsPriceTypeId, 2000, 1500, 0, 'A cozy knit sweater with multi-colored stars! Perfect for an evening stroll in the park.'),
   ('Pink Blouse', 'pink-blouse', 'clothing', @coinsPriceTypeId, 1500, 1000, 0, 'A casual pink blouse for every day wear!'),
   ('Galaxy Tank', 'galaxy-tank', 'clothing', @coinsPriceTypeId, 2000, 1500, 0, 'A sleeveless tank top with a deep space design featuring swirling galaxies, distant stars, and nebula clouds in deep purples, blues, and silver. Perfect for aspiring astronauts and space explorers.'),
@@ -155,7 +155,7 @@ INSERT INTO @ProductData VALUES
   ('Bunk Bed Fort', 'bunk-bed-fort', 'furniture', @coinsPriceTypeId, 1500, 1200, 1, 'A fun bunk bed with built-in ladder, string lights, and colorful blankets draped to create cozy fort spaces.');
 
 -- Insert products using the temp table and lookup joins
-INSERT INTO dbo.product (name, slug, productTypeId, priceTypeId, price, premiumPrice, isTradeable, isNew, isPromotional, isExclusive, description, sku, createdBy)
+INSERT INTO dbo.product (name, slug, productTypeId, priceTypeId, price, premiumPrice, isTradeable, isNew, isPromotional, isExclusive, isDemoProduct, description, sku, createdBy)
 SELECT 
   pd.name,
   pd.slug,
@@ -167,6 +167,7 @@ SELECT
   1 AS isNew,
   0 AS isPromotional,
   0 AS isExclusive,
+  1 AS isDemoProduct,
   pd.description,
   UPPER(LEFT(pd.slug, 3)) + '-' + FORMAT(ROW_NUMBER() OVER (ORDER BY pd.slug), '00000'), -- Generate SKU with sequential numbering
   @userId AS createdBy
@@ -191,7 +192,7 @@ FROM (VALUES
   ('red-velvet-cat', 'regular-pets'),
   ('orange-corgi', 'regular-pets'),
   
-  -- Pet Clothing mappings
+  -- Clothing mappings
   ('star-sweater', 'tops'),
   ('pink-blouse', 'tops'),
   ('galaxy-tank', 'tops'),

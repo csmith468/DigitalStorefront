@@ -32,6 +32,8 @@ public class Product
     [DbColumn] public decimal Price { get; set; }
     
     [DbColumn] public decimal PremiumPrice { get; set; }
+
+    [DbColumn] public bool IsDemoProduct { get; set; } = false;
     
     [DbColumn] public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     

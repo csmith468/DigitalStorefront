@@ -6,17 +6,16 @@ using API.Models.DboTables;
 using API.Models.Dtos;
 using API.Setup;
 using API.Utils;
+using Dapper;
 
 namespace API.Services;
 
 public interface IProductService
 {
     Task<Result<ProductDetailDto>> GetProductByIdAsync(int productId);
-    Task<Result<List<ProductDto>>> GetProductsBySubcategoryAsync(string subcategorySlug);
-    Task<Result<List<ProductDto>>> GetProductsByCategoryAsync(string categorySlug);
+    Task<Result<PaginatedResponse<ProductDto>>> GetProductsAsync(ProductFilterParams filterParams);
     Task<Result<ProductDetailDto>> CreateProductAsync(ProductFormDto dto, int userId);
     Task<Result<ProductDetailDto>> UpdateProductAsync(int productId, ProductFormDto dto, int userId);
-    bool CanUserEditProduct(Product product, int userId);
 }
 
 public class ProductService(ISharedContainer container) : BaseService(container), IProductService
@@ -33,43 +32,71 @@ public class ProductService(ISharedContainer container) : BaseService(container)
         return Result<ProductDetailDto>.Success(productDetailDto);
     }
 
-    public async Task<Result<List<ProductDto>>> GetProductsBySubcategoryAsync(string subcategorySlug)
+    public async Task<Result<PaginatedResponse<ProductDto>>> GetProductsAsync(ProductFilterParams filterParams)
     {
-        var validateSubcategory = await ValidateExistsByFieldAsync<Subcategory>("slug", subcategorySlug);
-        if (!validateSubcategory.IsSuccess)
-            return validateSubcategory.ToFailure<bool, List<ProductDto>>();
+        var whereConditions = new List<string>();
+        var parameters = new DynamicParameters();
 
-        var products = (await Dapper.QueryAsync<Product>(
-            """
-                SELECT p.*
-                FROM dbo.product p
-                JOIN dbo.productSubcategory ps ON p.productId = ps.productId
-                JOIN dbo.subcategory s ON s.subcategoryId = ps.subcategoryId
-                WHERE s.slug = @subcategorySlug
-            """,
-            new { subcategorySlug })).ToList();
+        if (filterParams.ProductTypeId.HasValue)
+        {
+            whereConditions.Add("p.productTypeId = @productTypeId");
+            parameters.Add("productTypeId", filterParams.ProductTypeId.Value);
+        }
+        if (filterParams.CategorySlug != null)
+        {
+            whereConditions.Add("c.slug = @categorySlug");
+            parameters.Add("categorySlug", filterParams.CategorySlug);
+        }
+        if (filterParams.SubcategorySlug != null)
+        {
+            whereConditions.Add("s.slug = @subcategorySlug");
+            parameters.Add("subcategorySlug", filterParams.SubcategorySlug);
+        }
 
-        return await ConvertProductsToProductDtos(products);
-    }
+        string relevanceExpression = "";
+        if (!string.IsNullOrWhiteSpace(filterParams.Search))
+        {
+            var prefixes = new[] { "p.", "c.", "s." };
+            var searchCondition = "(" + string.Join(" OR ", 
+                prefixes.SelectMany(p => new[] { $"{p}name LIKE @search", $"{p}slug LIKE @search" })
+            ) + ")";
 
-    public async Task<Result<List<ProductDto>>> GetProductsByCategoryAsync(string categorySlug)
-    {
-        var validateCategory = await ValidateExistsByFieldAsync<Category>("slug", categorySlug);
-        if (!validateCategory.IsSuccess)
-            return validateCategory.ToFailure<bool, List<ProductDto>>();
+            whereConditions.Add(searchCondition);
+            parameters.Add("search", $"%{filterParams.Search}%");
+            
+            relevanceExpression = """
+                                  , CASE
+                                    WHEN p.name LIKE @search OR p.slug LIKE @search THEN 1
+                                    WHEN s.name LIKE @search OR s.slug LIKE @search THEN 2
+                                    WHEN c.name LIKE @search OR c.slug LIKE @search THEN 3
+                                    ELSE 4
+                                  END AS Relevance
+                                  """;
+        }
+        var whereClause = whereConditions.Any() ? "WHERE " + string.Join(" AND ", whereConditions) : "";
+
+        var baseQuery = $"""
+                         SELECT DISTINCT p.* {relevanceExpression}
+                         FROM dbo.product p
+                         LEFT JOIN dbo.productSubcategory ps ON p.productId = ps.productId
+                         LEFT JOIN dbo.subcategory s ON s.subcategoryId = ps.subcategoryId
+                         LEFT JOIN dbo.category c ON c.categoryId = s.categoryId
+                         {whereClause}
+                         """;
+        var orderBy = !string.IsNullOrWhiteSpace(filterParams.Search)
+            ? "Relevance ASC, isDemoProduct DESC, p.productId"
+            : "isDemoProduct DESC, p.productId";
         
-        var products = (await Dapper.QueryAsync<Product>(
-            """
-                SELECT p.*
-                FROM dbo.product p
-                JOIN dbo.productSubcategory ps ON p.productId = ps.productId
-                JOIN dbo.subcategory s ON s.subcategoryId = ps.subcategoryId
-                JOIN dbo.category c ON c.categoryId = s.categoryId
-                WHERE c.slug = @categorySlug
-            """,
-            new { categorySlug })).ToList();
-
-        return await ConvertProductsToProductDtos(products);
+        var (products, totalCount) = await Dapper.GetPaginatedWithSqlAsync<Product>(baseQuery, filterParams, parameters, orderBy);
+        
+        var productDtosResult = await ConvertProductsToProductDtos(products.ToList());
+        return Result<PaginatedResponse<ProductDto>>.Success(new PaginatedResponse<ProductDto>
+        {
+            Items = productDtosResult.Data,
+            TotalCount = totalCount,
+            Page = filterParams.Page,
+            PageSize = filterParams.PageSize,
+        });
     }
 
     public async Task<Result<ProductDetailDto>> CreateProductAsync(ProductFormDto dto, int userId)
@@ -108,8 +135,8 @@ public class ProductService(ISharedContainer container) : BaseService(container)
         var product = await Dapper.GetByIdAsync<Product>(productId);
         if (product == null)
             return Result<ProductDetailDto>.Failure("Product could not be found");
-        if (!CanUserEditProduct(product, userId))
-            return Result<ProductDetailDto>.Failure("You do not have permission to edit this product", HttpStatusCode.Unauthorized);
+        if (product.IsDemoProduct && Config.GetValue<bool>("DemoMode"))
+            return Result<ProductDetailDto>.Failure("Demo products cannot be updated", HttpStatusCode.Unauthorized);
         if (product.Slug != dto.Slug && await Dapper.ExistsByFieldAsync<Product>("slug", dto.Slug))
             return Result<ProductDetailDto>.Failure($"Slug {dto.Slug} already exists", HttpStatusCode.BadRequest);
 
@@ -127,12 +154,6 @@ public class ProductService(ISharedContainer container) : BaseService(container)
         
         var productDetailDto = await ConvertProductToProductDetailDto(product);
         return Result<ProductDetailDto>.Success(productDetailDto);
-    }
-    
-    public bool CanUserEditProduct(Product product, int userId)
-    {
-        if (!Config.GetValue<bool>("DemoMode")) return true;
-        return product.CreatedBy == userId;
     }
     
     private async Task<bool> CanUserCreateProduct(int userId)
