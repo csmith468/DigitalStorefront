@@ -14,7 +14,7 @@ export interface UserContextType {
   login: (dto: LoginRequest) => Promise<void>;
   register: (dto: RegisterRequest) => Promise<void>;
   logout: () => void;
-  openAuthModal: () => void;
+  openAuthModal: (mode: 'login' | 'register') => void;
   closeAuthModal: () => void;
 }
 
@@ -26,6 +26,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
 
   useEffect(() => {
     const initAuth = async () => {
@@ -65,6 +66,11 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({
     window.location.href = '/';
   };
 
+  const openAuthModal = (mode: 'login' | 'register') => {
+    setAuthMode(mode);
+    setAuthModalOpen(true);
+  };
+
   const value: UserContextType = {
     user,
     isAuthenticated: !!user,
@@ -72,7 +78,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({
     login,
     register,
     logout,
-    openAuthModal: () => setAuthModalOpen(true),
+    openAuthModal,
     closeAuthModal: () => setAuthModalOpen(false),
   };
 
@@ -82,6 +88,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({
       <AuthModal
         isOpen={authModalOpen}
         onClose={() => setAuthModalOpen(false)}
+        initialMode={authMode}
       />
     </UserContext.Provider>
   );
