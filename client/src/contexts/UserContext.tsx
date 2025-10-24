@@ -1,26 +1,30 @@
 // State: user, isAuthenticated, isLoading
 // Actions: login(dto), register(dto), logout()
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import type { User, Auth, LoginRequest, RegisterRequest } from '../types/auth';
 import { authService } from '../services/auth';
+import { AuthModal } from '../components/auth/AuthModal';
 
 
-interface UserContextType {
+export interface UserContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (dto: LoginRequest) => Promise<void>;
   register: (dto: RegisterRequest) => Promise<void>;
   logout: () => void;
+  openAuthModal: () => void;
+  closeAuthModal: () => void;
 }
 
-const UserContext = createContext<UserContextType | undefined>(undefined);
+export const UserContext = createContext<UserContextType | undefined>(undefined); // store
 
-export const UserProvider: React.FC<{ children: ReactNode }>  = ({ children }) => {
+export const UserProvider: React.FC<{ children: ReactNode }>  = ({ children }) => { // component wrapper
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   // like created()
   useEffect(() => {
@@ -67,15 +71,16 @@ export const UserProvider: React.FC<{ children: ReactNode }>  = ({ children }) =
     isLoading,
     login,
     register,
-    logout
+    logout,
+    openAuthModal: () => setAuthModalOpen(true),
+    closeAuthModal: () => setAuthModalOpen(false)
   };
 
-  return <UserContext.Provider value={value}>{children}</UserContext.Provider>
+  return (
+    <UserContext.Provider value={value}>
+      {children}
+      <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
+    </UserContext.Provider>
+  );
 };
 
-export const useUser = (): UserContextType => {
-  const context = useContext(UserContext);
-  if (!context)
-    throw new Error('useUser must be used within UserProvider.');
-  return context;
-}
