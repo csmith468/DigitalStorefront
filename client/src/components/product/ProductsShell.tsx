@@ -18,22 +18,21 @@ interface ProductsShellProps {
   children: (products: Product[]) => ReactNode;
 }
 
-  export function ProductsShell({
-    title,
-    data,
-    isLoading,
-    error,
-    page,
-    pageSize,
-    onPageChange,
-    onPageSizeChange,
-    emptyMessage,
-    pageSizeOptions = [12, 24, 48],
-    children
-  }: ProductsShellProps) {
-
+export function ProductsShell({
+  title,
+  data,
+  isLoading,
+  error,
+  page,
+  pageSize,
+  onPageChange,
+  onPageSizeChange,
+  emptyMessage,
+  pageSizeOptions = [12, 24, 48],
+  children,
+}: ProductsShellProps) {
   if (isLoading) {
-    return ( <LoadingScreen message="Loading Products..." /> );
+    return <LoadingScreen message="Loading Products..." />;
   }
 
   if (error) {
@@ -55,24 +54,29 @@ interface ProductsShellProps {
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
         <h1 className="text-4xl font-bold mb-2 text-text-primary">{title}</h1>
-        <div className="w-24 h-1 rounded-full" style={{ background: `linear-gradient(90deg, var(--color-primary) 0%, var(--color-accent) 100%)` }}></div>
+        <div
+          className="w-24 h-1 rounded-full"
+          style={{
+            background: `linear-gradient(90deg, var(--color-primary) 0%, var(--color-accent) 100%)`,
+          }}></div>
       </div>
 
       {products.length === 0 ? (
         <div className="text-center py-16">
-          {emptyMessage || <p className="text-text-secondary">No products found.</p>}
+          {emptyMessage || (
+            <p className="text-text-secondary">No products found.</p>
+          )}
         </div>
       ) : (
-        <PaginationWrapper 
-          currentPage={page} 
-          totalPages={data?.totalPages || 0} 
-          pageSize={pageSize} 
+        <PaginationWrapper
+          currentPage={page}
+          totalPages={data?.totalPages || 0}
+          pageSize={pageSize}
           totalCount={data?.totalCount || 0}
-          onPageChange={onPageChange} 
-          onPageSizeChange={onPageSizeChange} 
-          pageSizeOptions={pageSizeOptions} 
-          isLoading={isLoading}
-        >
+          onPageChange={onPageChange}
+          onPageSizeChange={onPageSizeChange}
+          pageSizeOptions={pageSizeOptions}
+          isLoading={isLoading}>
           {children(products)}
         </PaginationWrapper>
       )}

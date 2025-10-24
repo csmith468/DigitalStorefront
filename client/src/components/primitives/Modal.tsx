@@ -9,11 +9,11 @@ interface ModalProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
 }
 
-export const Modal: React.FC<ModalProps> = ({ 
-  isOpen, 
-  onClose, 
-  title, 
-  children, 
+export const Modal: React.FC<ModalProps> = ({
+  isOpen,
+  onClose,
+  title,
+  children,
   size = 'md' 
 }) => {
   const sizeClasses = {
@@ -32,8 +32,7 @@ export const Modal: React.FC<ModalProps> = ({
           enterTo="opacity-100"
           leave="ease-in duration-200"
           leaveFrom="opacity-100"
-          leaveTo="opacity-0"
-        >
+          leaveTo="opacity-0">
           <div className="fixed inset-0 bg-black bg-opacity-25" />
         </TransitionChild>
 
@@ -46,13 +45,17 @@ export const Modal: React.FC<ModalProps> = ({
               enterTo="opacity-100 scale-100"
               leave="ease-in duration-200"
               leaveFrom="opacity-100 scale-100"
-              leaveTo="opacity-0 scale-95"
-            >
-              <DialogPanel className={`w-full ${sizeClasses[size]} overflow-hidden rounded-2xl bg-white p-6 shadow-xl`}>
+              leaveTo="opacity-0 scale-95">
+              <DialogPanel
+                className={`w-full ${sizeClasses[size]} overflow-hidden rounded-2xl bg-white p-6 shadow-xl`}>
                 {/* Header */}
                 <div className="flex items-center justify-between mb-4">
-                  <DialogTitle className="text-lg font-medium leading-6 text-gray-900">{title}</DialogTitle>
-                  <button onClick={onClose} className="rounded-md text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <DialogTitle className="text-lg font-medium leading-6 text-gray-900">
+                    {title}
+                  </DialogTitle>
+                  <button
+                    onClick={onClose}
+                    className="rounded-md text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
                     <XMarkIcon className="h-6 w-6" />
                   </button>
                 </div>

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useParams } from "react-router-dom";
 import ProductsGrid from "../components/product/ProductsGrid";
 import { isViewAllSubcategory } from "../types/subcategory";
@@ -18,8 +18,7 @@ export default function ProductsView() {
     if (!categories || !categorySlug) return 'Products';
     const category = categories.find(c => c.slug === categorySlug);
     if (!category) return 'Products';
-    if (!subcategorySlug || isViewAllInCategory)
-      return category.name;
+    if (!subcategorySlug || isViewAllInCategory) return category.name;
     const subcategory = category.subcategories.find(s => s.slug === subcategorySlug);
     return subcategory ? `${category.name}: ${subcategory.name}` : category.name;
   }, [categories, categorySlug, subcategorySlug, isViewAllInCategory]);
@@ -29,8 +28,13 @@ export default function ProductsView() {
       : useProductsBySubcategory(subcategorySlug || '', pagination.page, pagination.pageSize);
 
   return (
-    <ProductsShell title={pageTitle} data={data} isLoading={isLoading} error={error} {...pagination}>
-      { (products) => <ProductsGrid products={products} /> }
+    <ProductsShell
+      title={pageTitle}
+      data={data}
+      isLoading={isLoading}
+      error={error}
+      {...pagination}>
+      {(products) => <ProductsGrid products={products} />}
     </ProductsShell>
-  )
+  );
 }

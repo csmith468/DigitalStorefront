@@ -6,7 +6,6 @@ import './App.css'
 import SearchResults from './pages/SearchResults'
 
 function App() {
-  console.log('App component is mounting');
   return (
     <Router>
       <div className="app">
@@ -22,15 +21,18 @@ function App() {
                   <h2>Welcome to the Marketplace</h2>
                   <p>Select a category from the sidebar to browse products.</p>
                 </div>
-              } />
+              }/>
               <Route path="/search" element={<SearchResults />} />
-              <Route path="/products/:categorySlug/:subcategorySlug" element={<ProductsView />} />
+              <Route
+                path="/products/:categorySlug/:subcategorySlug"
+                element={<ProductsView />}
+              />
             </Routes>
           </main>
         </div>
       </div>
     </Router>
-  )
+  );
 }
 
-export default App
+export default App;

@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 interface FormCheckboxProps {
   id: string;
@@ -9,7 +9,11 @@ interface FormCheckboxProps {
 }
 
 export const FormCheckbox: React.FC<FormCheckboxProps> = ({
-  id, label, checked, onChange, disabled = false
+  id,
+  label,
+  checked,
+  onChange,
+  disabled = false,
 }) => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onChange(id, e.target.checked);

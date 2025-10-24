@@ -1,9 +1,9 @@
-import { useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { useProducts } from '../hooks/useProducts';
-import { usePagination } from '../hooks/usePagination';
-import { ProductsShell } from '../components/product/ProductsShell';
-import ProductsGrid from '../components/product/ProductsGrid';
+import { useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
+import { useProducts } from "../hooks/useProducts";
+import { usePagination } from "../hooks/usePagination";
+import { ProductsShell } from "../components/product/ProductsShell";
+import ProductsGrid from "../components/product/ProductsGrid";
 
 export default function SearchResults() {
   const [searchParams] = useSearchParams();
@@ -14,8 +14,10 @@ export default function SearchResults() {
     pagination.resetToFirstPage();
   }, [query]);
 
-  const { data, isLoading, error } = useProducts({ 
-    search: query, page: pagination.page, pageSize: pagination.pageSize 
+  const { data, isLoading, error } = useProducts({
+    search: query,
+    page: pagination.page,
+    pageSize: pagination.pageSize,
   });
 
   return (
@@ -24,9 +26,8 @@ export default function SearchResults() {
       data={data}
       isLoading={isLoading}
       error={error}
-      {...pagination}
-    >
+      {...pagination}>
       {(products) => <ProductsGrid products={products} />}
     </ProductsShell>
-  )
+  );
 }

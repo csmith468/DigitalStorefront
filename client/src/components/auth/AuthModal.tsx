@@ -11,12 +11,15 @@ interface AuthModalProps {
   initialMode?: AuthMode;
 }
 
-export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'login' }) => {
+export const AuthModal: React.FC<AuthModalProps> = ({
+  isOpen,
+  onClose,
+  initialMode = "login",
+}) => {
   const [mode, setMode] = useState<AuthMode>(initialMode);
 
   useEffect(() => {
-    if (isOpen)
-      setMode(initialMode);
+    if (isOpen) setMode(initialMode);
   }, [isOpen, initialMode]);
 
   const handleClose = () => {
@@ -33,13 +36,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMo
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={title}>
-      {mode === 'login' ? (
-        <LoginForm onSuccess={handleSuccess} onCancel={handleClose} 
-          onSwitchToRegister={() => setMode('register')} 
+      {mode === "login" ? (
+        <LoginForm
+          onSuccess={handleSuccess}
+          onCancel={handleClose}
+          onSwitchToRegister={() => setMode("register")}
         />
       ) : (
-        <RegisterForm onSuccess={handleSuccess} onCancel={handleClose} 
-          onSwitchToLogin={() => setMode('login')} 
+        <RegisterForm
+          onSuccess={handleSuccess}
+          onCancel={handleClose}
+          onSwitchToLogin={() => setMode("login")}
         />
       )}
     </Modal>
