@@ -1,14 +1,28 @@
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useProduct } from '../../hooks/useProducts';
 import { ProductForm } from '../../components/admin/ProductForm';
 import { LoadingScreen } from '../../components/primitives/LoadingScreen';
+import { useState } from 'react';
+import { ProductImageManager } from '../../components/admin/ProductImageManager';
+import { PageHeader } from '../../components/primitives/PageHeader';
+
+type TabType = 'details' | 'images';
 
 export function EditProductPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const productId = Number(id);
 
-  const { data: product, isLoading, error } = useProduct(productId);
+  const initialTab = (searchParams.get('tab') === 'images' ? 'images' : 'details') as TabType;
+  const [activeTab, setActiveTab] = useState<TabType>(initialTab);
+
+  const { data: product, isLoading, error, refetch } = useProduct(productId);
+
+  const handleTabChange = (tab: TabType) => {
+    setActiveTab(tab);
+    setSearchParams({ tab });
+  };
 
   if (isLoading) {
     return <LoadingScreen message="Loading product..." />;
@@ -25,22 +39,61 @@ export function EditProductPage() {
     );
   }
 
+  const tabs = [
+    { id: 'details' as TabType, label: 'Product Details' },
+    { id: 'images' as TabType, label: 'Images', badge: product.images?.length || 0 },
+  ]
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold text-text-primary">Edit Product: {product.name}</h1>
-        <div className="w-24 h-1 rounded-full mt-2" 
-          style={{ background: `linear-gradient(90deg, var(--color-primary) 0%, var(--color-accent) 100%)` }}
-        ></div>
+      <PageHeader 
+        title={`Edit Product: ${product.name}`}
+        returnLink='/admin/products'
+        returnText='Back to Products'
+      />
+
+      <div className="mb-6">
+        <nav className="flex gap-1 border-b-2 border-gray-200">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => handleTabChange(tab.id)}
+              className={`px-6 py-3 font-medium text-sm rounded-t-lg transition-all flex items-center gap-2 relative ${
+                activeTab === tab.id
+                  ? 'bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-accent)] text-white shadow-lg -mb-0.5 border-b-2 border-transparent'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300 hover:text-gray-900 border border-gray-300 border-b-0'
+              }`}
+            >
+              <span>{tab.label}</span>
+              {tab.badge !== undefined && (
+                <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                  activeTab === tab.id 
+                    ? 'bg-white/20 text-white border border-white/30' 
+                    : 'bg-gray-400 text-gray-800'
+                }`}>
+                  {tab.badge}
+                </span>
+              )}
+            </button>
+          ))}
+        </nav>
       </div>
 
       <div className="bg-white rounded-lg shadow p-6">
-        <ProductForm
-          existingProduct={product}
-          onSuccess={() => navigate('/admin/products')}
-          onCancel={() => navigate('/admin/products')}
-        />
+        {activeTab === 'details' ? (
+          <ProductForm
+            existingProduct={product}
+            onSuccess={() => refetch()}
+            onCancel={() => navigate('/admin/products')}
+          />
+        ) : (
+          <ProductImageManager
+            productId={productId}
+            images={product.images || []}
+            onImagesChange={() => refetch()}
+          />
+        )}
       </div>
     </div>
-  );
-}
+    );
+  }

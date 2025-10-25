@@ -6,9 +6,10 @@ import { createProduct,
   getProductsBySubcategory,
   updateProduct,
 } from "../services/products";
-import { uploadProductImage, deleteProductImage, setImageAsPrimary } from "../services/products/images";
-import type { ProductFormRequest, AddProductImageRequest } from "../types/product";
+import type { ProductFormRequest } from "../types/product";
 import type { ProductFilterParams } from "../types/pagination";
+
+// NOTE: Error handling for product CRUD happens in FormShell so it's not needed in here
 
 export const useProduct = (productId: number) => {
   return useQuery({
@@ -75,51 +76,6 @@ export const useUpdateProduct = () => {
     onSuccess: (data) => {
       queryClient.setQueryData(['product', data.productId], data);
       queryClient.invalidateQueries({ queryKey: ['products'] });
-    },
-  });
-};
-
-export const useUploadProductImage = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ productId, imageData }: {
-      productId: number;
-      imageData: AddProductImageRequest;
-    }) => uploadProductImage(productId, imageData),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: ['product', variables.productId],
-      });
-    },
-  });
-};
-
-export const useDeleteProductImage = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ productId, productImageId }: {
-      productId: number;
-      productImageId: number;
-    }) => deleteProductImage(productId, productImageId),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: ['product', variables.productId],
-      });
-    },
-  });
-};
-
-export const useSetImageAsPrimary = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ productId, productImageId }: {
-      productId: number;
-      productImageId: number;
-    }) => setImageAsPrimary(productId, productImageId),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: ['product"', variables.productId],
-      });
     },
   });
 };

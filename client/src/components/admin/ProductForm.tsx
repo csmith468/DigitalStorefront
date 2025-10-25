@@ -170,7 +170,7 @@ export function ProductForm ({
                   placeholder=""
                   onChange={(field, value) => updateField(field, value)}
                   min="0"
-                  step={formData.priceTypeId === 1 ? "500" : "0.01"}
+                  step={formData.priceTypeId === 1 ? "100" : "0.01"}
                 />
               </div>
               <div>
@@ -183,7 +183,7 @@ export function ProductForm ({
                   placeholder=""
                   onChange={(field, value) => updateField(field, value)}
                   min="0"
-                  step={formData.priceTypeId === 1 ? "500" : "0.01"}
+                  step={formData.priceTypeId === 1 ? "100" : "0.01"}
                 />
               </div>
             </div>

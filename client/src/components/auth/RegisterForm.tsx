@@ -56,7 +56,9 @@ export function RegisterForm ({
       validate={validate}
       onSubmit={onSubmit}
       onCancel={onCancel}
-      submitText="Register">
+      submitText="Register"
+      enableUnsavedChangesWarning={false}
+      >
       {({ data: form, updateField }) => (
         <>
           <div className={row}>

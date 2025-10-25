@@ -35,7 +35,9 @@ export function LoginForm ({
       onSubmit={onSubmit}
       onCancel={onCancel}
       validate={validate}
-      submitText="Login">
+      submitText="Login"
+      enableUnsavedChangesWarning={false}
+      >
       {({ data, updateField }) => (
         <>
           <FormInput
