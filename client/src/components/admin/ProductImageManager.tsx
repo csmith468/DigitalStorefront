@@ -1,12 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ProductImage } from "../../types/product";
-import { useDeleteProductImage, useSetImageAsPrimary, useUploadProductImage } from "../../hooks/useProductImages";
-import { StarIcon as StarSolid, TrashIcon } from "@heroicons/react/24/outline";
-import { StarIcon as StarOutline } from "@heroicons/react/16/solid";
+import { useDeleteProductImage, useReorderProductImages, useSetImageAsPrimary, useUploadProductImage } from "../../hooks/useProductImages";
 import { FormInput } from "../primitives/FormInput";
 import { ConfirmModal } from "../primitives/ConfirmModal";
 import { FormCheckbox } from "../primitives/FormCheckbox";
 import { formStyles } from "../primitives/primitive-constants";
+import { closestCenter, DndContext, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
+import { arrayMove, rectSortingStrategy, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { SortableImageItem } from "./SortableImageItem";
 
 
 interface ProductImageManagerProps {
@@ -22,14 +23,44 @@ export function ProductImageManager({ productId, images, onImagesChange }: Produ
   const [setAsPrimary, setSetAsPrimary] = useState(false);
   const [imageIdToDelete, setImageIdToDelete] = useState<number | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
+  const [localImages, setLocalImages] = useState<ProductImage[]>(images);
 
   const uploadMutation = useUploadProductImage();
   const deleteMutation = useDeleteProductImage();
   const setPrimaryMutation = useSetImageAsPrimary();
+  const reorderMutation = useReorderProductImages();
 
   const MAX_IMAGES = 5;
   const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
   const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+
+  useEffect(() => {
+    setLocalImages(images);
+  }, [images]);
+
+  // Drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const oldIndex = localImages.findIndex(img => img.productImageId === active.id);
+      const newIndex = localImages.findIndex(img => img.productImageId === over.id);
+
+      const newOrder = arrayMove(localImages, oldIndex, newIndex);
+      setLocalImages(newOrder);
+
+      const orderedIds = newOrder.map(img => img.productImageId);
+      await reorderMutation.mutateAsync({ productId, orderedImageIds: orderedIds });
+      onImagesChange();
+    }
+  };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -103,61 +134,38 @@ export function ProductImageManager({ productId, images, onImagesChange }: Produ
           <h3 className="text-lg font-semibold text-text-primary">
             Current Images ({images.length} of {MAX_IMAGES})
           </h3>
+          {images.length > 1 && (
+            <p className="text-sm text-gray-500">Drag Images to Reorder</p>
+          )}
         </div>
 
         {images.length === 0 ? (
           <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-            <p className="text-gray-500">No images uploaded yet</p>
+            <p className="text-gray-500">No Images Uploaded Yet</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {/* View Images */}
-            {images.map((image) => (
-              <div key={image.productImageId} className="relative group">
-                <img
-                  src={image.imageUrl}
-                  alt={image.altText || 'Product Image'}
-                  className="w-full h-48 object-cover rounded-lg border-2 border-gray-200"
-                />
-
-                {image.isPrimary && (
-                  <div className="absolute top-2 left-2 bg-yellow-400 text-yellow-900 px-2 py-1 rounded text-xs font-semibold flex items-center gap-1">
-                    <StarSolid className="h-3 w-3" />Primary
-                  </div>
-                )}
-
-                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all rounded-lg flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100">
-                  <button
-                    onClick={() => handleSetPrimary(image.productImageId)}
-                    disabled={image.isPrimary || setPrimaryMutation.isPending}
-                    className="p-2 bg-white rounded-full hover:bg-yellow-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    title={image.isPrimary ? 'Already Primary' : 'Set as Primary'}
-                  >
-                    {image.isPrimary ? (
-                      <StarSolid className="h-5 w-5 text-yellow-500" />
-                    ) : (
-                      <StarOutline className="h-5 w-5 text-gray-700" />
-                    )}
-                  </button>
-
-                  <button
-                    onClick={() => setImageIdToDelete(image.productImageId)}
-                    disabled={deleteMutation.isPending}
-                    className="p-2 bg-white rounded-full hover:bg-red-100 transition-colors disabled:opacity-50"
-                    title="Delete image"
-                  >
-                    <TrashIcon className="h-5 w-5 text-red-600" />
-                  </button>
-                </div>
-
-                {image.altText && (
-                  <p className="text-xs text-gray-600 mt-1 truncate" title={image.altText}>
-                    {image.altText}
-                  </p>
-                )}
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={localImages.map(img => img.productImageId)}
+              strategy={rectSortingStrategy}
+            >
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {localImages.map((image) => (
+                  <SortableImageItem
+                    key={image.productImageId}
+                    image={image}
+                    onSetPrimary={handleSetPrimary}
+                    onDelete={setImageIdToDelete}
+                    isPending={setPrimaryMutation.isPending || deleteMutation.isPending}
+                  />
+                ))}
               </div>
-            ))}
-          </div>
+            </SortableContext>
+          </DndContext>
         )}
       </div>
 

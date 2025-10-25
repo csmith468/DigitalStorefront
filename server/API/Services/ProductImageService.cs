@@ -16,6 +16,7 @@ public interface IProductImageService
     Task<Result<ProductImageDto>> AddProductImageAsync(int productId, AddProductImageDto dto);
     Task<Result<bool>> SetPrimaryImageAsync(int productId, int productImageId);
     Task<Result<bool>> DeleteProductImageAsync(int productId, int productImageId);
+    Task<Result<bool>> ReorderProductImagesAsync(int productId, List<int> orderedImageIds);
 }
 
 public class ProductImageService(ISharedContainer container) : BaseService(container), IProductImageService
@@ -86,7 +87,7 @@ public class ProductImageService(ISharedContainer container) : BaseService(conta
                 // Move to display order = 0 and shift others
                 if (dto.SetAsPrimary)
                 {
-                    await ReorderImagesAsync(productId, imageId);
+                    await FixDisplayOrderAsync(productId, imageId);
                     productImage.DisplayOrder = 0;
                 }
             });
@@ -113,7 +114,7 @@ public class ProductImageService(ISharedContainer container) : BaseService(conta
         {
             await Dapper.WithTransactionAsync(async () =>
             {
-                await ReorderImagesAsync(image.ProductId, productImageId);
+                await FixDisplayOrderAsync(image.ProductId, productImageId);
             });
 
             return Result<bool>.Success(true);
@@ -140,7 +141,7 @@ public class ProductImageService(ISharedContainer container) : BaseService(conta
                 if (!deleted)
                     throw new Exception("Failed to delete image file");
                 
-                await ReorderImagesAsync(image.ProductId);
+                await FixDisplayOrderAsync(image.ProductId);
             });
 
             return Result<bool>.Success(true);
@@ -151,7 +152,39 @@ public class ProductImageService(ISharedContainer container) : BaseService(conta
         }
     }
 
-    private async Task ReorderImagesAsync(int productId, int? newPrimaryImageId = null)
+    public async Task<Result<bool>> ReorderProductImagesAsync(int productId, List<int> orderedImageIds)
+    {
+        var validateProduct = await ValidateExistsAsync<Product>(productId);
+        if (!validateProduct.IsSuccess)
+            return validateProduct.ToFailure<bool, bool>();
+        
+        try
+        {
+            await Dapper.WithTransactionAsync(async () =>
+            {
+                var allImages = await Dapper.GetByFieldAsync<ProductImage>("productId", productId);
+                var imageDict = allImages.ToDictionary(i => i.ProductImageId);
+
+                if (orderedImageIds.Any(imageId => !imageDict.ContainsKey(imageId)))
+                    throw new Exception("Image does not belong to product");
+                
+                for (var i = 0; i < orderedImageIds.Count; i++)
+                {
+                    var image = imageDict[orderedImageIds[i]];
+                    image.DisplayOrder = i;
+                    await Dapper.UpdateAsync(image);
+                }
+            });
+
+            return Result<bool>.Success(true);
+        }
+        catch (Exception ex)
+        {
+            return Result<bool>.Failure($"Failed to reorder images: {ex.Message}", HttpStatusCode.InternalServerError);
+        }
+    }
+    
+    private async Task FixDisplayOrderAsync(int productId, int? newPrimaryImageId = null)
     {
         var images = (await Dapper.GetByFieldAsync<ProductImage>("productId", productId)).OrderBy(i => i.DisplayOrder).ToList();
 
