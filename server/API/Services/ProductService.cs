@@ -4,8 +4,8 @@ using API.Models;
 using API.Models.Constants;
 using API.Models.DboTables;
 using API.Models.Dtos;
+using API.Services.Images;
 using API.Setup;
-using API.Utils;
 using Dapper;
 
 namespace API.Services;
@@ -13,9 +13,11 @@ namespace API.Services;
 public interface IProductService
 {
     Task<Result<ProductDetailDto>> GetProductByIdAsync(int productId);
+    Task<Result<ProductDetailDto>> GetProductBySlugAsync(string slug);
     Task<Result<PaginatedResponse<ProductDto>>> GetProductsAsync(ProductFilterParams filterParams);
     Task<Result<ProductDetailDto>> CreateProductAsync(ProductFormDto dto, int userId);
-    Task<Result<ProductDetailDto>> UpdateProductAsync(int productId, ProductFormDto dto, int userId);
+    Task<Result<ProductDetailDto>> UpdateProductAsync(int productId, ProductFormDto dto);
+    Task<Result<bool>> DeleteProductAsync(int productId);
 }
 
 public class ProductService(ISharedContainer container) : BaseService(container), IProductService
@@ -29,6 +31,16 @@ public class ProductService(ISharedContainer container) : BaseService(container)
             return productResult.ToFailure<Product, ProductDetailDto>();
         
         var productDetailDto = await ConvertProductToProductDetailDto(productResult.Data);
+        return Result<ProductDetailDto>.Success(productDetailDto);
+    }
+
+    public async Task<Result<ProductDetailDto>> GetProductBySlugAsync(string slug)
+    {
+        var product = (await Dapper.GetByFieldAsync<Product>("slug", slug)).FirstOrDefault();
+        if (product == null)
+            Result<ProductDetailDto>.Failure("Product could not be found");
+        
+        var productDetailDto = await ConvertProductToProductDetailDto(product!);
         return Result<ProductDetailDto>.Success(productDetailDto);
     }
 
@@ -112,6 +124,7 @@ public class ProductService(ISharedContainer container) : BaseService(container)
             return validationResult.ToFailure<bool, ProductDetailDto>();
 
         var product = Mapper.Map<ProductFormDto, Product>(dto);
+        product.Slug = product.Slug.ToLower();
         await Dapper.WithTransactionAsync(async () =>
         {
             product.ProductId = await Dapper.InsertAsync(product);
@@ -130,7 +143,7 @@ public class ProductService(ISharedContainer container) : BaseService(container)
         return Result<ProductDetailDto>.Success(productDetailDto, HttpStatusCode.Created);
     }
 
-    public async Task<Result<ProductDetailDto>> UpdateProductAsync(int productId, ProductFormDto dto, int userId)
+    public async Task<Result<ProductDetailDto>> UpdateProductAsync(int productId, ProductFormDto dto)
     {
         var product = await Dapper.GetByIdAsync<Product>(productId);
         if (product == null)
@@ -154,6 +167,37 @@ public class ProductService(ISharedContainer container) : BaseService(container)
         
         var productDetailDto = await ConvertProductToProductDetailDto(product);
         return Result<ProductDetailDto>.Success(productDetailDto);
+    }
+    
+    public async Task<Result<bool>> DeleteProductAsync(int productId)
+    {
+        var product = await Dapper.GetByIdAsync<Product>(productId);
+        if (product == null)
+            return Result<bool>.Failure("Product not found", HttpStatusCode.NotFound);
+
+        if (product.IsDemoProduct)
+            return Result<bool>.Failure("Demo products cannot be deleted", HttpStatusCode.Forbidden);
+
+        try
+        {
+            await Dapper.WithTransactionAsync(async () =>
+            {
+                var images = await Dapper.GetByFieldAsync<ProductImage>("productId", productId);
+                foreach (var image in images)
+                {
+                    await Dapper.DeleteByIdAsync<ProductImage>(image.ProductImageId);
+                    await DepInj<IImageStorageService>().DeleteImageAsync(image.ImageUrl);
+                }
+                await Dapper.ExecuteAsync("DELETE FROM dbo.productSubcategory WHERE productId = @productId", new { productId });
+                await Dapper.DeleteByIdAsync<Product>(productId);
+            });
+
+            return Result<bool>.Success(true);
+        }
+        catch (Exception ex)
+        {
+            return Result<bool>.Failure($"Failed to delete product: {ex.Message}", HttpStatusCode.InternalServerError);
+        }
     }
     
     private async Task<bool> CanUserCreateProduct(int userId)
@@ -190,6 +234,9 @@ public class ProductService(ISharedContainer container) : BaseService(container)
         var productSubcategories = await Dapper.GetByFieldAsync<ProductSubcategory>("productId", product.ProductId);
         var subcategories = await Dapper.GetWhereInAsync<Subcategory>("subcategoryId", productSubcategories.Select(s => s.SubcategoryId).ToList());
         detailDto.Subcategories = subcategories.Select(s => Mapper.Map<Subcategory, SubcategoryDto>(s)).ToList();
+        
+        var priceType = PriceTypes.All.FirstOrDefault(pt => pt.PriceTypeId == product.PriceTypeId);
+        detailDto.PriceIcon = priceType != null ? priceType.Icon : "";
         
         return detailDto;
     }

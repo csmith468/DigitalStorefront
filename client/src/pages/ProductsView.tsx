@@ -1,12 +1,12 @@
 import { useEffect, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import { isViewAllSubcategory } from "../types/subcategory";
-import { useProductsByCategory, useProductsBySubcategory } from "../hooks/useProducts";
-import { useCategories } from "../hooks/useCategories";
-import { usePagination } from "../hooks/usePagination";
+import { useProductsByCategory, useProductsBySubcategory } from "../hooks/queries/useProducts";
+import { useCategories } from "../hooks/queries/useCategories";
+import { usePagination } from "../hooks/utilities/usePagination";
 import { ProductsGrid } from "../components/product/ProductsGrid";
 
-export default function ProductsView() {
+export function ProductsView() {
   const { categorySlug, subcategorySlug } = useParams();
   const { data: categories } = useCategories();
   const pagination = usePagination();

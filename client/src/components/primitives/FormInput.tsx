@@ -39,9 +39,14 @@ export function FormInput ({
           onChange(id,
             type !== "number"
               ? e.target.value
-              : parseFloat(e.target.value as string) || 0
+              : Number(e.target.value as string) || 0
           )
         }
+        onWheel={(e) => {
+          // Note: prevent scroll wheel from incrementing/decrementing numbers
+          if (type === 'number' && document.activeElement === e.currentTarget) 
+            e.currentTarget.blur();
+        }}
         placeholder={placeholder}
         className={formStyles.input}
         step={step}

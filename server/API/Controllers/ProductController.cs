@@ -54,6 +54,12 @@ public class ProductController(ISharedContainer container) : BaseController(cont
         return (await _productService.GetProductByIdAsync(productId)).ToActionResult();
     }
 
+    [HttpGet("slug/{slug}")]
+    public async Task<ActionResult<ProductDetailDto>> GetProductBySlug(string slug)
+    {
+        return (await _productService.GetProductBySlugAsync(slug)).ToActionResult();
+    }
+
     [Authorize]
     [HttpPost]
     public async Task<ActionResult<ProductDetailDto>> CreateProduct([FromBody] ProductFormDto dto)
@@ -70,9 +76,14 @@ public class ProductController(ISharedContainer container) : BaseController(cont
     [HttpPut("{productId}")]
     public async Task<ActionResult<ProductDetailDto>> UpdateProduct(int productId, [FromBody] ProductFormDto dto)
     {
-        if (UserId == null)
-            return Result<ProductDetailDto>.Failure("You are not logged in.").ToActionResult();
-        return (await _productService.UpdateProductAsync(productId, dto, UserId.Value)).ToActionResult();
+        return (await _productService.UpdateProductAsync(productId, dto)).ToActionResult();
+    }
+    
+    [Authorize]
+    [HttpDelete("{productId}")]
+    public async Task<ActionResult<bool>> DeleteProduct(int productId)
+    {
+        return (await _productService.DeleteProductAsync(productId)).ToActionResult();
     }
     
     [Authorize]

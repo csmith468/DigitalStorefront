@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { useUser } from '../hooks/useUser';
+import { useUser } from '../contexts/useUser';
 import type { ReactNode } from 'react';
 import { PageHeader } from '../components/primitives/PageHeader';
 

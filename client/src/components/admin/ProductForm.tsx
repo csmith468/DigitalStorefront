@@ -1,7 +1,7 @@
 import type { ProductDetail, ProductFormRequest } from "../../types/product";
-import { useCreateProduct, useUpdateProduct } from "../../hooks/useProducts";
-import { useCategories } from "../../hooks/useCategories";
-import { useProductTypes, usePriceTypes } from "../../hooks/useCommon";
+import { useCreateProduct, useUpdateProduct } from "../../hooks/queries/useProducts";
+import { useCategories } from "../../hooks/queries/useCategories";
+import { useProductTypes, usePriceTypes } from "../../hooks/queries/useCommon";
 import { FormInput } from "../primitives/FormInput";
 import { FormTextArea } from "../primitives/FormTextArea";
 import { FormSelect } from "../primitives/FormSelect";
@@ -11,7 +11,7 @@ import { OverlappingLabelBox } from "../primitives/OverlappingLabelBox";
 
 interface ProductFormProps {
   existingProduct?: ProductDetail; // if exists, edit mode
-  onSuccess: () => void;
+  onSuccess: (product?: ProductDetail) => void;
   onCancel: () => void;
 }
 
@@ -29,7 +29,7 @@ export function ProductForm ({
     productTypeId: existingProduct?.productTypeId || 0,
     description: existingProduct?.description || null,
     isTradeable: existingProduct?.isTradeable || false,
-    isNew: existingProduct?.isNew || false,
+    isNew: existingProduct?.isNew || true,
     isPromotional: existingProduct?.isPromotional || false,
     isExclusive: existingProduct?.isExclusive || false,
     price: existingProduct?.price || 0,
@@ -59,22 +59,23 @@ export function ProductForm ({
     if (formData.subcategoryIds.length === 0) return "Select at least one subcategory";
     if (formData.price <= 0 || formData.premiumPrice <= 0) return "Prices must be greater than 0";
     if (formData.premiumPrice > formData.price) return "Premium price cannot exceed regular price";
-    if (formData.priceTypeId === 2 && (!Number.isInteger(formData.premiumPrice) || !Number.isInteger(formData.price))) {
+    if (formData.priceTypeId === 1 && (!Number.isInteger(formData.premiumPrice) || !Number.isInteger(formData.price))) {
       return "Coin prices must be integers";
     }
     return null;
   };
 
   const onSubmit = async (formData: ProductFormRequest) => {
+    let result;
     if (isEditing) {
-      await updateMutation.mutateAsync({
+      result = await updateMutation.mutateAsync({
         productId: existingProduct.productId,
         product: formData,
       });
     } else {
-      await createMutation.mutateAsync(formData);
+      result = await createMutation.mutateAsync(formData);
     }
-    onSuccess();
+    onSuccess(result);
   };
 
   return (
@@ -104,7 +105,7 @@ export function ProductForm ({
                   required
                   value={formData.name}
                   placeholder="Product Name"
-                  onChange={(field, value) => updateField(field, value)}
+                  onChange={(f, v) => updateField(f, v)}
                 />
               </div>
               <div>
@@ -114,7 +115,7 @@ export function ProductForm ({
                   required
                   value={formData.slug}
                   placeholder="product-slug"
-                  onChange={(field, value) => updateField(field, value)}
+                  onChange={(f, v) => updateField(f, v)}
                 />
               </div>
             </div>
@@ -124,7 +125,7 @@ export function ProductForm ({
                 label="Description"
                 value={formData.description || ""}
                 placeholder="Description..."
-                onChange={(field, value) => updateField(field, value || null)}
+                onChange={(f, v) => updateField(f, v || null)}
               />
             </div>
 
@@ -136,7 +137,7 @@ export function ProductForm ({
                   required
                   value={formData.productTypeId}
                   type="number"
-                  onChange={(field, value) => updateField(field, value)}
+                  onChange={(f, v) => updateField(f, v)}
                   options={productTypes || []}
                   getOptionValue={(pt) => pt.productTypeId}
                   getOptionLabel={(pt) => pt.typeName}
@@ -150,7 +151,7 @@ export function ProductForm ({
                   required
                   value={formData.priceTypeId}
                   type="number"
-                  onChange={(field, value) => updateField(field, value)}
+                  onChange={(f, v) => updateField(f, v)}
                   options={priceTypes || []}
                   placeholder="Select Price Type..."
                   getOptionValue={(pt) => pt.priceTypeId}
@@ -168,7 +169,7 @@ export function ProductForm ({
                   type="number"
                   value={formData.price}
                   placeholder=""
-                  onChange={(field, value) => updateField(field, value)}
+                  onChange={(f, v) => updateField(f, v)}
                   min="0"
                   step={formData.priceTypeId === 1 ? "100" : "0.01"}
                 />
@@ -181,37 +182,37 @@ export function ProductForm ({
                   type="number"
                   value={formData.premiumPrice}
                   placeholder=""
-                  onChange={(field, value) => updateField(field, value)}
+                  onChange={(f, v) => updateField(f, v)}
                   min="0"
                   step={formData.priceTypeId === 1 ? "100" : "0.01"}
                 />
               </div>
             </div>
 
-            <OverlappingLabelBox label="Tags" required columns={2}>
+            <OverlappingLabelBox label="Tags" columns={2}>
               <FormCheckbox
                 id="isNew"
                 label="New"
                 checked={formData.isNew}
-                onChange={(field, value) => updateField(field, value)}
+                onChange={(f, v) => updateField(f, v)}
               />
               <FormCheckbox
                 id="isTradeable"
                 label="Tradeable"
                 checked={formData.isTradeable}
-                onChange={(field, value) => updateField(field, value)}
+                onChange={(f, v) => updateField(f, v)}
               />
               <FormCheckbox
                 id="isExclusive"
                 label="Exclusive"
                 checked={formData.isExclusive}
-                onChange={(field, value) => updateField(field, value)}
+                onChange={(f, v) => updateField(f, v)}
               />
               <FormCheckbox
                 id="isPromotional"
                 label="Promotional"
                 checked={formData.isPromotional}
-                onChange={(field, value) => updateField(field, value)}
+                onChange={(f, v) => updateField(f, v)}
               />
             </OverlappingLabelBox>
 

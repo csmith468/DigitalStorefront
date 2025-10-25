@@ -8,11 +8,11 @@ interface SortableImageItemProps {
   image: ProductImage;
   onSetPrimary: (id: number) => void;
   onDelete: (id: number) => void;
-  isPending: boolean;
+  isLoading: boolean;
 }
 
 export function SortableImageItem({
-  image, onSetPrimary, onDelete, isPending
+  image, onSetPrimary, onDelete, isLoading
 }: SortableImageItemProps) {
   const {
     attributes,
@@ -63,9 +63,9 @@ export function SortableImageItem({
         <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all rounded-lg flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100">
           <button
             onClick={() => onSetPrimary(image.productImageId)}
-            disabled={image.isPrimary || isPending}
+            disabled={image.isPrimary || isLoading}
             className="p-2 bg-white rounded-full hover:bg-yellow-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            title={image.isPrimary ? 'Already primary' : 'Set as primary'}
+            title={image.isPrimary ? 'Already Primary' : 'Set as Primary'}
           >
             {image.isPrimary ? (
               <StarSolid className="h-5 w-5 text-yellow-500" />
@@ -76,13 +76,19 @@ export function SortableImageItem({
 
           <button
             onClick={() => onDelete(image.productImageId)}
-            disabled={isPending}
+            disabled={isLoading}
             className="p-2 bg-white rounded-full hover:bg-red-100 transition-colors disabled:opacity-50"
             title="Delete image"
           >
             <TrashIcon className="h-5 w-5 text-red-600" />
           </button>
         </div>
+
+        {isLoading && (
+          <div className="absolute inset-0 bg-white bg-opacity-75 rounded-lg flex items-center justify-center z-20">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        )}
       </div>
 
       {image.altText && (

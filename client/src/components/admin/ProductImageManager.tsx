@@ -1,12 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ProductImage } from "../../types/product";
-import { useDeleteProductImage, useReorderProductImages, useSetImageAsPrimary, useUploadProductImage } from "../../hooks/useProductImages";
+import { useDeleteProductImage, useReorderProductImages, useSetImageAsPrimary, useUploadProductImage } from "../../hooks/queries/useProductImages";
 import { FormInput } from "../primitives/FormInput";
 import { ConfirmModal } from "../primitives/ConfirmModal";
 import { FormCheckbox } from "../primitives/FormCheckbox";
 import { formStyles } from "../primitives/primitive-constants";
 import { closestCenter, DndContext, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
-import { arrayMove, rectSortingStrategy, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { arrayMove, rectSortingStrategy, SortableContext, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { SortableImageItem } from "./SortableImageItem";
 
 
@@ -24,12 +24,14 @@ export function ProductImageManager({ productId, images, onImagesChange }: Produ
   const [imageIdToDelete, setImageIdToDelete] = useState<number | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
   const [localImages, setLocalImages] = useState<ProductImage[]>(images);
+  const [loadingImageId, setLoadingImageId] = useState<number| null>(null);
 
   const uploadMutation = useUploadProductImage();
   const deleteMutation = useDeleteProductImage();
   const setPrimaryMutation = useSetImageAsPrimary();
   const reorderMutation = useReorderProductImages();
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const MAX_IMAGES = 5;
   const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
   const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
@@ -109,19 +111,32 @@ export function ProductImageManager({ productId, images, onImagesChange }: Produ
     setSetAsPrimary(false);
     setFileError(null);
 
+    if (fileInputRef.current)
+      fileInputRef.current.value = '';
+
     onImagesChange();
   };
 
   const handleDelete = async () => {
     if (imageIdToDelete == null) return;
-    await deleteMutation.mutateAsync({ productId, productImageId: imageIdToDelete });
-    onImagesChange();
-    setImageIdToDelete(null);
+    setLoadingImageId(imageIdToDelete);
+    try {
+      await deleteMutation.mutateAsync({ productId, productImageId: imageIdToDelete });
+      onImagesChange();
+    } finally {
+      setImageIdToDelete(null);
+      setLoadingImageId(null);
+    }
   };
 
   const handleSetPrimary = async (productImageId: number) => {
-    await setPrimaryMutation.mutateAsync({ productId, productImageId });
-    onImagesChange();
+    setLoadingImageId(productImageId);
+    try {
+      await setPrimaryMutation.mutateAsync({ productId, productImageId });
+      onImagesChange();
+    } finally {
+      setLoadingImageId(null);
+    }
   };
 
   const canUploadMore = images.length < MAX_IMAGES;
@@ -160,7 +175,7 @@ export function ProductImageManager({ productId, images, onImagesChange }: Produ
                     image={image}
                     onSetPrimary={handleSetPrimary}
                     onDelete={setImageIdToDelete}
-                    isPending={setPrimaryMutation.isPending || deleteMutation.isPending}
+                    isLoading={loadingImageId == image.productImageId}
                   />
                 ))}
               </div>
@@ -187,13 +202,14 @@ export function ProductImageManager({ productId, images, onImagesChange }: Produ
             <label className={formStyles.label}>Select Image</label>
             <input
               type="file"
+              ref={fileInputRef}
               accept={ALLOWED_TYPES.join(',')}
               onChange={handleFileSelect}
               disabled={!canUploadMore || isUploading}
-              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed"
+              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-primary-dark file:cursor-pointer file:disabled:cursor-not-allowed disabled:opacity-50"
             />
             <p className="text-xs text-gray-500 mt-1">
-              Max size: {MAX_FILE_SIZE / 1024 / 1024}MB. Formats: JPG, PNG, GIF, WebP
+              Max Size: {MAX_FILE_SIZE / 1024 / 1024}MB. Formats: JPG, PNG, GIF, WebP
             </p>
             {fileError && (
               <p className="text-sm text-red-600 mt-1">{fileError}</p>
@@ -238,7 +254,7 @@ export function ProductImageManager({ productId, images, onImagesChange }: Produ
           <button
             onClick={handleUpload}
             disabled={!selectedFile || isUploading || !canUploadMore || !!fileError}
-            className="w-full bg-primary text-white py-2 px-4 rounded-lg font-medium hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-primary text-white py-2 px-4 rounded-lg font-medium hover:bg-primary-dark transition-colors disabled:opacity-50 file:cursor-pointer disabled:cursor-not-allowed"
           >
             {isUploading ? 'Uploading...' : 'Upload Image'}
           </button>
