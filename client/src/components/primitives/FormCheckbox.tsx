@@ -8,13 +8,13 @@ interface FormCheckboxProps {
   disabled?: boolean;
 }
 
-export const FormCheckbox: React.FC<FormCheckboxProps> = ({
+export function FormCheckbox({
   id,
   label,
   checked,
   onChange,
   disabled = false,
-}) => {
+}: FormCheckboxProps) {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onChange(id, e.target.checked);
   };

@@ -8,7 +8,7 @@ import {
 } from '@heroicons/react/24/outline';
 import './Header.css';
 
-export const Header: React.FC = () => {
+export function Header() {
   const { user, logout } = useUser();
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');

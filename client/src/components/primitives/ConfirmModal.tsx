@@ -10,7 +10,7 @@ interface ConfirmModalProps {
   cancelButtonMessage: string;
 }
 
-export const ConfirmModal: React.FC<ConfirmModalProps> = ({
+export function ConfirmModal({
   title,
   message,
   isOpen,
@@ -18,7 +18,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
   onCancel,
   confirmButtonMessage = 'Confirm',
   cancelButtonMessage = 'Cancel'
-}) => {
+}: ConfirmModalProps) {
   return (
     <Modal 
       isOpen={isOpen} 

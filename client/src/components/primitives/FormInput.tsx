@@ -1,4 +1,3 @@
-import React from "react";
 import { formStyles } from "./primitive-constants";
 import { FormLabel } from "./FormLabel";
 
@@ -15,7 +14,7 @@ interface FormInputProps {
   min?: string; // number type only
 }
 
-export const FormInput: React.FC<FormInputProps> = ({
+export function FormInput ({
   id,
   label,
   type = "text",
@@ -26,7 +25,7 @@ export const FormInput: React.FC<FormInputProps> = ({
   placeholder,
   step,
   min,
-}) => {
+}: FormInputProps) {
   return (
     <div>
       <FormLabel htmlFor={id} label={label} required={required} />

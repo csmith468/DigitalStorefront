@@ -1,4 +1,3 @@
-import React from "react";
 import { formStyles } from "./primitive-constants";
 
 interface FormLabelProps {
@@ -7,11 +6,11 @@ interface FormLabelProps {
   required?: boolean;
 }
 
-export const FormLabel: React.FC<FormLabelProps> = ({
+export function FormLabel ({
   htmlFor,
   label,
   required = false,
-}) => {
+}: FormLabelProps) {
   return (
     <label htmlFor={htmlFor} className={formStyles.label}>
       {label}{required && <span className={formStyles.required}>*</span>}

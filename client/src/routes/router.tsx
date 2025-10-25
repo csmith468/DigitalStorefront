@@ -7,11 +7,13 @@ import { ProtectedRoute } from "../components/auth/ProtectedRoute";
 import { AdminProductList } from "../components/admin/AdminProductList";
 import { CreateProductPage } from "../pages/admin/CreateProductPage";
 import { EditProductPage } from "../pages/admin/EditProductPage";
+import { RouteErrorPage } from "./RouteErrorPage";
 
 // NOTE (to self): Reminds me of Angular route guards
 export const router = createBrowserRouter([
   {
     element: <AppLayout />,
+    errorElement: <RouteErrorPage />,
     children: [
       { path: "/", element: <HomePage /> },
       { path: "/search", element: <SearchResults /> },
