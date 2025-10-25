@@ -1,4 +1,4 @@
-import { useUser } from "../../hooks/useUser";
+import { useUser } from "../../contexts/useUser";
 import type { RegisterRequest } from "../../types/auth";
 import { FormInput } from "../primitives/FormInput";
 import { FormShell } from "../primitives/FormShell";

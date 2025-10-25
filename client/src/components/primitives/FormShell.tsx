@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { UseUnsavedChanges } from "../../hooks/useUnsavedChanges";
+import { UseUnsavedChanges } from "../../hooks/utilities/useUnsavedChanges";
 import { ConfirmModal } from "./ConfirmModal";
 
 type ValidateFn<T> = (data: T) => string | null;
@@ -39,7 +39,7 @@ export function FormShell<T>({
   children,
 }: FormShellProps<T>) {
   const [data, setData] = useState<T>(initial);
-  const [error, setError] = useState<string | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
   const [hasSumbitted, setHasSubmitted] = useState(false);
 
   const isDirty = JSON.stringify(data) !== JSON.stringify(initial);
@@ -52,27 +52,19 @@ export function FormShell<T>({
     setData((prev) => ({ ...prev, [field]: value }));
   };
 
+  // Removing error handling - FormShell will just show validation errors, useMutationWithToast will handle server errors
+  // Hooks shouldn't need to know if they are being used here so keep server errors in hooks
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
+    setValidationError(null);
 
     const message = validate?.(data) ?? null;
     if (message) {
-      setError(message);
+      setValidationError(message);
       return;
     }
-
-    try {
-      await onSubmit(data);
-      setHasSubmitted(true);
-    } catch (err: any) {
-      setError(
-        err?.response?.data?.message 
-        ?? err?.response?.data 
-        ?? err.message 
-        ?? 'An error occurred'
-      );
-    }
+    setHasSubmitted(true);
+    await onSubmit(data);
   };
 
   return (
@@ -89,9 +81,9 @@ export function FormShell<T>({
       <form onSubmit={handleSubmit} className="space-y-6">
         {header}
 
-        {error && (
+        {validationError && (
           <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded">
-            {error}
+            {validationError}
           </div>
         )}
 

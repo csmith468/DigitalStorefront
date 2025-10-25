@@ -27,11 +27,15 @@ export const getProductsBySubcategory = async (subcategorySlug: string, page: nu
 };
 
 export const createProduct = async (product: ProductFormRequest): Promise<ProductDetail> => {
-  const response = await apiClient.post<ProductDetail>('/product', product);
-  return response.data;
-};
+    const response = await apiClient.post<ProductDetail>('/product', product);
+    return response.data;
+  };
 
 export const updateProduct = async (productId: number, product: ProductFormRequest): Promise<ProductDetail> => {
   const response = await apiClient.put<ProductDetail>(`/product/${productId}`, product);
   return response.data;
+};
+
+export const deleteProduct = async (productId: number): Promise<void> => {
+  await apiClient.delete(`/product/${productId}`);
 };

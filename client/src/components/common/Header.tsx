@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useUser } from '../../hooks/useUser';
+import { useUser } from '../../contexts/useUser';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AuthModal } from '../auth/AuthModal';
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';

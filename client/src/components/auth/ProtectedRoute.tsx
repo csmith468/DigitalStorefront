@@ -1,4 +1,4 @@
-import { useUser } from "../../hooks/useUser";
+import { useUser } from "../../contexts/useUser";
 import { LoadingScreen } from "../primitives/LoadingScreen";
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {

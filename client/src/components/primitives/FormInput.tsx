@@ -39,9 +39,10 @@ export function FormInput ({
           onChange(id,
             type !== "number"
               ? e.target.value
-              : parseFloat(e.target.value as string) || 0
+              : Number(e.target.value as string) || 0
           )
         }
+        onWheel={(e) => e.currentTarget.blur()}
         placeholder={placeholder}
         className={formStyles.input}
         step={step}

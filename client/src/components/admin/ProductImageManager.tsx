@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import type { ProductImage } from "../../types/product";
-import { useDeleteProductImage, useReorderProductImages, useSetImageAsPrimary, useUploadProductImage } from "../../hooks/useProductImages";
+import { useDeleteProductImage, useReorderProductImages, useSetImageAsPrimary, useUploadProductImage } from "../../hooks/queries/useProductImages";
 import { FormInput } from "../primitives/FormInput";
 import { ConfirmModal } from "../primitives/ConfirmModal";
 import { FormCheckbox } from "../primitives/FormCheckbox";
 import { formStyles } from "../primitives/primitive-constants";
 import { closestCenter, DndContext, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
-import { arrayMove, rectSortingStrategy, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { arrayMove, rectSortingStrategy, SortableContext, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { SortableImageItem } from "./SortableImageItem";
 
 
@@ -24,6 +24,7 @@ export function ProductImageManager({ productId, images, onImagesChange }: Produ
   const [imageIdToDelete, setImageIdToDelete] = useState<number | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
   const [localImages, setLocalImages] = useState<ProductImage[]>(images);
+  const [loadingImageId, setLoadingImageId] = useState<number| null>(null);
 
   const uploadMutation = useUploadProductImage();
   const deleteMutation = useDeleteProductImage();
@@ -114,14 +115,24 @@ export function ProductImageManager({ productId, images, onImagesChange }: Produ
 
   const handleDelete = async () => {
     if (imageIdToDelete == null) return;
-    await deleteMutation.mutateAsync({ productId, productImageId: imageIdToDelete });
-    onImagesChange();
-    setImageIdToDelete(null);
+    setLoadingImageId(imageIdToDelete);
+    try {
+      await deleteMutation.mutateAsync({ productId, productImageId: imageIdToDelete });
+      onImagesChange();
+    } finally {
+      setImageIdToDelete(null);
+      setLoadingImageId(null);
+    }
   };
 
   const handleSetPrimary = async (productImageId: number) => {
-    await setPrimaryMutation.mutateAsync({ productId, productImageId });
-    onImagesChange();
+    setLoadingImageId(productImageId);
+    try {
+      await setPrimaryMutation.mutateAsync({ productId, productImageId });
+      onImagesChange();
+    } finally {
+      setLoadingImageId(null);
+    }
   };
 
   const canUploadMore = images.length < MAX_IMAGES;
@@ -160,7 +171,7 @@ export function ProductImageManager({ productId, images, onImagesChange }: Produ
                     image={image}
                     onSetPrimary={handleSetPrimary}
                     onDelete={setImageIdToDelete}
-                    isPending={setPrimaryMutation.isPending || deleteMutation.isPending}
+                    isLoading={loadingImageId == image.productImageId}
                   />
                 ))}
               </div>

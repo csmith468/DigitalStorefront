@@ -1,8 +1,8 @@
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { useProduct } from '../../hooks/useProducts';
+import { useProduct } from '../../hooks/queries/useProducts';
 import { ProductForm } from '../../components/admin/ProductForm';
 import { LoadingScreen } from '../../components/primitives/LoadingScreen';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ProductImageManager } from '../../components/admin/ProductImageManager';
 import { PageHeader } from '../../components/primitives/PageHeader';
 
@@ -16,6 +16,12 @@ export function EditProductPage() {
 
   const initialTab = (searchParams.get('tab') === 'images' ? 'images' : 'details') as TabType;
   const [activeTab, setActiveTab] = useState<TabType>(initialTab);
+
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam === 'images' || tabParam === 'details')
+      setActiveTab(tabParam as TabType);
+  }, [searchParams]);
 
   const { data: product, isLoading, error, refetch } = useProduct(productId);
 
@@ -83,7 +89,7 @@ export function EditProductPage() {
         {activeTab === 'details' ? (
           <ProductForm
             existingProduct={product}
-            onSuccess={() => refetch()}
+            onSuccess={() => navigate('/admin/products')}
             onCancel={() => navigate('/admin/products')}
           />
         ) : (

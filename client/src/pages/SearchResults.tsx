@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { useProducts } from "../hooks/useProducts";
-import { usePagination } from "../hooks/usePagination";
+import { useProducts } from "../hooks/queries/useProducts";
+import { usePagination } from "../hooks/utilities/usePagination";
 import { ProductsGrid } from "../components/product/ProductsGrid";
 
 export default function SearchResults() {
