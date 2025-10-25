@@ -1,4 +1,3 @@
-import React from 'react';
 import { formStyles } from './primitive-constants';
 import { FormLabel } from './FormLabel';
 
@@ -11,14 +10,14 @@ interface FormTextAreaProps {
   placeholder?: string;
 }
 
-export const FormTextArea: React.FC<FormTextAreaProps> = ({ 
+export function FormTextArea ({ 
   id, 
   label, 
   required = false, 
   value, 
   onChange, 
   placeholder 
-}) => {
+}: FormTextAreaProps) {
   return (
     <div>
       <FormLabel htmlFor={id} label={label} required={required} />

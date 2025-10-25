@@ -11,11 +11,11 @@ interface AuthModalProps {
   initialMode?: AuthMode;
 }
 
-export const AuthModal: React.FC<AuthModalProps> = ({
+export function AuthModal ({
   isOpen,
   onClose,
   initialMode = "login",
-}) => {
+}: AuthModalProps) {
   const [mode, setMode] = useState<AuthMode>(initialMode);
 
   useEffect(() => {

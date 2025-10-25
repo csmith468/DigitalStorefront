@@ -15,11 +15,11 @@ interface ProductFormProps {
   onCancel: () => void;
 }
 
-export const ProductForm: React.FC<ProductFormProps> = ({
+export function ProductForm ({
   existingProduct,
   onSuccess,
   onCancel,
-}) => {
+}: ProductFormProps) {
   const isEditing = !!existingProduct;
 
   // State (equivalent to data())
@@ -170,7 +170,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                   placeholder=""
                   onChange={(field, value) => updateField(field, value)}
                   min="0"
-                  step={formData.priceTypeId === 1 ? "500" : "0.01"}
+                  step={formData.priceTypeId === 1 ? "100" : "0.01"}
                 />
               </div>
               <div>
@@ -183,7 +183,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                   placeholder=""
                   onChange={(field, value) => updateField(field, value)}
                   min="0"
-                  step={formData.priceTypeId === 1 ? "500" : "0.01"}
+                  step={formData.priceTypeId === 1 ? "100" : "0.01"}
                 />
               </div>
             </div>

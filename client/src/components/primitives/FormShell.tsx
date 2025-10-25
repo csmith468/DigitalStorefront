@@ -40,11 +40,12 @@ export function FormShell<T>({
 }: FormShellProps<T>) {
   const [data, setData] = useState<T>(initial);
   const [error, setError] = useState<string | null>(null);
+  const [hasSumbitted, setHasSubmitted] = useState(false);
 
   const isDirty = JSON.stringify(data) !== JSON.stringify(initial);
 
   const { showPrompt, proceed, reset } = UseUnsavedChanges({
-    isDirty: enableUnsavedChangesWarning && isDirty,
+    isDirty: enableUnsavedChangesWarning && isDirty && !hasSumbitted,
   });
 
   const updateField = (field: string, value: any) => {
@@ -63,6 +64,7 @@ export function FormShell<T>({
 
     try {
       await onSubmit(data);
+      setHasSubmitted(true);
     } catch (err: any) {
       setError(
         err?.response?.data?.message 

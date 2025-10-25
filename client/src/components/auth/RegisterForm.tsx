@@ -9,11 +9,11 @@ interface RegisterFormProps {
   onSwitchToLogin: () => void;
 }
 
-export const RegisterForm: React.FC<RegisterFormProps> = ({
+export function RegisterForm ({
   onSuccess,
   onCancel,
   onSwitchToLogin,
-}) => {
+}: RegisterFormProps) {
   const { register } = useUser();
 
   const initial: RegisterRequest = {
@@ -56,7 +56,9 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
       validate={validate}
       onSubmit={onSubmit}
       onCancel={onCancel}
-      submitText="Register">
+      submitText="Register"
+      enableUnsavedChangesWarning={false}
+      >
       {({ data: form, updateField }) => (
         <>
           <div className={row}>

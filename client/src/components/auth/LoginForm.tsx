@@ -8,11 +8,11 @@ interface LoginFormProps {
   onSwitchToRegister: () => void;
 }
 
-export const LoginForm: React.FC<LoginFormProps> = ({
+export function LoginForm ({
   onSuccess,
   onCancel,
   onSwitchToRegister,
-}) => {
+}: LoginFormProps) {
   const { login } = useUser();
 
   const onSubmit = async (form: { username: string; password: string }) => {
@@ -35,7 +35,9 @@ export const LoginForm: React.FC<LoginFormProps> = ({
       onSubmit={onSubmit}
       onCancel={onCancel}
       validate={validate}
-      submitText="Login">
+      submitText="Login"
+      enableUnsavedChangesWarning={false}
+      >
       {({ data, updateField }) => (
         <>
           <FormInput

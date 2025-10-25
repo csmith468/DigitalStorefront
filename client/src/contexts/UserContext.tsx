@@ -45,6 +45,16 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({
     initAuth();
   }, []);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const authParam = params.get('auth');
+
+    if (authParam === 'login' || authParam === 'register') {
+      openAuthModal(authParam);
+      window.history.replaceState({}, '', '/');
+    }
+  }, []);
+
   const setUserAndTokenFromAuthResponse = (response: Auth) => {
     authService.setStoredToken(response.token);
     setUser({ userId: response.userId, username: response.username });
