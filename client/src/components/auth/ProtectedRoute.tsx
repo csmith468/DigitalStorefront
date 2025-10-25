@@ -18,7 +18,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
           You need to be logged in to access the admin console.
         </p>
         <button
-          onClick={openAuthModal}
+          onClick={() => openAuthModal('login')}
           className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700">
           Sign In
         </button>
