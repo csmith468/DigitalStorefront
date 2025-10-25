@@ -9,11 +9,11 @@ interface RegisterFormProps {
   onSwitchToLogin: () => void;
 }
 
-export const RegisterForm: React.FC<RegisterFormProps> = ({
+export function RegisterForm ({
   onSuccess,
   onCancel,
   onSwitchToLogin,
-}) => {
+}: RegisterFormProps) {
   const { register } = useUser();
 
   const initial: RegisterRequest = {

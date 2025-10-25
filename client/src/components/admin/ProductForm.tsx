@@ -15,11 +15,11 @@ interface ProductFormProps {
   onCancel: () => void;
 }
 
-export const ProductForm: React.FC<ProductFormProps> = ({
+export function ProductForm ({
   existingProduct,
   onSuccess,
   onCancel,
-}) => {
+}: ProductFormProps) {
   const isEditing = !!existingProduct;
 
   // State (equivalent to data())

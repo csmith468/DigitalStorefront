@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 const columnClasses: Record<number, string> = {
   1: "grid grid-cols-1 gap-4",
   2: "grid grid-cols-2 gap-4",
@@ -5,12 +7,16 @@ const columnClasses: Record<number, string> = {
   4: "grid grid-cols-4 gap-4",
 };
 
-export const OverlappingLabelBox: React.FC<{
+interface OverlappingLabelBoxProps {
   label: string;
   required?: boolean;
-  children: React.ReactNode;
   columns?: number;
-}> = ({ label, required, children, columns = 1 }) => {
+  children: ReactNode;
+}
+
+export function OverlappingLabelBox ({ 
+  label, required, children, columns = 1 
+}: OverlappingLabelBoxProps) {
   const columnClass = columnClasses[columns] || columnClasses[1];
   return (
     <div className="relative mt-6">

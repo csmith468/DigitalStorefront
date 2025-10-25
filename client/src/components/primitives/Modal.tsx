@@ -9,13 +9,13 @@ interface ModalProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
 }
 
-export const Modal: React.FC<ModalProps> = ({
+export function Modal ({
   isOpen,
   onClose,
   title,
   children,
   size = 'md' 
-}) => {
+}: ModalProps) {
   const sizeClasses = {
     sm: 'max-w-md',
     md: 'max-w-lg',

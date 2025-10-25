@@ -8,9 +8,12 @@ interface PageHeaderProps {
   returnText?: string;
 }
  
-export const PageHeader: React.FC<PageHeaderProps> = ({
-  title, returnLink, returnText, subtitle
-}) => {
+export function PageHeader ({
+  title, 
+  returnLink, 
+  returnText, 
+  subtitle
+}: PageHeaderProps) {
   const navigate = useNavigate();
 
   return (

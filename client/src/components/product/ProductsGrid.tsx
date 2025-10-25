@@ -1,6 +1,7 @@
 import type { PaginatedResponse } from "../../types/pagination";
 import type { Product } from "../../types/product";
 import { LoadingScreen } from "../primitives/LoadingScreen";
+import { PageHeader } from "../primitives/PageHeader";
 import { PaginationWrapper } from "../primitives/PaginationWrapper";
 import ProductCard from "./ProductCard";
 
@@ -48,14 +49,11 @@ export function ProductsGrid({
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-2 text-text-primary">{title}</h1>
-        <div
-          className="w-24 h-1 rounded-full"
-          style={{
-            background: `linear-gradient(90deg, var(--color-primary) 0%, var(--color-accent) 100%)`,
-          }}></div>
-      </div>
+      <PageHeader 
+        title={title}
+        returnLink='/'
+        returnText='Back to Home'
+      />
 
       <PaginationWrapper
         page={page}
