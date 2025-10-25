@@ -9,14 +9,14 @@ export const uploadProductImage = async (productId: number, imageData: AddProduc
     formData.append('altText', imageData.altText);
   formData.append('setAsPrimary', String(imageData.setAsPrimary));
 
-  const response = await apiClient.post<ProductImage>(`/product/${productId}`, formData,
+  const response = await apiClient.post<ProductImage>(`/product/${productId}/image`, formData,
     { headers: { 'Content-Type': 'multipart/form-data' } }
   );
   return response.data;
 };
 
 export const deleteProductImage = async (productId: number, productImageId: number): Promise<void> => {
-  await apiClient.delete(`/product/${productId}image/${productImageId}`);
+  await apiClient.delete(`/product/${productId}/image/${productImageId}`);
 };
 
 export const setImageAsPrimary = async (productId: number, productImageId: number): Promise<void> => {

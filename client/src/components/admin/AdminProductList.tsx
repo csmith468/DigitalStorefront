@@ -8,6 +8,7 @@ import { PaginationWrapper } from "../primitives/PaginationWrapper";
 import { LockClosedIcon, MagnifyingGlassIcon, PencilIcon } from "@heroicons/react/24/outline";
 import { FormInput } from "../primitives/FormInput";
 import { FormSelect } from "../primitives/FormSelect";
+import { PageHeader } from "../primitives/PageHeader";
 
 export function AdminProductList() {
   const navigate = useNavigate();
@@ -55,14 +56,11 @@ export function AdminProductList() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-4xl font-bold text-text-primary">Product Management</h1>
-          <div
-            className="w-24 h-1 rounded-full mt-2"
-            style={{
-              background: `linear-gradient(90deg, var(--color-primary) 0%, var(--color-accent) 100%)`,
-            }}></div>
-        </div>
+        <PageHeader 
+          title="Product Management"
+          returnLink='/'
+          returnText='Back to Home' // eventually admin main
+        />
         <button
           onClick={() => navigate("/admin/products/create")}
           className="px-4 py-2 bg-[var(--color-primary)] text-white rounded-md hover:opacity-90 font-medium">
@@ -157,12 +155,12 @@ export function AdminProductList() {
                         {product.priceIcon} {product.premiumPrice}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        {product.isDemoProduct ? (
+                        {/* {product.isDemoProduct ? (
                           <div className="flex items-center justify-end gap-2 text-gray-400">
                             <LockClosedIcon className="h-5 w-5" />
                             <span>Demo Product</span>
                           </div>
-                        ) : (
+                        ) : ( */}
                           <div className="flex items-center justify-end gap-2">
                             <button
                               onClick={() => navigate(`/admin/products/${product.productId}/edit`)}
@@ -171,7 +169,7 @@ export function AdminProductList() {
                               Edit
                             </button>
                           </div>
-                        )}
+                        {/* )} */}
                       </td>
                     </tr>
                   );
