@@ -26,7 +26,7 @@ function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <UserProvider>
-        <AppLayout />
+        <Outlet />
         <ReactQueryDevtools initialIsOpen={false} />
       </UserProvider>
     </QueryClientProvider>
@@ -39,21 +39,26 @@ export const router = createBrowserRouter([
     element: <RootLayout />,
     errorElement: <RouteErrorPage />,
     children: [
-      { path: "/", element: <HomePage /> },
-      { path: "/search", element: <SearchResults /> },
-      { path: "/products/:categorySlug/:subcategorySlug", element: <ProductsView /> },
-      { path: "/admin", 
-        element: <ProtectedRoute><Outlet /></ProtectedRoute>,
+      {
+        element: <AppLayout />,
         children: [
-          { index: true, element: <Navigate to="/admin/products" replace /> },
-          { path: "products", element: <AdminProductList /> },
-          { path: "products/create", element: <CreateProductPage /> },
-          {
-            path: "products/:id/edit",
-            element: <Navigate to="details" replace />
-          },
-          { path: "products/:id/edit/details", element: <EditProductPage /> },
-          { path: "products/:id/edit/images", element: <EditProductPage /> },
+          { path: "/", element: <HomePage /> },
+          { path: "/search", element: <SearchResults /> },
+          { path: "/products/:categorySlug/:subcategorySlug", element: <ProductsView /> },
+          { path: "/admin", 
+            element: <ProtectedRoute><Outlet /></ProtectedRoute>,
+            children: [
+              { index: true, element: <Navigate to="/admin/products" replace /> },
+              { path: "products", element: <AdminProductList /> },
+              { path: "products/create", element: <CreateProductPage /> },
+              {
+                path: "products/:id/edit",
+                element: <Navigate to="details" replace />
+              },
+              { path: "products/:id/edit/details", element: <EditProductPage /> },
+              { path: "products/:id/edit/images", element: <EditProductPage /> },
+            ]
+          }
         ]
       }
     ]

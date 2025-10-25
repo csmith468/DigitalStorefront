@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { deleteProductImage, setImageAsPrimary, uploadProductImage } from "../services/products/images";
+import { deleteProductImage, reorderProductImages, setImageAsPrimary, uploadProductImage } from "../services/products/images";
 import type { AddProductImageRequest } from "../types/product";
 
 // NOTE: Error handling happens here because FormShell is not used for image uploader
@@ -53,13 +53,33 @@ export const useSetImageAsPrimary = () => {
     }) => setImageAsPrimary(productId, productImageId),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
-        queryKey: ['product"', variables.productId],
+        queryKey: ['product', variables.productId],
       });
       queryClient.invalidateQueries({ queryKey: ['products'] });
     },
     onError: (error) => {
       console.error('Failed to update image: ', error);
       alert('Failed to update image. Please try again.');
+    }
+  });
+};
+
+export const useReorderProductImages = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ productId, orderedImageIds }: {
+      productId: number;
+      orderedImageIds: number[];
+    }) => reorderProductImages(productId, orderedImageIds),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ['product"', variables.productId],
+      });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+    },
+    onError: (error) => {
+      console.error('Failed to reorder images:', error);
+      alert('Failed to reorder images. Please try again.');
     }
   });
 };

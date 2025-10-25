@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import { isViewAllSubcategory } from "../types/subcategory";
 import { useProductsByCategory, useProductsBySubcategory } from "../hooks/useProducts";
@@ -10,6 +10,10 @@ export default function ProductsView() {
   const { categorySlug, subcategorySlug } = useParams();
   const { data: categories } = useCategories();
   const pagination = usePagination();
+
+  useEffect(() => {
+    pagination.resetToFirstPage();
+  }, [categorySlug, subcategorySlug]);
 
   const isViewAllInCategory = categorySlug && subcategorySlug && isViewAllSubcategory(subcategorySlug);
 

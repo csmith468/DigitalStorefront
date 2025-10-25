@@ -95,5 +95,12 @@ public class ProductController(ISharedContainer container) : BaseController(cont
     {
         return (await _productImageService.SetPrimaryImageAsync(productId, productImageId)).ToActionResult();
     }
+
+    [Authorize]
+    [HttpPut("{productId}/images/reorder")]
+    public async Task<ActionResult<bool>> ReorderProductImages(int productId, List<int> productImageIds)
+    {
+        return (await _productImageService.ReorderProductImagesAsync(productId, productImageIds)).ToActionResult();
+    }
 }
 

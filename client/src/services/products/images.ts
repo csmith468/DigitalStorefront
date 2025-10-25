@@ -22,3 +22,7 @@ export const deleteProductImage = async (productId: number, productImageId: numb
 export const setImageAsPrimary = async (productId: number, productImageId: number): Promise<void> => {
   await apiClient.put(`/product/${productId}/image/${productImageId}/set-primary`);
 };
+
+export const reorderProductImages = async (productId: number, orderedImageIds: number[]): Promise<void> => {
+  await apiClient.put(`/product/${productId}/images/reorder`, orderedImageIds);
+};
