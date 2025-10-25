@@ -11,6 +11,8 @@ import { CreateProductPage } from "../pages/admin/CreateProductPage";
 import { EditProductPage } from "../pages/admin/EditProductPage";
 import { RouteErrorPage } from "./RouteErrorPage";
 import { UserProvider } from "../contexts/UserContext";
+import { Toaster } from "react-hot-toast";
+import { toasterConfig } from "../config/toastConfig";
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -27,6 +29,7 @@ function RootLayout() {
     <QueryClientProvider client={queryClient}>
       <UserProvider>
         <Outlet />
+        <Toaster {...toasterConfig} />
         <ReactQueryDevtools initialIsOpen={false} />
       </UserProvider>
     </QueryClientProvider>
@@ -51,12 +54,7 @@ export const router = createBrowserRouter([
               { index: true, element: <Navigate to="/admin/products" replace /> },
               { path: "products", element: <AdminProductList /> },
               { path: "products/create", element: <CreateProductPage /> },
-              {
-                path: "products/:id/edit",
-                element: <Navigate to="details" replace />
-              },
-              { path: "products/:id/edit/details", element: <EditProductPage /> },
-              { path: "products/:id/edit/images", element: <EditProductPage /> },
+              { path: "products/:id/edit", element: <EditProductPage /> },
             ]
           }
         ]

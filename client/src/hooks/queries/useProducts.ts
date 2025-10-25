@@ -5,12 +5,15 @@ import { createProduct,
   getProductsByCategory,
   getProductsBySubcategory,
   updateProduct,
-} from "../services/products";
-import type { ProductDetail, ProductFormRequest } from "../types/product";
-import type { ProductFilterParams } from "../types/pagination";
+  deleteProduct,
+} from "../../services/products";
+import type { ProductDetail, ProductFormRequest } from "../../types/product";
+import type { ProductFilterParams } from "../../types/pagination";
+import toast from "react-hot-toast";
+import { useMutationWithToast } from "../utilities/useMutationWithToast";
 
-// NOTE: Error handling for product CRUD happens in FormShell so it's not needed in here
 
+// Getters
 export const useProduct = (productId: number) => {
   return useQuery({
     queryKey: ["product", productId],
@@ -50,32 +53,43 @@ export const useProductsBySubcategory = (
   });
 };
 
-// mutationFn(input: inputType) => functionToCallApi(input),
-// onSuccess: (data, variables (input), context) => {
-//    queryClient.setQueryData(['queryToSetOutputTo', idToSetOutputTo], output)
-//    queryClient.invalidateQueries({ queryKey: ['queryKeysToRefetch'] })
-
+// Mutations (with toast - similar setup, just pass messages)
 export const useCreateProduct = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
+  return useMutationWithToast({
     mutationFn: (product: ProductFormRequest) => createProduct(product),
-    onSuccess: (data: ProductDetail) => {
+    onSuccess: (data, _, queryClient) => {
       queryClient.setQueryData(['product', data.productId], data);
       queryClient.invalidateQueries({ queryKey: ['products'] });
     },
-  });
-};
+    successMessage: 'Product created!',
+    errorMessage: 'Failed to create product. Please try again.',
+  })
+}
 
 export const useUpdateProduct = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
+  return useMutationWithToast({
     mutationFn: ({ productId, product }: {
       productId: number;
       product: ProductFormRequest;
     }) => updateProduct(productId, product),
-    onSuccess: (data: ProductDetail) => {
+    onSuccess: (data: ProductDetail, _, queryClient) => {
       queryClient.setQueryData(['product', data.productId], data);
       queryClient.invalidateQueries({ queryKey: ['products'] });
     },
+    successMessage: 'Product updated!',
+    errorMessage: 'Failed to update product. Please try again.',
   });
 };
+
+export const useDeleteProduct = () => {
+  return useMutationWithToast({
+    mutationFn: ({ productId }: {
+      productId: number;
+    }) => deleteProduct(productId + 1000),
+    onSuccess: (_d, _v, queryClient) => {
+      queryClient.invalidateQueries({ queryKey: ['products']});
+    },
+    successMessage: 'Product deleted!',
+    errorMessage: 'Failed to delete product. Please try again.',
+  });
+}

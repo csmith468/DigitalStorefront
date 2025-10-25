@@ -1,20 +1,22 @@
 import { useNavigate } from "react-router-dom";
-import { useProducts } from "../../hooks/useProducts";
+import { useDeleteProduct, useProducts } from "../../hooks/queries/useProducts";
 import { LoadingScreen } from "../primitives/LoadingScreen";
-import { usePagination } from "../../hooks/usePagination";
+import { usePagination } from "../../hooks/utilities/usePagination";
 import { useState } from "react";
-import { useProductTypes } from "../../hooks/useCommon";
+import { useProductTypes } from "../../hooks/queries/useCommon";
 import { PaginationWrapper } from "../primitives/PaginationWrapper";
-import { LockClosedIcon, MagnifyingGlassIcon, PencilIcon } from "@heroicons/react/24/outline";
+import { LockClosedIcon, MagnifyingGlassIcon, PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { FormInput } from "../primitives/FormInput";
 import { FormSelect } from "../primitives/FormSelect";
 import { PageHeader } from "../primitives/PageHeader";
+import { ConfirmModal } from "../primitives/ConfirmModal";
 
 export function AdminProductList() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeSearch, setActiveSearch] = useState('');
   const [productTypeId, setProductTypeId] = useState<number | undefined>(undefined);
+  const [productIdToDelete, setProductIdToDelete] = useState<number | null>(null);
   const pagination = usePagination({
     initialPageSize: 10,
     pageSizeOptions: [10, 25, 50],
@@ -28,11 +30,28 @@ export function AdminProductList() {
     pageSize: pagination.pageSize,
   });
 
+  const deleteMutation = useDeleteProduct();
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setActiveSearch(searchQuery.trim());
     pagination.resetToFirstPage();
   };
+
+  const handleDelete = async () => {
+    if (productIdToDelete === null) return;
+    try {
+      await deleteMutation.mutateAsync({ productId: productIdToDelete });
+      setProductIdToDelete(null);
+  
+      const remainingItemsOnPage = (data?.totalCount || 0) - 1;
+      const maxPage =  Math.ceil(remainingItemsOnPage / pagination.pageSize);
+      if (pagination.page > maxPage && maxPage > 0)
+        pagination.onPageChange(maxPage);
+    } finally {
+      setProductIdToDelete(null);
+    }
+  }
 
   if (isLoading) {
     return <LoadingScreen message="Loading Products..." />;
@@ -59,7 +78,7 @@ export function AdminProductList() {
         <PageHeader 
           title="Product Management"
           returnLink='/'
-          returnText='Back to Home' // eventually admin main
+          returnText='Back to Home' // TODO: eventually admin main
         />
         <button
           onClick={() => navigate("/admin/products/create")}
@@ -155,21 +174,29 @@ export function AdminProductList() {
                         {product.priceIcon} {product.premiumPrice}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        {/* {product.isDemoProduct ? (
+                        {/* TODO: make form editor read-only for demo products */}
+                        {product.isDemoProduct ? (
                           <div className="flex items-center justify-end gap-2 text-gray-400">
                             <LockClosedIcon className="h-5 w-5" />
                             <span>Demo Product</span>
                           </div>
-                        ) : ( */}
+                        ) : (
                           <div className="flex items-center justify-end gap-2">
                             <button
                               onClick={() => navigate(`/admin/products/${product.productId}/edit`)}
+                              aria-label="Edit Product"
                               className="text-[var(--color-primary)] hover:text-[var(--color-primary-light)] flex items-center gap-1">
                               <PencilIcon className="h-5 w-5" />
-                              Edit
+                            </button>
+                            <button
+                              onClick={() => setProductIdToDelete(product.productId)}
+                              disabled={deleteMutation.isPending}
+                              aria-label="Delete Product"
+                              className="text-red-600 hover:text-red-800 flex items-center gap-1 disabled:opacity-50">
+                              <TrashIcon className="h-5 w-5" />
                             </button>
                           </div>
-                        {/* )} */}
+                        )}
                       </td>
                     </tr>
                   );
@@ -179,6 +206,16 @@ export function AdminProductList() {
           </table>
         </div>
       </PaginationWrapper>
+
+      <ConfirmModal
+        isOpen={productIdToDelete !== null}
+        title="Delete Product"
+        message="Are you sure you want to delete this product? This will also delete all associated images. This action cannot be undone."
+        confirmButtonMessage="Delete"
+        cancelButtonMessage="Cancel"
+        onConfirm={handleDelete}
+        onCancel={() => setProductIdToDelete(null)}
+      />
     </div>
   );
 }
