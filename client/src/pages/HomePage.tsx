@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../hooks/useUser';
 import type { ReactNode } from 'react';
+import { PageHeader } from '../components/primitives/PageHeader';
 
 interface FeatureCardProps {
   title: string;
@@ -28,19 +29,10 @@ export function HomePage() {
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-4xl">
-      {/* Hero Section */}
-      <div className="mb-6">
-        <h1 className="text-4xl font-bold text-text-primary mb-2">
-          Welcome to Digital Collectibles
-        </h1>
-        <div 
-          className="w-24 h-1 rounded-full mb-4" 
-          style={{ background: `linear-gradient(90deg, var(--color-primary) 0%, var(--color-accent) 100%)` }}
-        ></div>
-        <p className="text-lg text-text-secondary">
-          Inspired by virtual pet game economies - demonstrating admin console architecture, complex product management, and full-stack integration beyond basic e-commerce
-        </p>
-      </div>
+      <PageHeader
+        title="Welcome to Digital Collectibles"
+        subtitle="Inspired by virtual pet game economies - demonstrating admin console architecture, complex product management, and full-stack integration beyond basic e-commerce"
+      />
 
       <div className="grid md:grid-cols-2 gap-4 mb-6">
         <FeatureCard

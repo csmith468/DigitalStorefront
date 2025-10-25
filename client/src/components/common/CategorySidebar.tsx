@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getCategories } from "../services/categories";
+import { getCategories } from "../../services/categories";
 import { ChevronDownIcon, Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 import './CategorySidebar.css'
-import type { Category } from '../types/category';
-import { VIEW_ALL_SUBCATEGORY } from '../types/subcategory';
+import type { Category } from '../../types/category';
+import { VIEW_ALL_SUBCATEGORY } from '../../types/subcategory';
 
 const CategorySidebar = () => {
   const [categories, setCategories] = useState<Category[]>([]);

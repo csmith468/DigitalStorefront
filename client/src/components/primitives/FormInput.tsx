@@ -7,6 +7,7 @@ interface FormInputProps {
   label: string;
   type?: "text" | "email" | "password" | "number";
   required?: boolean;
+  disabled?: boolean;
   value: string | number;
   onChange: (field: string, value: string | number | null) => void;
   placeholder?: string;
@@ -19,6 +20,7 @@ export const FormInput: React.FC<FormInputProps> = ({
   label,
   type = "text",
   required = false,
+  disabled = false,
   value,
   onChange,
   placeholder,
@@ -32,6 +34,7 @@ export const FormInput: React.FC<FormInputProps> = ({
         id={id}
         type={type}
         required={required}
+        disabled={disabled}
         value={type !== "number" ? value : value == 0 ? "" : value.toString()}
         onChange={(e) =>
           onChange(id,
