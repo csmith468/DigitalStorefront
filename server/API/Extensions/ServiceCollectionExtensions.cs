@@ -1,7 +1,10 @@
 using System.Text;
+using FluentValidation;
+using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Versioning;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
@@ -42,8 +45,10 @@ public static class ServiceCollectionExtensions
         {
             IssuerSigningKey = tokenKey,
             ValidateIssuer = false,
-            ValidateIssuerSigningKey = false,
+            ValidateIssuerSigningKey = true,
             ValidateAudience = false,
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.Zero,
         };
 
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -52,6 +57,24 @@ public static class ServiceCollectionExtensions
                 options.TokenValidationParameters = tokenValidationParameters;
             });
 
+        return services;
+    }
+
+    public static IServiceCollection AddAuthorizationPolicies(this IServiceCollection services)
+    {
+        // NOTE: I hard-coded role names here to match the database exactly, but for production with roles 
+        // that may change a lot, I'd likely use an enum as a single source of truth and seed the database from 
+        // the enum on startup. This would let me autogenerate these policies with Enum.GetValues<UserRole>()
+        // and get rid of hard-coding. I decided the tradeoff wasn't necessary for the 3 roles in this project
+        // ADMIN Meaning: Can edit demo products
+        
+        services.AddAuthorization(options =>
+        {
+            options.AddPolicy("RequireAdmin", policy => policy.RequireRole("Admin"));
+            options.AddPolicy("CanManageProducts", policy => policy.RequireRole("Admin", "ProductWriter"));
+            options.AddPolicy("CanManageImages", policy => policy.RequireRole("Admin", "ImageManager"));
+        });
+        
         return services;
     }
 
@@ -89,6 +112,13 @@ public static class ServiceCollectionExtensions
         
         return services;
     }
+    
+    public static IServiceCollection AddValidation(this IServiceCollection services)
+    {
+        services.AddFluentValidationAutoValidation();
+        services.AddValidatorsFromAssemblyContaining<Program>();
+        return services;
+    }
 
     public static IServiceCollection AddApiVersioningConfig(this IServiceCollection services)
     {
@@ -115,5 +145,17 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
-    
+    public static IServiceCollection AddHealthChecksConfiguration(this IServiceCollection services, IConfiguration config)
+    {
+        services.AddHealthChecks()
+            .AddSqlServer(
+                config.GetConnectionString("DefaultConnection")!,
+                healthQuery: "SELECT 1;",
+                name: "sql-server",
+                failureStatus: HealthStatus.Unhealthy,
+                tags: ["db", "sql", "ready"],
+                timeout: TimeSpan.FromSeconds(3))
+            .AddCheck("self", () => HealthCheckResult.Healthy("API is running"), tags: ["self"]);
+        return services;
+    }
 }

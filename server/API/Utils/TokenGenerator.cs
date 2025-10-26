@@ -10,9 +10,10 @@ public class TokenGenerator(IServiceProvider serviceProvider)
 {
     private IConfiguration Config => serviceProvider.GetService<IConfiguration>()!;
     
-    public string GenerateToken(int userId)
+    public string GenerateToken(int userId, List<string> roles)
     {
-        var claims = new[] { new Claim("userId", userId.ToString()) };
+        var claims = new List<Claim> { new ("userId", userId.ToString()) };
+        claims.AddRange(roles.Select(role => new Claim("role", role)));
 
         var configTokenKey = Config.GetSection("AppSettings:TokenKey").Value;
         if (configTokenKey is null) throw new Exception("Cannot create token.");
