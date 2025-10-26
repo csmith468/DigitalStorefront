@@ -1,7 +1,10 @@
 using System.Text;
+using FluentValidation;
+using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Versioning;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
@@ -41,9 +44,11 @@ public static class ServiceCollectionExtensions
         var tokenValidationParameters = new TokenValidationParameters()
         {
             IssuerSigningKey = tokenKey,
-            ValidateIssuer = false,
-            ValidateIssuerSigningKey = false,
+            ValidateIssuer = true,
+            ValidateIssuerSigningKey = true,
             ValidateAudience = false,
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.Zero,
         };
 
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -89,6 +94,13 @@ public static class ServiceCollectionExtensions
         
         return services;
     }
+    
+    public static IServiceCollection AddValidation(this IServiceCollection services)
+    {
+        services.AddFluentValidationAutoValidation();
+        services.AddValidatorsFromAssemblyContaining<Program>();
+        return services;
+    }
 
     public static IServiceCollection AddApiVersioningConfig(this IServiceCollection services)
     {
@@ -115,5 +127,17 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
-    
+    public static IServiceCollection AddHealthChecksConfiguration(this IServiceCollection services, IConfiguration config)
+    {
+        services.AddHealthChecks()
+            .AddSqlServer(
+                config.GetConnectionString("DefaultConnection")!,
+                healthQuery: "SELECT 1;",
+                name: "sql-server",
+                failureStatus: HealthStatus.Unhealthy,
+                tags: ["db", "sql", "ready"],
+                timeout: TimeSpan.FromSeconds(3))
+            .AddCheck("self", () => HealthCheckResult.Healthy("API is running"), tags: ["self"]);
+        return services;
+    }
 }

@@ -12,7 +12,9 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddCorsConfiguration();
 builder.Services.AddAuthentication(builder.Configuration);
 builder.Services.AddApiVersioningConfig();
+builder.Services.AddValidation();
 builder.Services.AddSwaggerAuth();
+builder.Services.AddHealthChecksConfiguration(builder.Configuration);
 
 // Dependency Injection
 builder.Services.AddAutoRegistration(typeof(Program).Assembly);
@@ -48,6 +50,7 @@ app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.MapHealthCheckEndpoints();
 app.MapControllers();
 
 app.Run();

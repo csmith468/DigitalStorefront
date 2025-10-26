@@ -199,9 +199,7 @@ public class DataContextDapper : IDataContextDapper
           PaginationParams paginationParams, object? parameters = null, string orderBy = "1 DESC") where T : class
       {
           var countSql = $"SELECT COUNT(*) FROM ({baseQuery}) AS CountQuery";
-          Console.WriteLine($"COUNT SQL: {countSql}");
           var totalCount = await _db.ExecuteScalarAsync<int>(countSql, parameters, _transaction);
-          Console.WriteLine($"Total Count: {totalCount}");
 
           var paginatedSql = $"""
                               {baseQuery}
@@ -209,15 +207,12 @@ public class DataContextDapper : IDataContextDapper
                               OFFSET @skip ROWS
                               FETCH NEXT @pageSize ROWS ONLY
                               """;
-          Console.WriteLine($"PAGINATED SQL: {paginatedSql}");
-          Console.WriteLine($"Skip: {paginationParams.Skip}, PageSize: {paginationParams.PageSize}");
 
           var allParms = new DynamicParameters(parameters);
           allParms.Add("skip", paginationParams.Skip);
           allParms.Add("pageSize", paginationParams.PageSize);
 
           var items = await _db.QueryAsync<T>(paginatedSql, allParms);
-          Console.WriteLine($"Items returned: {items.Count()}");
           return (items, totalCount);
       }
 
