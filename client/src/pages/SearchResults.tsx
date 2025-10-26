@@ -4,7 +4,7 @@ import { useProducts } from "../hooks/queries/useProducts";
 import { usePagination } from "../hooks/utilities/usePagination";
 import { ProductsGrid } from "../components/product/ProductsGrid";
 
-export default function SearchResults() {
+export function SearchResults() {
   const [searchParams] = useSearchParams();
   const query = searchParams.get('q') || '';
   const pagination = usePagination();

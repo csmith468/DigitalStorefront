@@ -54,6 +54,12 @@ public class ProductController(ISharedContainer container) : BaseController(cont
         return (await _productService.GetProductByIdAsync(productId)).ToActionResult();
     }
 
+    [HttpGet("slug/{slug}")]
+    public async Task<ActionResult<ProductDetailDto>> GetProductBySlug(string slug)
+    {
+        return (await _productService.GetProductBySlugAsync(slug)).ToActionResult();
+    }
+
     [Authorize]
     [HttpPost]
     public async Task<ActionResult<ProductDetailDto>> CreateProduct([FromBody] ProductFormDto dto)

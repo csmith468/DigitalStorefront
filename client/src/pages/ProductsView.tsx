@@ -6,7 +6,7 @@ import { useCategories } from "../hooks/queries/useCategories";
 import { usePagination } from "../hooks/utilities/usePagination";
 import { ProductsGrid } from "../components/product/ProductsGrid";
 
-export default function ProductsView() {
+export function ProductsView() {
   const { categorySlug, subcategorySlug } = useParams();
   const { data: categories } = useCategories();
   const pagination = usePagination();

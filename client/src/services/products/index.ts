@@ -7,6 +7,11 @@ export const getProductById = async (productId: number): Promise<ProductDetail> 
   return response.data;
 };
 
+export const getProductBySlug = async (slug: string): Promise<ProductDetail> => {
+  const response = await apiClient.get<ProductDetail>(`/product/slug/${slug}`);
+  return response.data;
+}
+
 export const getProducts = async (params: ProductFilterParams): Promise<PaginatedResponse<Product>> => {
   const response = await apiClient.get<PaginatedResponse<Product>>('/product', { params });
   return response.data;

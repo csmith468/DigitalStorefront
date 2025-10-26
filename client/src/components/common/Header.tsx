@@ -4,11 +4,17 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AuthModal } from '../auth/AuthModal';
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
 import { 
-  ChevronDownIcon, UserCircleIcon, MagnifyingGlassIcon, XMarkIcon, UserPlusIcon, ArrowRightEndOnRectangleIcon
+  ChevronDownIcon, UserCircleIcon, MagnifyingGlassIcon, XMarkIcon, UserPlusIcon, ArrowRightEndOnRectangleIcon,
+  Bars3Icon
 } from '@heroicons/react/24/outline';
 import './Header.css';
 
-export function Header() {
+interface HeaderProps {
+  mobileMenuOpen: boolean;
+  setMobileMenuOpen: (open: boolean) => void;
+}
+
+export function Header({ mobileMenuOpen, setMobileMenuOpen }: HeaderProps) {
   const { user, logout } = useUser();
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
@@ -43,10 +49,28 @@ export function Header() {
   return (
     <>
       <header className="app-header">
-        <div className="flex justify-between items-center pl-16 lg:pl-0">
-          <Link to="/" className="header-h1 cursor-pointer">
-            Digital Collectibles
-          </Link>
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            {!mobileMenuOpen ? (
+              <button
+                onClick={() => setMobileMenuOpen(true)}
+                className="lg:hidden p-2 text-white hover:bg-white/10 rounded-md transition-colors"
+                aria-label="Open Menu"
+              ><Bars3Icon className="w-6 h-6" />
+              </button>
+            ) : (
+              <button
+                onClick={() => setMobileMenuOpen(false)}
+                className="lg:hidden p-2 text-white hover:bg-white/10 rounded-md transition-colors"
+                aria-label="Close Menu"
+              ><XMarkIcon className="w-6 h-6" />
+              </button>
+            )}
+
+            <Link to="/" className="header-h1 cursor-pointer">
+              Digital Collectibles
+            </Link>
+          </div>``
           <div className="flex items-center gap-1 md:gap-3">
             {!isAdminPage && (
               <>

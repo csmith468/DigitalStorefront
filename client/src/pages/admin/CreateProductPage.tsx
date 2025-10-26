@@ -7,11 +7,9 @@ export function CreateProductPage() {
   const navigate = useNavigate();
 
   const handleSuccess = (product?: ProductDetail) => {
-    console.log('handleSuccess called with:', product);
     if (product) {
       navigate(`/admin/products/${product.productId}/edit?tab=images`);
     } else {
-      console.log('No product received, going to list');
       navigate('/admin/products');
     }
   };

@@ -73,8 +73,8 @@ export function AdminProductList() {
   const tableHeaderStyle = "px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider";
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-8">
+    <div className="mb-8">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
         <PageHeader 
           title="Product Management"
           returnLink='/'
@@ -82,12 +82,12 @@ export function AdminProductList() {
         />
         <button
           onClick={() => navigate("/admin/products/create")}
-          className="px-4 py-2 bg-[var(--color-primary)] text-white rounded-md hover:opacity-90 font-medium">
+          className="px-4 py-2 bg-[var(--color-primary)] text-white rounded-md hover:opacity-90 font-medium self-end md:self-auto">
           + Create New Product
         </button>
       </div>
 
-      <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+       <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
         <form onSubmit={handleSearch} className="flex gap-2 items-end">
           <div className="flex-1">
             <FormInput
@@ -124,8 +124,8 @@ export function AdminProductList() {
         {...pagination}
         totalPages={data?.totalPages || 0}
         totalCount={data?.totalCount || 0}>
-        <div className="overflow-x-auto bg-white rounded-lg shadow">
-          <table className="min-w-full divide-y divide-gray-200">
+        <div className="w-full overflow-x-auto bg-white rounded-lg shadow">
+          <table className="w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
                 <th className={tableHeaderStyle}>Thumbnail</th>
@@ -150,7 +150,10 @@ export function AdminProductList() {
 
                   return (
                     <tr key={product.productId} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td 
+                        onClick={() => navigate(`/admin/products/${product.productId}/edit?tab=images`)}
+                        className="px-6 py-4 whitespace-nowrap cursor-pointer"
+                      >
                         {product.primaryImage ? (
                           <img
                             src={product.primaryImage.imageUrl}
@@ -163,7 +166,10 @@ export function AdminProductList() {
                           </div>
                         )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td 
+                        onClick={() => navigate(`/admin/products/${product.productId}/edit?tab=details`)}
+                        className="px-6 py-4 whitespace-nowrap cursor-pointer"
+                      >
                         <div className="text-sm font-medium text-gray-900">{product.name}</div>
                         <div className="text-sm text-gray-500">{product.slug}</div>
                       </td>
@@ -171,16 +177,19 @@ export function AdminProductList() {
                         {productType?.typeName || "Unknown"}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {product.priceIcon} {product.premiumPrice}
+                        <div className="flex flex-col gap-1">
+                          <div>{product.priceIcon} {product.price}</div>
+                          <div className="text-gray-500">{product.priceIcon} {product.premiumPrice}</div>
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         {/* TODO: make form editor read-only for demo products */}
-                        {product.isDemoProduct ? (
+                          {product.isDemoProduct ? (
                           <div className="flex items-center justify-end gap-2 text-gray-400">
                             <LockClosedIcon className="h-5 w-5" />
                             <span>Demo Product</span>
                           </div>
-                        ) : (
+                          ) : (
                           <div className="flex items-center justify-end gap-2">
                             <button
                               onClick={() => navigate(`/admin/products/${product.productId}/edit`)}
@@ -196,7 +205,7 @@ export function AdminProductList() {
                               <TrashIcon className="h-5 w-5" />
                             </button>
                           </div>
-                        )}
+                          )}
                       </td>
                     </tr>
                   );

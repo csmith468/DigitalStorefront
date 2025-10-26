@@ -42,7 +42,11 @@ export function FormInput ({
               : Number(e.target.value as string) || 0
           )
         }
-        onWheel={(e) => e.currentTarget.blur()}
+        onWheel={(e) => {
+          // Note: prevent scroll wheel from incrementing/decrementing numbers
+          if (type === 'number' && document.activeElement === e.currentTarget) 
+            e.currentTarget.blur();
+        }}
         placeholder={placeholder}
         className={formStyles.input}
         step={step}

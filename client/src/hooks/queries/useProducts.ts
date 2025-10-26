@@ -6,10 +6,10 @@ import { createProduct,
   getProductsBySubcategory,
   updateProduct,
   deleteProduct,
+  getProductBySlug,
 } from "../../services/products";
 import type { ProductDetail, ProductFormRequest } from "../../types/product";
 import type { ProductFilterParams } from "../../types/pagination";
-import toast from "react-hot-toast";
 import { useMutationWithToast } from "../utilities/useMutationWithToast";
 
 
@@ -21,6 +21,15 @@ export const useProduct = (productId: number) => {
     enabled: !!productId,
   });
 };
+
+export const useProductBySlug = (slug: string) => {
+  return useQuery({
+    queryKey: ["product", slug],
+    queryFn: () => getProductBySlug(slug),
+    enabled: !!slug,
+  });
+
+}
 
 export const useProducts = (filters: ProductFilterParams) => {
   return useQuery({
@@ -85,7 +94,7 @@ export const useDeleteProduct = () => {
   return useMutationWithToast({
     mutationFn: ({ productId }: {
       productId: number;
-    }) => deleteProduct(productId + 1000),
+    }) => deleteProduct(productId),
     onSuccess: (_d, _v, queryClient) => {
       queryClient.invalidateQueries({ queryKey: ['products']});
     },

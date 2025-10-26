@@ -29,7 +29,7 @@ export function ProductForm ({
     productTypeId: existingProduct?.productTypeId || 0,
     description: existingProduct?.description || null,
     isTradeable: existingProduct?.isTradeable || false,
-    isNew: existingProduct?.isNew || false,
+    isNew: existingProduct?.isNew || true,
     isPromotional: existingProduct?.isPromotional || false,
     isExclusive: existingProduct?.isExclusive || false,
     price: existingProduct?.price || 0,

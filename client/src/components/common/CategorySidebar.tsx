@@ -6,11 +6,15 @@ import './CategorySidebar.css'
 import type { Category } from '../../types/category';
 import { VIEW_ALL_SUBCATEGORY } from '../../types/subcategory';
 
-const CategorySidebar = () => {
+interface CategorySidebarProps {
+  mobileMenuOpen: boolean;
+  setMobileMenuOpen: (open: boolean) => void;
+}
+
+const CategorySidebar = ({ mobileMenuOpen, setMobileMenuOpen }: CategorySidebarProps) => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState<boolean>(true);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
 
   useEffect(() => {
     const loadCategories = async () => {
@@ -52,15 +56,6 @@ const CategorySidebar = () => {
 
   return (
     <>
-      {!mobileMenuOpen && (
-        <button
-          onClick={() => setMobileMenuOpen(true)}
-          className="mobile-menu-button lg:hidden"
-          aria-label="Open Menu">
-          <Bars3Icon className="w-6 h-6 text-text-primary" />
-        </button>
-      )}
-
       {mobileMenuOpen && (
         <div
           className="fixed inset-0 bg-overlay-dark z-30 lg:hidden"
@@ -76,12 +71,6 @@ const CategorySidebar = () => {
             <h2 className="font-semibold text-primary text-sm uppercase tracking-wider">
               Browse Categories
             </h2>
-            <button
-              onClick={() => setMobileMenuOpen(false)}
-              className="lg:hidden p-1 hover:bg-hover-bg rounded"
-              aria-label="Close Menu">
-              <XMarkIcon className="w-5 h-5 text-text-primary" />
-            </button>
           </div>
         </div>
         
