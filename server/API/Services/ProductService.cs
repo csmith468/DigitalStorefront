@@ -115,13 +115,12 @@ public class ProductService(ISharedContainer container) : BaseService(container)
     {
         if (!await CanUserCreateProduct(userId))
             return Result<ProductDetailDto>.Failure("You do not have permission to create a product", HttpStatusCode.Unauthorized);
-        
+        if (await Dapper.ExistsByFieldAsync<Product>("name", dto.Name))
+            return Result<ProductDetailDto>.Failure($"Product name {dto.Name} already exists", HttpStatusCode.BadRequest);
         if (await Dapper.ExistsByFieldAsync<Product>("slug", dto.Slug))
             return Result<ProductDetailDto>.Failure($"Product slug {dto.Slug} already exists", HttpStatusCode.BadRequest);
-
-        var validationResult = await ValidateProduct(dto);
-        if (!validationResult.IsSuccess)
-            return validationResult.ToFailure<bool, ProductDetailDto>();
+        if (dto.PremiumPrice > dto.Price)
+            return Result<ProductDetailDto>.Failure("Premium price cannot exceed regular price", HttpStatusCode.BadRequest);
 
         var product = Mapper.Map<ProductFormDto, Product>(dto);
         product.Slug = product.Slug.ToLower();
@@ -150,12 +149,12 @@ public class ProductService(ISharedContainer container) : BaseService(container)
             return Result<ProductDetailDto>.Failure("Product could not be found");
         if (product.IsDemoProduct && Config.GetValue<bool>("DemoMode"))
             return Result<ProductDetailDto>.Failure("Demo products cannot be updated", HttpStatusCode.Unauthorized);
+        if (product.Name != dto.Name && await Dapper.ExistsByFieldAsync<Product>("name", dto.Name))
+            return Result<ProductDetailDto>.Failure($"Name {dto.Name} already exists", HttpStatusCode.BadRequest);
         if (product.Slug != dto.Slug && await Dapper.ExistsByFieldAsync<Product>("slug", dto.Slug))
             return Result<ProductDetailDto>.Failure($"Slug {dto.Slug} already exists", HttpStatusCode.BadRequest);
-
-        var validationResult = await ValidateProduct(dto);
-        if (!validationResult.IsSuccess)
-            return validationResult.ToFailure<bool, ProductDetailDto>();
+        if (dto.PremiumPrice > dto.Price)
+            return Result<ProductDetailDto>.Failure("Premium price cannot exceed regular price", HttpStatusCode.BadRequest);
 
         await Dapper.WithTransactionAsync(async () =>
         {
@@ -260,33 +259,5 @@ public class ProductService(ISharedContainer container) : BaseService(container)
     private string GenerateSku(int productId, string slug)
     {
         return slug[..3].ToUpper() + "-" + productId.ToString("D5");
-    }
-
-    private async Task<Result<bool>> ValidateProduct(ProductFormDto dto)
-    {
-        try
-        {
-            var productTypeExists = await ValidateExistsAsync<ProductType>(dto.ProductTypeId);
-            if (!productTypeExists.IsSuccess)
-                return productTypeExists.ToFailure<bool, bool>();
-            if (!PriceTypes.All.Select(pt => pt.PriceTypeId).Contains(dto.PriceTypeId))
-                return Result<bool>.Failure("Price type could not be found", HttpStatusCode.NotFound);
-            if (dto.Name == "")
-                return Result<bool>.Failure("Product name cannot be empty", HttpStatusCode.BadRequest);
-            if (dto.Slug == "")
-                return Result<bool>.Failure("Product slug cannot be empty", HttpStatusCode.BadRequest);
-            if (dto.PremiumPrice >= dto.Price)
-                return Result<bool>.Failure("Premium price cannot be greater than regular price",
-                    HttpStatusCode.BadRequest);
-            if (dto.SubcategoryIds.Count == 0)
-                return Result<bool>.Failure("Product must have at least one subcategory", HttpStatusCode.BadRequest);
-            if (dto.Price <= 0 || dto.PremiumPrice <= 0)
-                return Result<bool>.Failure("Prices must be greater than zero", HttpStatusCode.BadRequest);
-        }
-        catch (Exception ex)
-        {
-            return Result<bool>.Failure(ex.Message, HttpStatusCode.InternalServerError);
-        }
-        return Result<bool>.Success(true);
     }
 }
