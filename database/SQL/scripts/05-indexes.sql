@@ -7,13 +7,15 @@ CREATE NONCLUSTERED INDEX IX_ProductImage_ProductId ON dbo.productImage(productI
 CREATE NONCLUSTERED INDEX IX_Subcategory_CategoryId ON dbo.subcategory(categoryId);
 CREATE NONCLUSTERED INDEX IX_User_Username ON dsf.[user](username);
 CREATE NONCLUSTERED INDEX IX_User_Email ON dsf.[user](email);
+CREATE NONCLUSTERED INDEX IX_UserRole_UserId ON dsf.[userRole](userId);
+CREATE NONCLUSTERED INDEX IX_UserRole_RoleId ON dsf.[userRole](roleId);
 CREATE NONCLUSTERED INDEX IX_Auth_UserId ON dsf.auth(userId);
 
 -- Search performance
-CREATE NONCLUSTERED INDEX IX_Product_Name ON dbo.product(name) INCLUDE (slug, productTypeId, price);
+CREATE UNIQUE NONCLUSTERED INDEX IX_Product_Name ON dbo.product(name) INCLUDE (slug, productTypeId, price);
 CREATE UNIQUE NONCLUSTERED INDEX IX_Product_Slug_Unique ON dbo.product(slug);
-CREATE NONCLUSTERED INDEX IX_Category_Slug ON dbo.category(slug);
-CREATE NONCLUSTERED INDEX IX_Subcategory_Slug ON dbo.subcategory(slug);
+CREATE UNIQUE NONCLUSTERED INDEX IX_Category_Slug ON dbo.category(slug);
+CREATE UNIQUE NONCLUSTERED INDEX IX_Subcategory_Slug ON dbo.subcategory(slug);
 CREATE NONCLUSTERED INDEX IX_Product_CreatedBy ON dbo.product(createdBy);
 
 -- Composite indexes for common queries

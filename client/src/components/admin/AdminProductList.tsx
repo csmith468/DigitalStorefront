@@ -10,6 +10,7 @@ import { FormInput } from "../primitives/FormInput";
 import { FormSelect } from "../primitives/FormSelect";
 import { PageHeader } from "../primitives/PageHeader";
 import { ConfirmModal } from "../primitives/ConfirmModal";
+import { useUser } from "../../contexts/useUser";
 
 export function AdminProductList() {
   const navigate = useNavigate();
@@ -29,6 +30,7 @@ export function AdminProductList() {
     page: pagination.page,
     pageSize: pagination.pageSize,
   });
+  const { isAdmin } = useUser();
 
   const deleteMutation = useDeleteProduct();
 
@@ -184,7 +186,7 @@ export function AdminProductList() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         {/* TODO: make form editor read-only for demo products */}
-                          {product.isDemoProduct ? (
+                          {product.isDemoProduct && !isAdmin() ? (
                           <div className="flex items-center justify-end gap-2 text-gray-400">
                             <LockClosedIcon className="h-5 w-5" />
                             <span>Demo Product</span>

@@ -11,6 +11,7 @@ builder.Services.AddHttpContextAccessor();
 // Application Services
 builder.Services.AddCorsConfiguration();
 builder.Services.AddAuthentication(builder.Configuration);
+builder.Services.AddAuthorizationPolicies();
 builder.Services.AddApiVersioningConfig();
 builder.Services.AddValidation();
 builder.Services.AddSwaggerAuth();

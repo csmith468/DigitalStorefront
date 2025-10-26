@@ -5,6 +5,7 @@ using API.Models.Dtos;
 using API.Setup;
 using API.Utils;
 using API.Extensions;
+using Api.Models.DsfTables;
 
 namespace API.Services;
 
@@ -38,13 +39,26 @@ public class AuthService(ISharedContainer container) : BaseService(container), I
                 LastName = userDto.LastName,
             });
             await CreateAuthAsync(userId, userDto.Password);
-        });
 
-        var token = TokenGen.GenerateToken(userId);
+            var sql = "SELECT * FROM dsf.role WHERE roleName in ('ProductWriter', 'ImageManager')";
+            var roles = await Dapper.QueryAsync<Role>(sql);
+            foreach (var role in roles)
+            {
+                var userRole = new UserRole { UserId = userId, RoleId = role.RoleId };
+                await Dapper.InsertAsync(userRole);
+            }
+            
+        });
+        if (userId == 0)
+            return Result<AuthResponseDto>.Failure("Failed to register user.");
+
+        var roles = await GetUserRolesAsync(userId);
+        var token = TokenGen.GenerateToken(userId, roles);
         var response = new AuthResponseDto
         {
             UserId = userId,
             Username = userDto.Username,
+            Roles = roles,
             Token = token
         };
         
@@ -62,8 +76,8 @@ public class AuthService(ISharedContainer container) : BaseService(container), I
         var userAuth = (await Dapper.GetByFieldAsync<Auth>("userId", user.UserId)).FirstOrDefault();
         if (userAuth == null || !PasswordHasher.VerifyPassword(userDto.Password, userAuth.PasswordSalt, userAuth.PasswordHash))
             return Result<AuthResponseDto>.Failure(errorMessage, HttpStatusCode.Unauthorized);
-
-        return Result<AuthResponseDto>.Success(CreateAuthResponseDtoFromUser(user));
+        
+        return Result<AuthResponseDto>.Success(await CreateAuthResponseDtoFromUser(user));
     }
 
     public async Task<Result<AuthResponseDto>> RefreshToken(string userIdStr)
@@ -75,18 +89,16 @@ public class AuthService(ISharedContainer container) : BaseService(container), I
         if (user == null) 
             return Result<AuthResponseDto>.Failure("Invalid token.", HttpStatusCode.Unauthorized);
 
-        return Result<AuthResponseDto>.Success(CreateAuthResponseDtoFromUser(user));
+        return Result<AuthResponseDto>.Success(await CreateAuthResponseDtoFromUser(user));
     }
     
     private async Task<Result<bool>> ValidateRegistrationAsync(UserRegisterDto user)
     {
-        if (user.Password != user.ConfirmPassword)
-            return Result<bool>.Failure("Passwords do not match.", HttpStatusCode.BadRequest);
         if (user.Email is not null && await Dapper.ExistsByFieldAsync<User>("email", user.Email))
             return Result<bool>.Failure("Email already exists.", HttpStatusCode.BadRequest);
         if (await Dapper.ExistsByFieldAsync<User>("username", user.Username))
             return Result<bool>.Failure("Username already exists.", HttpStatusCode.BadRequest);
-        return  Result<bool>.Success(true);
+        return Result<bool>.Success(true);
     }
     
     private async Task CreateAuthAsync(int userId, string password)
@@ -100,15 +112,27 @@ public class AuthService(ISharedContainer container) : BaseService(container), I
         });
     }
 
-    private AuthResponseDto CreateAuthResponseDtoFromUser(User user)
+    private async Task<AuthResponseDto> CreateAuthResponseDtoFromUser(User user)
     {
-        var response = new AuthResponseDto
+        var roles = await GetUserRolesAsync(user.UserId);
+        
+        return new AuthResponseDto
         {
             UserId = user.UserId,
             Username = user.Username,
-            Token = TokenGen.GenerateToken(user.UserId)
+            Roles = roles,
+            Token = TokenGen.GenerateToken(user.UserId, roles)
         };
-        
-        return response;
+    }
+
+    private async Task<List<string>> GetUserRolesAsync(int userId)
+    {
+        var sql = """
+                  SELECT r.roleName
+                  FROM dsf.userRole ur
+                  JOIN dsf.role r ON ur.roleId = r.roleId
+                  WHERE ur.userId = @userId
+                  """;
+        return (await Dapper.QueryAsync<string>(sql, new { userId })).ToList();
     }
 }

@@ -15,7 +15,7 @@ interface HeaderProps {
 }
 
 export function Header({ mobileMenuOpen, setMobileMenuOpen }: HeaderProps) {
-  const { user, logout } = useUser();
+  const { user, logout, roles } = useUser();
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
@@ -114,6 +114,20 @@ export function Header({ mobileMenuOpen, setMobileMenuOpen }: HeaderProps) {
                 </MenuButton>
 
                 <MenuItems className="absolute right-0 mt-2 w-48 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                  <div className="px-4 py-3 border-b border-gray-200">
+                    <p className="text-sm font-medium text-gray-900">{user.username}</p>
+
+                    <div className="mt-2">
+                      <p className="text-xs text-gray-500 font-semibold mb-1">Your Roles:</p>
+                      {roles.length > 0 ? (
+                        <ul className="text-xs text-gray-600 space-y-1">
+                          {roles.map((role) => (<li key={role}>• {role}</li>))}
+                        </ul>
+                      ) : (
+                        <p className="text-xs text-gray-400 italic">No roles assigned</p>
+                      )}
+                    </div>
+                  </div>
                     <div className="py-1">
                       <MenuItem>{({ focus }) => (
                         <button onClick={() => navigate('/admin/products')} 

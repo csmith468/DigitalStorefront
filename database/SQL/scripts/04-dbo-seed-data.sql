@@ -1,15 +1,12 @@
 USE DigitalStorefront;
 GO
 
--- Create seed user for initial inserts
-INSERT INTO [dsf].[user] (username, firstName, lastName, email, isActive, isAdmin)
-VALUES ('seedUser', 'Seed', 'User', NULL, 0, 1);
+-- Get user created in previous step to be creator of all demo data
+DECLARE @userId INT = (SELECT TOP(1) userId FROM dsf.[user]);
 
-DECLARE @userId INT = SCOPE_IDENTITY();
 DECLARE @coinsPriceTypeId INT = 1;
 DECLARE @usdPriceTypeId INT = 2;
 
--- Insert Product Types
 INSERT INTO dbo.productType (typeName, typeCode, description) VALUES
   ('Pet', 'pet', 'Virtual pets for adoption'),
   ('Furniture', 'furniture', 'Room decorations and furniture'),
@@ -17,7 +14,6 @@ INSERT INTO dbo.productType (typeName, typeCode, description) VALUES
   ('Food', 'food', 'Pet food and treats'),
   ('Bundle', 'bundle', 'Product bundles and packages');
 
--- Insert Category
 INSERT INTO dbo.category (name, slug, displayOrder, createdBy) 
 SELECT name, slug, displayOrder, @userId
 FROM (VALUES 
@@ -28,7 +24,6 @@ FROM (VALUES
   ('Room Items', 'room-items', 5)
 ) AS v(name, slug, displayOrder);
 
--- Insert Subcategory with inline category lookups
 INSERT INTO dbo.subcategory (categoryId, name, slug, displayOrder, createdBy) 
 SELECT c.categoryId, s.name, s.slug, s.displayOrder, @userId
 FROM (VALUES
@@ -67,7 +62,7 @@ DECLARE @ProductData TABLE (
   name NVARCHAR(200),
   slug NVARCHAR(200),
   productType NVARCHAR(20),
-  priceType NVARCHAR(10),
+  priceTypeId INT,
   price DECIMAL(10,2),
   premiumPrice DECIMAL(10,2),
   isTradeable BIT,
@@ -76,7 +71,7 @@ DECLARE @ProductData TABLE (
 
 -- Insert all product data
 INSERT INTO @ProductData VALUES
-  -- Virtual Pets (pet type, coins)
+  -- Virtual Pets
   ('Cocoa Corgi', 'cocoa-corgi', 'pet', @coinsPriceTypeId, 10000, 8000, 0, 'This adorable short-legged pup loves to waddle around your room and perform silly tricks! With fluffy cocoa-colored fur and a perpetual smile, this pup brings joy to every virtual playdate.'),
   ('Orange Corgi', 'orange-corgi', 'pet', @coinsPriceTypeId, 10000, 8000, 0, 'This adorable short-legged pup loves to waddle around your room and perform silly tricks! With fluffy orange fur and a perpetual smile, this pup brings joy to every virtual playdate.'),
   ('Stardust Dragon', 'stardust-dragon', 'pet', @coinsPriceTypeId, 12000, 10000, 0, 'A shimmering purple dragon with constellation patterns on its wings. This magical companion breathes sparkles instead of fire.'),
@@ -90,7 +85,7 @@ INSERT INTO @ProductData VALUES
   ('Cherry Blossom Panda', 'cherry-blossom-panda', 'pet', @coinsPriceTypeId, 12000, 10000, 0, 'Adorned with delicate pink flower markings, this gentle panda practices tai chi movements! It loves munching bamboo shoots and rolling playfully on soft grass.'),
   ('Red Velvet Cat', 'red-velvet-cat', 'pet', @coinsPriceTypeId, 9000, 7000, 0, 'This cuddly cat looks like its favorite dish - a red velvet cake slice with cream cheese icing! You may find it baking in the kitchen in its free time.'),
 
-  -- Clothing (clothing type, coins)
+  -- Clothing
   ('Star Sweater', 'star-sweater', 'clothing', @coinsPriceTypeId, 2000, 1500, 0, 'A cozy knit sweater with multi-colored stars! Perfect for an evening stroll in the park.'),
   ('Pink Blouse', 'pink-blouse', 'clothing', @coinsPriceTypeId, 1500, 1000, 0, 'A casual pink blouse for every day wear!'),
   ('Galaxy Tank', 'galaxy-tank', 'clothing', @coinsPriceTypeId, 2000, 1500, 0, 'A sleeveless tank top with a deep space design featuring swirling galaxies, distant stars, and nebula clouds in deep purples, blues, and silver. Perfect for aspiring astronauts and space explorers.'),
@@ -102,7 +97,7 @@ INSERT INTO @ProductData VALUES
   ('Cloud Sneakers', 'cloud-sneakers', 'clothing', @coinsPriceTypeId, 1500, 1000, 0, 'These puffy white sneakers let your pet bounce extra high and leave little cloud puffs with each step. Great for athletic activities!'),
   ('Red Rocker Collar', 'red-rocker-collar', 'clothing', @coinsPriceTypeId, 1500, 1000, 0, 'This red collar shows your pet is really into rock and roll!'),
   
-  -- Fall Clothing Items (clothing type, coins)
+  -- Fall Clothing Items
   ('Harvest Moon Hoodie', 'harvest-moon-hoodie', 'clothing', @coinsPriceTypeId, 2500, 2000, 0, 'A cozy burnt orange hoodie featuring a glowing moon design with falling autumn leaves. The front pocket is shaped like a basket for collecting acorns.'),
   ('Maple Leaf Sweater', 'maple-leaf-sweater', 'clothing', @coinsPriceTypeId, 2200, 1800, 0, 'A cozy autumn sweater featuring beautiful maple leaf patterns in warm fall colors. The leaves are scattered across the fabric in shades of red, orange, and golden yellow, perfect for celebrating the changing seasons.'),
   ('Pumpkin Patch Overalls', 'pumpkin-patch-overalls', 'clothing', @coinsPriceTypeId, 2300, 1900, 0, 'Denim overalls with orange pumpkin patches on the knees and an embroidered vine pattern climbing up one leg.'),
@@ -114,7 +109,7 @@ INSERT INTO @ProductData VALUES
   ('Turkey Trot Hat', 'turkey-trot-hat', 'clothing', @coinsPriceTypeId, 1500, 1200, 0, 'A pilgrim-style hat with a turkey feather tucked in the band that bobbles when your pet moves.'),
   ('Apple Cider Mittens', 'apple-cider-mittens', 'clothing', @coinsPriceTypeId, 800, 600, 0, 'Soft red mittens woven with quality yarn, complete with green stems on top to look like apples.'),
   
-  -- Beach Theme Items (furniture type, coins, tradeable)
+  -- Beach Theme Items
   ('Tropical Horizon Wallpaper', 'tropical-horizon-wallpaper', 'furniture', @coinsPriceTypeId, 800, 600, 1, 'Painted ocean vista with sailboats drifting across turquoise waters and seagulls soaring through cotton candy clouds.'),
   ('Sandy Shore Rug', 'sandy-shore-rug', 'furniture', @coinsPriceTypeId, 800, 600, 1, 'Realistic beach sand texture complete with scattered seashells, starfish, and occasional foam from gentle waves.'),
   ('Driftwood Lounger', 'driftwood-lounger', 'furniture', @coinsPriceTypeId, 1200, 900, 1, 'A rustic beach chair crafted from weathered driftwood with coral-colored cushions and rope accents.'),
@@ -174,7 +169,7 @@ SELECT
 FROM @ProductData pd
 JOIN dbo.productType pt ON pt.typeCode = pd.productType
 
--- Product to Subcategory mappings using VALUES constructor
+
 INSERT INTO dbo.productSubcategory (productId, subcategoryId, createdBy)
 SELECT p.productId, s.subcategoryId, @userId
 FROM (VALUES

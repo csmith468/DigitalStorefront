@@ -23,11 +23,11 @@ public class ProductFormDtoValidator : AbstractValidator<ProductFormDto>
         
         RuleFor(p => p.Price)
             .GreaterThan(0).WithMessage("Price must be greater than 0")
-            .LessThanOrEqualTo(1000).WithMessage("Price must be less than 1000");
+            .LessThanOrEqualTo(99999).WithMessage("Price must be less than 99999");
         
         RuleFor(p => p.PremiumPrice)
             .GreaterThan(0).WithMessage("Premium price must be greater than 0")
-            .LessThanOrEqualTo(1000).WithMessage("Premium price must be less than 1000");
+            .LessThanOrEqualTo(99999).WithMessage("Premium price must be less than 99999");
 
         RuleFor(p => p.PriceTypeId)
             .Must(BeValidPriceType).WithMessage("Invalid price type");

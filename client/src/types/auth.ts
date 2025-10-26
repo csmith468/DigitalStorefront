@@ -2,6 +2,7 @@ export interface Auth {
   userId: number;
   username: string;
   token: string;
+  roles: string[];
 }
 
 export interface LoginRequest {
