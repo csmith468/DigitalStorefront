@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ProductImage } from "../../types/product";
 import { useDeleteProductImage, useReorderProductImages, useSetImageAsPrimary, useUploadProductImage } from "../../hooks/queries/useProductImages";
 import { FormInput } from "../primitives/FormInput";
@@ -31,6 +31,7 @@ export function ProductImageManager({ productId, images, onImagesChange }: Produ
   const setPrimaryMutation = useSetImageAsPrimary();
   const reorderMutation = useReorderProductImages();
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const MAX_IMAGES = 5;
   const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
   const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
@@ -109,6 +110,9 @@ export function ProductImageManager({ productId, images, onImagesChange }: Produ
     setAltText('');
     setSetAsPrimary(false);
     setFileError(null);
+
+    if (fileInputRef.current)
+      fileInputRef.current.value = '';
 
     onImagesChange();
   };
@@ -198,13 +202,14 @@ export function ProductImageManager({ productId, images, onImagesChange }: Produ
             <label className={formStyles.label}>Select Image</label>
             <input
               type="file"
+              ref={fileInputRef}
               accept={ALLOWED_TYPES.join(',')}
               onChange={handleFileSelect}
               disabled={!canUploadMore || isUploading}
-              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed"
+              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-primary-dark file:cursor-pointer file:disabled:cursor-not-allowed disabled:opacity-50"
             />
             <p className="text-xs text-gray-500 mt-1">
-              Max size: {MAX_FILE_SIZE / 1024 / 1024}MB. Formats: JPG, PNG, GIF, WebP
+              Max Size: {MAX_FILE_SIZE / 1024 / 1024}MB. Formats: JPG, PNG, GIF, WebP
             </p>
             {fileError && (
               <p className="text-sm text-red-600 mt-1">{fileError}</p>
@@ -249,7 +254,7 @@ export function ProductImageManager({ productId, images, onImagesChange }: Produ
           <button
             onClick={handleUpload}
             disabled={!selectedFile || isUploading || !canUploadMore || !!fileError}
-            className="w-full bg-primary text-white py-2 px-4 rounded-lg font-medium hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-primary text-white py-2 px-4 rounded-lg font-medium hover:bg-primary-dark transition-colors disabled:opacity-50 file:cursor-pointer disabled:cursor-not-allowed"
           >
             {isUploading ? 'Uploading...' : 'Upload Image'}
           </button>

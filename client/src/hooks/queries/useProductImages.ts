@@ -63,7 +63,7 @@ export const useReorderProductImages = () => {
     }) => reorderProductImages(productId, orderedImageIds),
     onSuccess: (_, variables, queryClient) => {
       queryClient.invalidateQueries({
-        queryKey: ['product"', variables.productId],
+        queryKey: ['product', variables.productId],
       });
       queryClient.invalidateQueries({ queryKey: ['products'] });
     },

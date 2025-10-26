@@ -13,6 +13,7 @@ namespace API.Services;
 public interface IProductService
 {
     Task<Result<ProductDetailDto>> GetProductByIdAsync(int productId);
+    Task<Result<ProductDetailDto>> GetProductBySlugAsync(string slug);
     Task<Result<PaginatedResponse<ProductDto>>> GetProductsAsync(ProductFilterParams filterParams);
     Task<Result<ProductDetailDto>> CreateProductAsync(ProductFormDto dto, int userId);
     Task<Result<ProductDetailDto>> UpdateProductAsync(int productId, ProductFormDto dto);
@@ -30,6 +31,16 @@ public class ProductService(ISharedContainer container) : BaseService(container)
             return productResult.ToFailure<Product, ProductDetailDto>();
         
         var productDetailDto = await ConvertProductToProductDetailDto(productResult.Data);
+        return Result<ProductDetailDto>.Success(productDetailDto);
+    }
+
+    public async Task<Result<ProductDetailDto>> GetProductBySlugAsync(string slug)
+    {
+        var product = (await Dapper.GetByFieldAsync<Product>("slug", slug)).FirstOrDefault();
+        if (product == null)
+            Result<ProductDetailDto>.Failure("Product could not be found");
+        
+        var productDetailDto = await ConvertProductToProductDetailDto(product!);
         return Result<ProductDetailDto>.Success(productDetailDto);
     }
 
@@ -113,6 +124,7 @@ public class ProductService(ISharedContainer container) : BaseService(container)
             return validationResult.ToFailure<bool, ProductDetailDto>();
 
         var product = Mapper.Map<ProductFormDto, Product>(dto);
+        product.Slug = product.Slug.ToLower();
         await Dapper.WithTransactionAsync(async () =>
         {
             product.ProductId = await Dapper.InsertAsync(product);
@@ -222,6 +234,9 @@ public class ProductService(ISharedContainer container) : BaseService(container)
         var productSubcategories = await Dapper.GetByFieldAsync<ProductSubcategory>("productId", product.ProductId);
         var subcategories = await Dapper.GetWhereInAsync<Subcategory>("subcategoryId", productSubcategories.Select(s => s.SubcategoryId).ToList());
         detailDto.Subcategories = subcategories.Select(s => Mapper.Map<Subcategory, SubcategoryDto>(s)).ToList();
+        
+        var priceType = PriceTypes.All.FirstOrDefault(pt => pt.PriceTypeId == product.PriceTypeId);
+        detailDto.PriceIcon = priceType != null ? priceType.Icon : "";
         
         return detailDto;
     }
