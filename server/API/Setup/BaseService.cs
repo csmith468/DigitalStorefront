@@ -14,6 +14,22 @@ public class BaseService(ISharedContainer container)
     protected readonly IMapper Mapper = container.Mapper;
     protected T DepInj<T>() where T : class => container.DepInj<T>()!;
 
+    protected bool IsCurrentUserAdmin()
+    {
+        return CurrentUserHasRole("admin");
+    }
+
+    protected List<string> GetCurrentUserRoles()
+    {
+        var httpContextAccessor = DepInj<IHttpContextAccessor>();
+        return httpContextAccessor.HttpContext?.User.FindAll("role").Select(r => r.Value).ToList() ?? [];
+    }
+    
+    protected bool CurrentUserHasRole(string roleName)
+    {
+        return GetCurrentUserRoles().Contains(roleName);
+    }
+
     protected async Task<Result<T>> GetOrFailAsync<T>(int id, string? message = null) where T : class
     {
         var entity = await Dapper.GetByIdAsync<T>(id);

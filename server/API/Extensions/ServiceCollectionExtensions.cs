@@ -44,7 +44,7 @@ public static class ServiceCollectionExtensions
         var tokenValidationParameters = new TokenValidationParameters()
         {
             IssuerSigningKey = tokenKey,
-            ValidateIssuer = true,
+            ValidateIssuer = false,
             ValidateIssuerSigningKey = true,
             ValidateAudience = false,
             ValidateLifetime = true,
@@ -57,6 +57,24 @@ public static class ServiceCollectionExtensions
                 options.TokenValidationParameters = tokenValidationParameters;
             });
 
+        return services;
+    }
+
+    public static IServiceCollection AddAuthorizationPolicies(this IServiceCollection services)
+    {
+        // NOTE: I hard-coded role names here to match the database exactly, but for production with roles 
+        // that may change a lot, I'd likely use an enum as a single source of truth and seed the database from 
+        // the enum on startup. This would let me autogenerate these policies with Enum.GetValues<UserRole>()
+        // and get rid of hard-coding. I decided the tradeoff wasn't necessary for the 3 roles in this project
+        // ADMIN Meaning: Can edit demo products
+        
+        services.AddAuthorization(options =>
+        {
+            options.AddPolicy("RequireAdmin", policy => policy.RequireRole("Admin"));
+            options.AddPolicy("CanManageProducts", policy => policy.RequireRole("Admin", "ProductWriter"));
+            options.AddPolicy("CanManageImages", policy => policy.RequireRole("Admin", "ImageManager"));
+        });
+        
         return services;
     }
 

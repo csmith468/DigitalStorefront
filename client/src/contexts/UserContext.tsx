@@ -11,6 +11,7 @@ import toast from "react-hot-toast";
 export interface UserContextType {
   user: User | null;
   isAuthenticated: boolean;
+  roles: string[];
   isLoading: boolean;
   login: (dto: LoginRequest) => Promise<void>;
   register: (dto: RegisterRequest) => Promise<void>;
@@ -25,6 +26,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [roles, setRoles] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
@@ -63,6 +65,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({
   const setUserAndTokenFromAuthResponse = (response: Auth) => {
     authService.setStoredToken(response.token);
     setUser({ userId: response.userId, username: response.username });
+    setRoles(response.roles);
   };
 
   const login = async (dto: LoginRequest) => {
@@ -89,6 +92,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({
   const value: UserContextType = {
     user,
     isAuthenticated: !!user,
+    roles,
     isLoading,
     login,
     register,

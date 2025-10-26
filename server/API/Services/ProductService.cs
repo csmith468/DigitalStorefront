@@ -65,7 +65,7 @@ public class ProductService(ISharedContainer container) : BaseService(container)
             parameters.Add("subcategorySlug", filterParams.SubcategorySlug);
         }
 
-        string relevanceExpression = "";
+        var relevanceExpression = "";
         if (!string.IsNullOrWhiteSpace(filterParams.Search))
         {
             var prefixes = new[] { "p.", "c.", "s." };
@@ -85,7 +85,7 @@ public class ProductService(ISharedContainer container) : BaseService(container)
                                   END AS Relevance
                                   """;
         }
-        var whereClause = whereConditions.Any() ? "WHERE " + string.Join(" AND ", whereConditions) : "";
+        var whereClause = whereConditions.Count != 0 ? "WHERE " + string.Join(" AND ", whereConditions) : "";
 
         var baseQuery = $"""
                          SELECT DISTINCT p.* {relevanceExpression}
@@ -147,15 +147,18 @@ public class ProductService(ISharedContainer container) : BaseService(container)
         var product = await Dapper.GetByIdAsync<Product>(productId);
         if (product == null)
             return Result<ProductDetailDto>.Failure("Product could not be found");
-        if (product.IsDemoProduct && Config.GetValue<bool>("DemoMode"))
-            return Result<ProductDetailDto>.Failure("Demo products cannot be updated", HttpStatusCode.Unauthorized);
+        
+        var manageProductResult = CanUserManageProduct(product);
+        if (!manageProductResult.IsSuccess)
+            return manageProductResult.ToFailure<bool, ProductDetailDto>();
+        
         if (product.Name != dto.Name && await Dapper.ExistsByFieldAsync<Product>("name", dto.Name))
             return Result<ProductDetailDto>.Failure($"Name {dto.Name} already exists", HttpStatusCode.BadRequest);
         if (product.Slug != dto.Slug && await Dapper.ExistsByFieldAsync<Product>("slug", dto.Slug))
             return Result<ProductDetailDto>.Failure($"Slug {dto.Slug} already exists", HttpStatusCode.BadRequest);
         if (dto.PremiumPrice > dto.Price)
             return Result<ProductDetailDto>.Failure("Premium price cannot exceed regular price", HttpStatusCode.BadRequest);
-
+        
         await Dapper.WithTransactionAsync(async () =>
         {
             Mapper.Map(dto, product);
@@ -173,9 +176,10 @@ public class ProductService(ISharedContainer container) : BaseService(container)
         var product = await Dapper.GetByIdAsync<Product>(productId);
         if (product == null)
             return Result<bool>.Failure("Product not found", HttpStatusCode.NotFound);
-
-        if (product.IsDemoProduct)
-            return Result<bool>.Failure("Demo products cannot be deleted", HttpStatusCode.Forbidden);
+        
+        var manageProductResult = CanUserManageProduct(product);
+        if (!manageProductResult.IsSuccess)
+            return manageProductResult.ToFailure<bool, bool>();
 
         try
         {
@@ -197,6 +201,13 @@ public class ProductService(ISharedContainer container) : BaseService(container)
         {
             return Result<bool>.Failure($"Failed to delete product: {ex.Message}", HttpStatusCode.InternalServerError);
         }
+    }
+    
+    private Result<bool> CanUserManageProduct(Product product)
+    {
+        return product.IsDemoProduct && Config.GetValue<bool>("DemoMode") && !IsCurrentUserAdmin()
+            ? Result<bool>.Failure("Demo products can only be managed by administrators", HttpStatusCode.Forbidden)
+            : Result<bool>.Success(true);
     }
     
     private async Task<bool> CanUserCreateProduct(int userId)

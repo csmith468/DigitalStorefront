@@ -15,11 +15,15 @@ PRINT 'Step 2: Creating database and dbo schema tables (products, categories, et
 GO
 
 PRINT 'Step 3: Seeding initial data...';
-:r scripts/03-dbo-seed-data.sql
+:r scripts/03-dsf-seed-data.sql
 GO
 
-PRINT 'Step 4: Creating indexes...';
-:r scripts/04-indexes.sql
+PRINT 'Step 4: Seeding initial data...';
+:r scripts/04-dbo-seed-data.sql
+GO
+
+PRINT 'Step 5: Creating indexes...';
+:r scripts/05-indexes.sql
 GO
 
 PRINT 'Database setup complete!';

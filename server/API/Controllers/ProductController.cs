@@ -9,6 +9,13 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers;
 
+/// <summary>
+/// Product CRUD endpoints with role-based authorization
+///
+/// Roles:
+/// - Admin: Can manage all products including demo products
+/// - ProductWriter: Can manage non-demo products
+/// </summary>
 [ApiController]
 [Route("product")]
 public class ProductController(ISharedContainer container) : BaseController(container)
@@ -60,7 +67,7 @@ public class ProductController(ISharedContainer container) : BaseController(cont
         return (await _productService.GetProductBySlugAsync(slug)).ToActionResult();
     }
 
-    [Authorize]
+    [Authorize(Policy = "CanManageProducts")]
     [HttpPost]
     public async Task<ActionResult<ProductDetailDto>> CreateProduct([FromBody] ProductFormDto dto)
     {
@@ -72,42 +79,43 @@ public class ProductController(ISharedContainer container) : BaseController(cont
             : BadRequest(result.Error);
     }
 
-    [Authorize]
+    [Authorize(Policy = "CanManageProducts")]
     [HttpPut("{productId}")]
     public async Task<ActionResult<ProductDetailDto>> UpdateProduct(int productId, [FromBody] ProductFormDto dto)
     {
         return (await _productService.UpdateProductAsync(productId, dto)).ToActionResult();
     }
     
-    [Authorize]
+    // Considered [Authorize(Policy = "RequireAdmin")] but will allow users to delete non-demo products they create
+    [Authorize(Policy = "CanManageProducts")]
     [HttpDelete("{productId}")]
     public async Task<ActionResult<bool>> DeleteProduct(int productId)
     {
         return (await _productService.DeleteProductAsync(productId)).ToActionResult();
     }
     
-    [Authorize]
+    [Authorize(Policy = "CanManageImages")]
     [HttpPost("{productId}/image")]
     public async Task<ActionResult<ProductImageDto>> UploadProductImage(int productId, [FromForm] AddProductImageDto dto)
     {
         return (await _productImageService.AddProductImageAsync(productId, dto)).ToActionResult();
     }
 
-    [Authorize]
+    [Authorize(Policy = "CanManageImages")]
     [HttpDelete("{productId}/image/{productImageId}")]
     public async Task<ActionResult<bool>> DeleteProductImage(int productId, int productImageId)
     {
         return (await _productImageService.DeleteProductImageAsync(productId, productImageId)).ToActionResult();
     }
 
-    [Authorize]
+    [Authorize(Policy = "CanManageImages")]
     [HttpPut("{productId}/image/{productImageId}/set-primary")]
     public async Task<ActionResult<bool>> SetProductImagePrimary(int productId, int productImageId)
     {
         return (await _productImageService.SetPrimaryImageAsync(productId, productImageId)).ToActionResult();
     }
 
-    [Authorize]
+    [Authorize(Policy = "CanManageImages")]
     [HttpPut("{productId}/images/reorder")]
     public async Task<ActionResult<bool>> ReorderProductImages(int productId, List<int> productImageIds)
     {

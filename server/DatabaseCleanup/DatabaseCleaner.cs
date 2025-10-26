@@ -36,7 +36,9 @@ public class DatabaseCleaner(IDataContextDapper dapper, IImageStorageService ima
                                        DELETE FROM dbo.category;
                                        DELETE FROM dbo.productType;
                                        DELETE FROM dsf.auth;
-                                       DELETE FROM dsf.[user]
+                                       DELETE FROM dsf.role;
+                                       DELETE FROM dsf.[user];
+                                       DELETE FROM dsf.userRole;
                                        """);
         });
         Console.WriteLine($"{Indent}All tables cleared.");
