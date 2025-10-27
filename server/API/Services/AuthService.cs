@@ -1,10 +1,10 @@
 using System.Net;
+using API.Database;
+using API.Extensions;
 using API.Models;
 using API.Models.DsfTables;
 using API.Models.Dtos;
-using API.Setup;
 using API.Utils;
-using API.Extensions;
 using Api.Models.DsfTables;
 
 namespace API.Services;
@@ -16,11 +16,26 @@ public interface IAuthService
     Task<Result<AuthResponseDto>> RefreshToken(string userIdStr);
 }
 
-public class AuthService(ISharedContainer container) : BaseService(container), IAuthService
+public class AuthService : IAuthService
 {
-    private IUserService UserService => DepInj<IUserService>();
-    private TokenGenerator TokenGen => DepInj<TokenGenerator>();
-    private PasswordHasher PasswordHasher => DepInj<PasswordHasher>();
+    private readonly IDataContextDapper _dapper;
+    private readonly ILogger<AuthService> _logger;
+    private readonly TokenGenerator _tokenGen;
+    private readonly PasswordHasher _passwordHasher;
+    private readonly IUserService _userService;
+    
+    public AuthService(IDataContextDapper dapper,
+        ILogger<AuthService> logger,
+        TokenGenerator tokenGen,
+        PasswordHasher passwordHasher,
+        IUserService userService)
+    {
+        _dapper = dapper;
+        _logger = logger;
+        _tokenGen = tokenGen;
+        _passwordHasher = passwordHasher;
+        _userService = userService;
+    }
     
     public async Task<Result<AuthResponseDto>> RegisterUser(UserRegisterDto userDto)
     {
@@ -29,9 +44,9 @@ public class AuthService(ISharedContainer container) : BaseService(container), I
             return validateResult.ToFailure<bool, AuthResponseDto>();
         
         var userId = 0;
-        await Dapper.WithTransactionAsync(async () =>
+        await _dapper.WithTransactionAsync(async () =>
         {
-            userId = await Dapper.InsertAsync(new User
+            userId = await _dapper.InsertAsync(new User
             {
                 Username = userDto.Username,
                 Email = userDto.Email,
@@ -41,11 +56,11 @@ public class AuthService(ISharedContainer container) : BaseService(container), I
             await CreateAuthAsync(userId, userDto.Password);
 
             var sql = "SELECT * FROM dsf.role WHERE roleName in ('ProductWriter', 'ImageManager')";
-            var roles = await Dapper.QueryAsync<Role>(sql);
+            var roles = await _dapper.QueryAsync<Role>(sql);
             foreach (var role in roles)
             {
                 var userRole = new UserRole { UserId = userId, RoleId = role.RoleId };
-                await Dapper.InsertAsync(userRole);
+                await _dapper.InsertAsync(userRole);
             }
             
         });
@@ -53,7 +68,7 @@ public class AuthService(ISharedContainer container) : BaseService(container), I
             return Result<AuthResponseDto>.Failure("Failed to register user.");
 
         var roles = await GetUserRolesAsync(userId);
-        var token = TokenGen.GenerateToken(userId, roles);
+        var token = _tokenGen.GenerateToken(userId, roles);
         var response = new AuthResponseDto
         {
             UserId = userId,
@@ -62,6 +77,7 @@ public class AuthService(ISharedContainer container) : BaseService(container), I
             Token = token
         };
         
+        _logger.LogInformation("User Registered: UserId: {UserId} Username: {Username}", userId, userDto.Username);
         return Result<AuthResponseDto>.Success(response, HttpStatusCode.Created);
     }
 
@@ -69,14 +85,20 @@ public class AuthService(ISharedContainer container) : BaseService(container), I
     {
         const string errorMessage = "Invalid username or password";
         
-        var user = await UserService.GetUserByUsernameAsync(userDto.Username);
+        var user = await _userService.GetUserByUsernameAsync(userDto.Username);
         if (user == null)
+        {
+            _logger.LogWarning("Failed login attempt for username: {Username}", userDto.Username);
             return Result<AuthResponseDto>.Failure(errorMessage, HttpStatusCode.Unauthorized);
-        
-        var userAuth = (await Dapper.GetByFieldAsync<Auth>("userId", user.UserId)).FirstOrDefault();
-        if (userAuth == null || !PasswordHasher.VerifyPassword(userDto.Password, userAuth.PasswordSalt, userAuth.PasswordHash))
+        }
+        var userAuth = (await _dapper.GetByFieldAsync<Auth>("userId", user.UserId)).FirstOrDefault();
+        if (userAuth == null || !_passwordHasher.VerifyPassword(userDto.Password, userAuth.PasswordSalt, userAuth.PasswordHash))
+        {
+            _logger.LogWarning("Failed login attempt for username: {Username}", userDto.Username);
             return Result<AuthResponseDto>.Failure(errorMessage, HttpStatusCode.Unauthorized);
+        }
         
+        _logger.LogInformation("User Registered: UserId: {UserId} Username: {Username}", user.UserId, user.Username);
         return Result<AuthResponseDto>.Success(await CreateAuthResponseDtoFromUser(user));
     }
 
@@ -85,7 +107,7 @@ public class AuthService(ISharedContainer container) : BaseService(container), I
         if (!int.TryParse(userIdStr, out var userId))
             return Result<AuthResponseDto>.Failure("Invalid token.", HttpStatusCode.Unauthorized);
         
-        var user = await UserService.GetUserByIdAsync(userId);
+        var user = await _userService.GetUserByIdAsync(userId);
         if (user == null) 
             return Result<AuthResponseDto>.Failure("Invalid token.", HttpStatusCode.Unauthorized);
 
@@ -94,17 +116,17 @@ public class AuthService(ISharedContainer container) : BaseService(container), I
     
     private async Task<Result<bool>> ValidateRegistrationAsync(UserRegisterDto user)
     {
-        if (user.Email is not null && await Dapper.ExistsByFieldAsync<User>("email", user.Email))
+        if (user.Email is not null && await _dapper.ExistsByFieldAsync<User>("email", user.Email))
             return Result<bool>.Failure("Email already exists.", HttpStatusCode.BadRequest);
-        if (await Dapper.ExistsByFieldAsync<User>("username", user.Username))
+        if (await _dapper.ExistsByFieldAsync<User>("username", user.Username))
             return Result<bool>.Failure("Username already exists.", HttpStatusCode.BadRequest);
         return Result<bool>.Success(true);
     }
     
     private async Task CreateAuthAsync(int userId, string password)
     {
-        var (passwordSalt, passwordHash) = PasswordHasher.HashPassword(password);
-        await Dapper.InsertAsync(new Auth
+        var (passwordSalt, passwordHash) = _passwordHasher.HashPassword(password);
+        await _dapper.InsertAsync(new Auth
         {
             UserId = userId,
             PasswordHash = passwordHash,
@@ -121,7 +143,7 @@ public class AuthService(ISharedContainer container) : BaseService(container), I
             UserId = user.UserId,
             Username = user.Username,
             Roles = roles,
-            Token = TokenGen.GenerateToken(user.UserId, roles)
+            Token = _tokenGen.GenerateToken(user.UserId, roles)
         };
     }
 
@@ -133,6 +155,6 @@ public class AuthService(ISharedContainer container) : BaseService(container), I
                   JOIN dsf.role r ON ur.roleId = r.roleId
                   WHERE ur.userId = @userId
                   """;
-        return (await Dapper.QueryAsync<string>(sql, new { userId })).ToList();
+        return (await _dapper.QueryAsync<string>(sql, new { userId })).ToList();
     }
 }
