@@ -55,12 +55,14 @@ public class AuthService : IAuthService
             });
             await CreateAuthAsync(userId, userDto.Password);
 
-            var sql = "SELECT * FROM dsf.role WHERE roleName in ('ProductWriter', 'ImageManager')";
-            var roles = await _dapper.QueryAsync<Role>(sql);
-            foreach (var role in roles)
+            var roles = (await _dapper.QueryAsync<Role>(
+                "SELECT * FROM dsf.role WHERE roleName in ('ProductWriter', 'ImageManager')")).ToList();
+
+            if (roles.Count != 0)
             {
-                var userRole = new UserRole { UserId = userId, RoleId = role.RoleId };
-                await _dapper.InsertAsync(userRole);
+                var values = string.Join(",", roles.Select(r => $"({userId}, {r.RoleId})"));
+                var sqlInsertRoles = $"INSERT INTO dsf.UserRole (userId, roleId) VALUES {values}";
+                await _dapper.ExecuteAsync(sqlInsertRoles);
             }
             
         });

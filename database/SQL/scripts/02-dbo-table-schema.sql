@@ -89,20 +89,12 @@ CREATE TABLE dbo.productSubcategory (
     productId INT NOT NULL,
     subcategoryId INT NOT NULL,
     displayOrder INT DEFAULT 0,
-    createdAt DATETIME2 DEFAULT GETUTCDATE(),
-    updatedAt DATETIME2 NULL,
-    createdBy INT NOT NULL,
-    updatedBy INT NULL,
 
     CONSTRAINT UQ_ProductSubcategory UNIQUE (productId, subcategoryId),
     CONSTRAINT FK_ProductSubcategory_Product
         FOREIGN KEY (productId) REFERENCES dbo.product(productId) ON DELETE CASCADE,
     CONSTRAINT FK_ProductSubcategory_Subcategory
-        FOREIGN KEY (subcategoryId) REFERENCES dbo.subcategory(subcategoryId) ON DELETE CASCADE,
-    CONSTRAINT FK_ProductSubcategory_UserId_CreatedBy 
-        FOREIGN KEY (createdBy) REFERENCES dsf.[user](userId),
-    CONSTRAINT FK_ProductSubcategory_UserId_UpdatedBy
-        FOREIGN KEY (updatedBy) REFERENCES dsf.[user](userId)
+        FOREIGN KEY (subcategoryId) REFERENCES dbo.subcategory(subcategoryId) ON DELETE CASCADE
 );
 
 CREATE TABLE dbo.productImage (

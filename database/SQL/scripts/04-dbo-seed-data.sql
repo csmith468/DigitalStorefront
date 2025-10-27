@@ -170,8 +170,8 @@ FROM @ProductData pd
 JOIN dbo.productType pt ON pt.typeCode = pd.productType
 
 
-INSERT INTO dbo.productSubcategory (productId, subcategoryId, createdBy)
-SELECT p.productId, s.subcategoryId, @userId
+INSERT INTO dbo.productSubcategory (productId, subcategoryId)
+SELECT p.productId, s.subcategoryId
 FROM (VALUES
   -- Virtual Pets mappings
   ('cocoa-corgi', 'regular-pets'),

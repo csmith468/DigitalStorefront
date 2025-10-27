@@ -218,11 +218,14 @@ public class ProductService : IProductService
         {
             await _dapper.WithTransactionAsync(async () =>
             {
-                var images = await _dapper.GetByFieldAsync<ProductImage>("productId", productId);
-                foreach (var image in images)
+                var images = (await _dapper.GetByFieldAsync<ProductImage>("productId", productId)).ToList();
+                if (images.Count != 0)
                 {
-                    await _dapper.DeleteByIdAsync<ProductImage>(image.ProductImageId);
-                    await _imageStorageService.DeleteImageAsync(image.ImageUrl);
+                    var imageIds = images.Select(i => i.ProductImageId).ToList();
+                    await _dapper.DeleteWhereInAsync<ProductImage>("productImageId", imageIds);
+                    
+                    foreach (var image in images)
+                        await _imageStorageService.DeleteImageAsync(image.ImageUrl);
                 }
                 await _dapper.ExecuteAsync("DELETE FROM dbo.productSubcategory WHERE productId = @productId", new { productId });
                 await _dapper.DeleteByIdAsync<Product>(productId);
@@ -264,11 +267,18 @@ public class ProductService : IProductService
         var subcategoriesToRemove = existingSubcategories.Where(es => 
             !updatedSubcategoriesIds.Contains(es.SubcategoryId)).ToList();
         
-        foreach (var subcategoryId in subcategoryIdsToAdd)
-            await _dapper.InsertAsync(new ProductSubcategory { ProductId = productId, SubcategoryId = subcategoryId });
+        if (subcategoryIdsToAdd.Count != 0)
+        {
+            var values = string.Join(",", subcategoryIdsToAdd.Select(id => $"({productId}, {id})"));
+            var sql = $"INSERT INTO dbo.productSubcategory (productId, subcategoryId) VALUES {values}";
+            await _dapper.ExecuteAsync(sql);
+        }
 
-        foreach (var subcategory in subcategoriesToRemove)
-            await _dapper.DeleteByIdAsync<ProductSubcategory>(subcategory.ProductSubcategoryId);
+        if (subcategoriesToRemove.Count != 0)
+        {
+            var idsToRemove = subcategoriesToRemove.Select(s => s.ProductSubcategoryId).ToList();
+            await _dapper.DeleteWhereInAsync<ProductSubcategory>("productSubcategoryId", idsToRemove);
+        }
     }
 
     private async Task<ProductDetailDto> ConvertProductToProductDetailDto(Product product)

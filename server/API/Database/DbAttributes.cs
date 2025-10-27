@@ -34,11 +34,11 @@ public static class DbAttributes
         };
     }
 
-    public static bool ValidateColumnExists<T>(string columnName)
+    public static bool ValidateColumnExists<T>(string fieldName)
     {
         var metadata = GetTableMetadata<T>();
-        return string.Equals(metadata.PrimaryKey.Name, columnName, StringComparison.CurrentCultureIgnoreCase) 
-                    || metadata.Columns.Any(c => string.Equals(c.Name, columnName, StringComparison.CurrentCultureIgnoreCase));
+        return string.Equals(metadata.PrimaryKey.Name, fieldName, StringComparison.CurrentCultureIgnoreCase) 
+                    || metadata.Columns.Any(c => string.Equals(c.Name, fieldName, StringComparison.CurrentCultureIgnoreCase));
     }
 
     private static void ValidateTable<T>()
