@@ -23,7 +23,7 @@ public class TokenGenerator(IServiceProvider serviceProvider)
         {
             Subject = new ClaimsIdentity(claims),
             SigningCredentials = credentials,
-            Expires = DateTime.Now.AddDays(1),
+            Expires = DateTime.UtcNow.AddDays(1),
         };
         var tokenHandler = new JwtSecurityTokenHandler();
         var token = tokenHandler.CreateToken(descriptor);
