@@ -28,8 +28,9 @@ public interface IDataContextDapper : IDisposable
     Task<IEnumerable<T>> GetWhereAsync<T>(Dictionary<string, object> whereConditions) where T : class;
     Task<IEnumerable<T>> GetByFieldAsync<T>(string fieldName, object value) where T : class;
     Task<IEnumerable<T>> GetWhereInAsync<T>(string fieldName, List<int> values) where T : class;
-    Task<(IEnumerable<T> items, int totalCount)> GetPaginatedWithSqlAsync<T>(string baseQuery, 
-        PaginationParams paginationParams, object? parameters = null, string orderBy = "1 DESC") where T : class;
+    Task<(IEnumerable<T> items, int totalCount)> GetPaginatedWithSqlAsync<T>(string baseQuery, PaginationParams paginationParams,
+        object? parameters = null, string? orderByColumn = null, bool descending = true, string? customOrderBy = null) where T : class;
+    
     Task<bool> ExistsAsync<T>(int id) where T : class;
     Task<bool> ExistsByFieldAsync<T>(string fieldName, object value) where T : class;
     Task<int> GetCountByFieldAsync<T>(string fieldName, object value) where T : class;
@@ -211,14 +212,35 @@ public class DataContextDapper : IDataContextDapper
           return await QueryAsync<T>(sql, new { values });
       }
 
-      public async Task<(IEnumerable<T> items, int totalCount)> GetPaginatedWithSqlAsync<T>(string baseQuery,
-          PaginationParams paginationParams, object? parameters = null, string orderBy = "1 DESC") where T : class
+      public async Task<(IEnumerable<T> items, int totalCount)> GetPaginatedWithSqlAsync<T>(
+          string baseQuery,
+          PaginationParams paginationParams,
+          object? parameters = null,
+          string? orderByColumn = null,
+          bool descending = true,
+          string? customOrderBy = null) where T : class
       {
           var countSql = $"SELECT COUNT(*) FROM ({baseQuery}) AS CountQuery";
           var totalCount = await _db.ExecuteScalarAsync<int>(countSql, parameters, _transaction);
-          
-          // NOTE: I recognize orderBy is not validated for SQL injection but decided field-validation is
-          // enough for this portfolio project (DbAttributes.ValidateColumnExists<T>(fieldName) used in other functions)
+
+          string orderBy;
+
+          if (!string.IsNullOrWhiteSpace(customOrderBy))
+          {
+              // For security, I'm only trusting customOrderBy  when it comes from service layer
+              // (I still want to allow dynamic expressions like relevance scoring in search)
+              orderBy = customOrderBy;
+          }
+          else if (!string.IsNullOrWhiteSpace(orderByColumn))
+          {
+              if (!DbAttributes.ValidateColumnExists<T>(orderByColumn))
+                  throw new ArgumentException($"Invalid sort column: {orderByColumn}", nameof(orderByColumn));
+
+              var direction = descending ? "DESC" : "ASC";
+              orderBy = $"[{orderByColumn}] {direction}";
+          }
+          else orderBy = "1 DESC";
+
           var paginatedSql = $"""
                               {baseQuery}
                               ORDER BY {orderBy}
