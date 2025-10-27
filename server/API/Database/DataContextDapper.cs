@@ -21,6 +21,7 @@ public interface IDataContextDapper : IDisposable
     Task<int> InsertAsync<T>(T obj) where T : class;
     Task UpdateAsync<T>(T obj) where T : class;
     Task DeleteByIdAsync<T>(int id) where T : class;
+    Task DeleteWhereInAsync<T>(string fieldName, List<int> values) where T : class;
     
     Task<IEnumerable<T>> GetAllAsync<T>() where T : class;
     Task<T?> GetByIdAsync<T>(int id) where T : class;
@@ -154,6 +155,17 @@ public class DataContextDapper : IDataContextDapper
           var sql = $"DELETE FROM {metadata.TableName} WHERE [{metadata.PrimaryKey.Name}] = @id";
           await ExecuteAsync(sql, new { id });
       }
+      
+      public async Task DeleteWhereInAsync<T>(string fieldName, List<int> values) where T : class
+      {
+          ValidateFieldName<T>(fieldName);
+          if (values.Count == 0) return;
+          
+          var metadata = DbAttributes.GetTableMetadata<T>();
+          var sql = $"DELETE FROM {metadata.TableName} WHERE [{fieldName}] IN @values";
+    
+          await ExecuteAsync(sql, new { values });
+      }
 
       public async Task<IEnumerable<T>> GetAllAsync<T>() where T : class
       {
@@ -184,22 +196,14 @@ public class DataContextDapper : IDataContextDapper
 
       public async Task<IEnumerable<T>> GetByFieldAsync<T>(string fieldName, object value) where T : class
       {
-          if (string.IsNullOrWhiteSpace(fieldName))
-              throw new ArgumentException("Field name is required", nameof(fieldName));
-          if (!DbAttributes.ValidateColumnExists<T>(fieldName))
-              throw new ArgumentException("Field not found", nameof(fieldName));
+          ValidateFieldName<T>(fieldName);
           return await GetWhereAsync<T>(new Dictionary<string, object>{ { fieldName, value } });
       }
 
       public async Task<IEnumerable<T>> GetWhereInAsync<T>(string fieldName, List<int> values) where T : class
       {
-          if (string.IsNullOrWhiteSpace(fieldName))
-              throw new ArgumentException("Field name is required", nameof(fieldName));
-          if (!DbAttributes.ValidateColumnExists<T>(fieldName))
-              throw new ArgumentException("Field not found", nameof(fieldName));
-          
-          if (values.Count == 0)
-              return [];
+          ValidateFieldName<T>(fieldName);
+          if (values.Count == 0) return [];
           
           var metadata = DbAttributes.GetTableMetadata<T>();
           var sql = $"SELECT * FROM {metadata.TableName} WHERE [{fieldName}] IN @values";
@@ -257,6 +261,14 @@ public class DataContextDapper : IDataContextDapper
 
           prop.SetValue(obj, value);
           return obj;
+      }
+
+      private void ValidateFieldName<T>(string fieldName)
+      {
+          if (string.IsNullOrWhiteSpace(fieldName))
+              throw new ArgumentException("Field name is required", nameof(fieldName));
+          if (!DbAttributes.ValidateColumnExists<T>(fieldName))
+              throw new ArgumentException("Field not found", nameof(fieldName));
       }
 
 

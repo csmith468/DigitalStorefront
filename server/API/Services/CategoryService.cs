@@ -23,6 +23,7 @@ public class CategoryService : ICategoryService
             "SELECT categoryId, [name], slug, displayOrder FROM dbo.category WHERE isActive = 1"
         )).OrderBy(c => c.DisplayOrder).ToList();
 
+        // Looping because there are only 5 categories and this data is cached in UI
         foreach (var category in categories)
         {
             category.Subcategories = (await _dapper.QueryAsync<SubcategoryDto>(

@@ -35,6 +35,7 @@ public class ProductController : ControllerBase
         return (await _productService.GetProductsAsync(filterParams)).ToActionResult();
     }
     
+    // NOTE: Created dedicated endpoint for a common UI request to get products by category
     [HttpGet("category/{categorySlug}")]
     public async Task<ActionResult<PaginatedResponse<ProductDto>>> GetProductsByCategory(string categorySlug, 
         [FromQuery] PaginationParams pagination)
@@ -48,6 +49,7 @@ public class ProductController : ControllerBase
         return (await _productService.GetProductsAsync(filterParams)).ToActionResult();
     }
 
+    // NOTE: Created dedicated endpoint for a common UI request to get products by subcategory
     [HttpGet("subcategory/{subcategorySlug}")]
     public async Task<ActionResult<PaginatedResponse<ProductDto>>> GetProductsBySubcategory(string subcategorySlug, 
         [FromQuery] PaginationParams pagination)
