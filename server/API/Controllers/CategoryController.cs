@@ -1,16 +1,20 @@
 using API.Extensions;
 using API.Models.Dtos;
 using API.Services;
-using API.Setup;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers;
 
 [ApiController]
 [Route("category")]
-public class CategoryController(ISharedContainer container) : BaseController(container)
+public class CategoryController : ControllerBase
 {
-    private ICategoryService _categoryService => DepInj<ICategoryService>();
+    private readonly ICategoryService _categoryService;
+
+    public CategoryController(ICategoryService categoryService)
+    {
+        _categoryService = categoryService;
+    }
     
     [HttpGet]
     public async Task<ActionResult<List<CategoryDto>>> GetCategoriesAndSubcategories()

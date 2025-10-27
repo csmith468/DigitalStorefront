@@ -1,5 +1,6 @@
 using System.Data;
 using API.Models.Dtos;
+using API.Services;
 using Microsoft.Data.SqlClient;
 using Dapper;
 
@@ -20,6 +21,7 @@ public interface IDataContextDapper : IDisposable
     Task<int> InsertAsync<T>(T obj) where T : class;
     Task UpdateAsync<T>(T obj) where T : class;
     Task DeleteByIdAsync<T>(int id) where T : class;
+    Task DeleteWhereInAsync<T>(string fieldName, List<int> values) where T : class;
     
     Task<IEnumerable<T>> GetAllAsync<T>() where T : class;
     Task<T?> GetByIdAsync<T>(int id) where T : class;
@@ -40,13 +42,17 @@ public class DataContextDapper : IDataContextDapper
 {
       private readonly IDbConnection _db;
       private IDbTransaction? _transaction;
-      private readonly IHttpContextAccessor _httpContextAccessor;
+      private IUserContext _userContext;
 
-      public DataContextDapper(IConfiguration config, IHttpContextAccessor httpContextAccessor)
+      // NOTE: I decided to make Dapper depend on IUserContext to auto-populate CreatedBy/UpdatedBy
+      // on all Inserts/Updates. I know the data layer shouldn't typically know about users,
+      // but I wanted to make sure audit fields are always set. They aren't in DTOs so they can
+      // easily be forgotten, and passing userID each time leads to a lot of repetition (not DRY).
+      public DataContextDapper(IConfiguration config, IUserContext userContext)
       {
           _db = new SqlConnection(config.GetConnectionString("DefaultConnection"));
           _db.Open();
-          _httpContextAccessor = httpContextAccessor;
+          _userContext = userContext;
       }
 
       public async Task<IEnumerable<T>> QueryAsync<T>(string sql, object? parameters = null)
@@ -110,7 +116,7 @@ public class DataContextDapper : IDataContextDapper
           if (metadata.Columns.Any(c => c.Name == "CreatedAt"))
               obj = SetEntityProp(obj, "CreatedAt", DateTime.UtcNow);
           
-          var userId = GetCurrentUserId();
+          var userId = _userContext.UserId;
           if (userId != null && metadata.Columns.Any(c => c.Name == "CreatedBy"))
               obj = SetEntityProp(obj, "CreatedBy", userId.Value);
           
@@ -131,7 +137,7 @@ public class DataContextDapper : IDataContextDapper
           if (metadata.Columns.Any(c => c.Name == "UpdatedAt"))
               obj = SetEntityProp(obj, "UpdatedAt", DateTime.UtcNow);
 
-          var userId = GetCurrentUserId();
+          var userId = _userContext.UserId;
           if (userId != null && metadata.Columns.Any(c => c.Name == "UpdatedBy"))
               obj = SetEntityProp(obj, "UpdatedBy", userId.Value);
           
@@ -148,6 +154,17 @@ public class DataContextDapper : IDataContextDapper
           var metadata = DbAttributes.GetTableMetadata<T>();
           var sql = $"DELETE FROM {metadata.TableName} WHERE [{metadata.PrimaryKey.Name}] = @id";
           await ExecuteAsync(sql, new { id });
+      }
+      
+      public async Task DeleteWhereInAsync<T>(string fieldName, List<int> values) where T : class
+      {
+          ValidateFieldName<T>(fieldName);
+          if (values.Count == 0) return;
+          
+          var metadata = DbAttributes.GetTableMetadata<T>();
+          var sql = $"DELETE FROM {metadata.TableName} WHERE [{fieldName}] IN @values";
+    
+          await ExecuteAsync(sql, new { values });
       }
 
       public async Task<IEnumerable<T>> GetAllAsync<T>() where T : class
@@ -167,7 +184,10 @@ public class DataContextDapper : IDataContextDapper
       {
           if (whereConditions == null || !whereConditions.Any())
               throw new ArgumentException("At least one condition is required");
-          
+
+          foreach (var key in whereConditions.Keys.Where(key => !DbAttributes.ValidateColumnExists<T>(key)))
+              throw new ArgumentException($"Field '{key}' not found", nameof(whereConditions));
+
           var metadata = DbAttributes.GetTableMetadata<T>();
           var whereClause = string.Join(" AND ", whereConditions.Keys.Select(key => $"[{key}] = @{key}"));
           var sql = $"SELECT * FROM {metadata.TableName} WHERE {whereClause}";
@@ -176,18 +196,14 @@ public class DataContextDapper : IDataContextDapper
 
       public async Task<IEnumerable<T>> GetByFieldAsync<T>(string fieldName, object value) where T : class
       {
-          if (string.IsNullOrWhiteSpace(fieldName))
-              throw new ArgumentException("Field name is required", nameof(fieldName));
+          ValidateFieldName<T>(fieldName);
           return await GetWhereAsync<T>(new Dictionary<string, object>{ { fieldName, value } });
       }
 
       public async Task<IEnumerable<T>> GetWhereInAsync<T>(string fieldName, List<int> values) where T : class
       {
-          if (string.IsNullOrWhiteSpace(fieldName))
-              throw new ArgumentException("Field name is required", nameof(fieldName));
-          
-          if (values.Count == 0)
-              return [];
+          ValidateFieldName<T>(fieldName);
+          if (values.Count == 0) return [];
           
           var metadata = DbAttributes.GetTableMetadata<T>();
           var sql = $"SELECT * FROM {metadata.TableName} WHERE [{fieldName}] IN @values";
@@ -200,7 +216,9 @@ public class DataContextDapper : IDataContextDapper
       {
           var countSql = $"SELECT COUNT(*) FROM ({baseQuery}) AS CountQuery";
           var totalCount = await _db.ExecuteScalarAsync<int>(countSql, parameters, _transaction);
-
+          
+          // NOTE: I recognize orderBy is not validated for SQL injection but decided field-validation is
+          // enough for this portfolio project (DbAttributes.ValidateColumnExists<T>(fieldName) used in other functions)
           var paginatedSql = $"""
                               {baseQuery}
                               ORDER BY {orderBy}
@@ -223,20 +241,18 @@ public class DataContextDapper : IDataContextDapper
 
       public async Task<bool> ExistsByFieldAsync<T>(string fieldName, object value) where T : class
       {
+          if (!DbAttributes.ValidateColumnExists<T>(fieldName))
+              throw new ArgumentException("Field not found", nameof(fieldName));
           return (await GetWhereAsync<T>(new Dictionary<string, object> { { fieldName, value } })).Any();
       }
 
       public async Task<int> GetCountByFieldAsync<T>(string fieldName, object value) where T : class
       {
+          if (!DbAttributes.ValidateColumnExists<T>(fieldName))
+              throw new ArgumentException("Field not found", nameof(fieldName));
           return (await GetWhereAsync<T>(new Dictionary<string, object> { { fieldName, value } })).Count();
       }
       
-      private int? GetCurrentUserId()
-      {
-          var userIdClaim = _httpContextAccessor.HttpContext?.User?.FindFirst("userId")?.Value;
-          return userIdClaim != null ? int.Parse(userIdClaim!) : null;
-      }
-
       private T SetEntityProp<T>(T obj, string field, object value) where T : class
       {
           var type = typeof(T);
@@ -245,6 +261,14 @@ public class DataContextDapper : IDataContextDapper
 
           prop.SetValue(obj, value);
           return obj;
+      }
+
+      private void ValidateFieldName<T>(string fieldName)
+      {
+          if (string.IsNullOrWhiteSpace(fieldName))
+              throw new ArgumentException("Field name is required", nameof(fieldName));
+          if (!DbAttributes.ValidateColumnExists<T>(fieldName))
+              throw new ArgumentException("Field not found", nameof(fieldName));
       }
 
 

@@ -1,7 +1,7 @@
 using System.Reflection;
 using API.Database;
+using API.Services;
 using API.Services.Images;
-using API.Setup;
 using API.Utils;
 
 namespace API.Extensions;
@@ -12,7 +12,7 @@ public static class DependencyInjectionExtensions
     {
         var types = assembly.GetTypes()
             .Where(t => t is { IsClass: true, IsAbstract: false, IsGenericType: false })
-            .Where(t => t.Name.EndsWith("Service") || t.Name.EndsWith("Repository"))
+            .Where(t => t.Name.EndsWith("Service"))
             .ToList();
 
         foreach (var implementationType in types)
@@ -30,8 +30,7 @@ public static class DependencyInjectionExtensions
     public static IServiceCollection AddManualRegistrations(this IServiceCollection services)
     {
         services.AddScoped<IDataContextDapper, DataContextDapper>();
-        services.AddScoped<ISharedContainer, SharedContainer>();
-        
+        services.AddScoped<IUserContext, UserContext>();
         services.AddScoped<IImageStorageService, LocalImageStorageService>();
         services.AddScoped<TokenGenerator>();
         services.AddScoped<PasswordHasher>();
