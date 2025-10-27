@@ -9,20 +9,20 @@ export const uploadProductImage = async (productId: number, imageData: AddProduc
     formData.append('altText', imageData.altText);
   formData.append('setAsPrimary', String(imageData.setAsPrimary));
 
-  const response = await apiClient.post<ProductImage>(`/product/${productId}/image`, formData,
+  const response = await apiClient.post<ProductImage>(`/products/${productId}/images`, formData,
     { headers: { 'Content-Type': 'multipart/form-data' } }
   );
   return response.data;
 };
 
 export const deleteProductImage = async (productId: number, productImageId: number): Promise<void> => {
-  await apiClient.delete(`/product/${productId}/image/${productImageId}`);
+  await apiClient.delete(`/products/${productId}/images/${productImageId}`);
 };
 
 export const setImageAsPrimary = async (productId: number, productImageId: number): Promise<void> => {
-  await apiClient.put(`/product/${productId}/image/${productImageId}/set-primary`);
+  await apiClient.put(`/products/${productId}/images/${productImageId}/set-primary`);
 };
 
 export const reorderProductImages = async (productId: number, orderedImageIds: number[]): Promise<void> => {
-  await apiClient.put(`/product/${productId}/images/reorder`, orderedImageIds);
+  await apiClient.put(`/products/${productId}/images/reorder`, orderedImageIds);
 };

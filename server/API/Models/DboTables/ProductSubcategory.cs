@@ -10,6 +10,4 @@ public class ProductSubcategory
     [DbColumn] public int ProductId { get; set; }
     
     [DbColumn] public int SubcategoryId { get; set; }
-
-    [DbColumn] public int DisplayOrder { get; set; } = 0;
 }

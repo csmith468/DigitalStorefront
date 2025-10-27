@@ -15,6 +15,8 @@ builder.Services.AddAuthorizationPolicies();
 builder.Services.AddValidation();
 builder.Services.AddSwaggerAuth();
 builder.Services.AddHealthChecksConfiguration(builder.Configuration);
+builder.Services.AddRateLimiting();
+builder.Services.AddResponseCachingConfiguration();
 
 // Dependency Injection
 builder.Services.AddAutoRegistration(typeof(Program).Assembly);
@@ -46,6 +48,9 @@ else
 }
 
 app.UseStaticFiles();
+
+app.UseRateLimiter();
+app.UseOutputCache();
 
 app.UseAuthentication();
 app.UseAuthorization();

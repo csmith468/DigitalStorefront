@@ -88,7 +88,6 @@ CREATE TABLE dbo.productSubcategory (
     productSubcategoryId INT PRIMARY KEY IDENTITY,
     productId INT NOT NULL,
     subcategoryId INT NOT NULL,
-    displayOrder INT DEFAULT 0,
 
     CONSTRAINT UQ_ProductSubcategory UNIQUE (productId, subcategoryId),
     CONSTRAINT FK_ProductSubcategory_Product

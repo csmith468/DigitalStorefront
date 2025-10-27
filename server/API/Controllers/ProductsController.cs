@@ -15,14 +15,14 @@ namespace API.Controllers;
 /// - ProductWriter: Can manage non-demo products
 /// </summary>
 [ApiController]
-[Route("product")]
-public class ProductController : ControllerBase
+[Route("products")]
+public class ProductsController : ControllerBase
 {
     private readonly IProductService _productService;
     private readonly IProductImageService _productImageService;
     private readonly IUserContext _userContext;
 
-    public ProductController(IProductService productService, IProductImageService productImageService, IUserContext userContext)
+    public ProductsController(IProductService productService, IProductImageService productImageService, IUserContext userContext)
     {
         _productService = productService;
         _productImageService = productImageService;
@@ -103,21 +103,21 @@ public class ProductController : ControllerBase
     }
     
     [Authorize(Policy = "CanManageImages")]
-    [HttpPost("{productId}/image")]
+    [HttpPost("{productId}/images")]
     public async Task<ActionResult<ProductImageDto>> UploadProductImage(int productId, [FromForm] AddProductImageDto dto)
     {
         return (await _productImageService.AddProductImageAsync(productId, dto)).ToActionResult();
     }
 
     [Authorize(Policy = "CanManageImages")]
-    [HttpDelete("{productId}/image/{productImageId}")]
+    [HttpDelete("{productId}/images/{productImageId}")]
     public async Task<ActionResult<bool>> DeleteProductImage(int productId, int productImageId)
     {
         return (await _productImageService.DeleteProductImageAsync(productId, productImageId)).ToActionResult();
     }
 
     [Authorize(Policy = "CanManageImages")]
-    [HttpPut("{productId}/image/{productImageId}/set-primary")]
+    [HttpPut("{productId}/images/{productImageId}/set-primary")]
     public async Task<ActionResult<bool>> SetProductImagePrimary(int productId, int productImageId)
     {
         return (await _productImageService.SetPrimaryImageAsync(productId, productImageId)).ToActionResult();
