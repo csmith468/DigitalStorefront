@@ -1,9 +1,7 @@
 using API.Extensions;
 using API.Models;
-using API.Models.Constants;
 using API.Models.Dtos;
 using API.Services;
-using API.Setup;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -18,11 +16,19 @@ namespace API.Controllers;
 /// </summary>
 [ApiController]
 [Route("product")]
-public class ProductController(ISharedContainer container) : BaseController(container)
+public class ProductController : ControllerBase
 {
-    private IProductService _productService => DepInj<IProductService>();
-    private IProductImageService _productImageService => DepInj<IProductImageService>();
+    private readonly IProductService _productService;
+    private readonly IProductImageService _productImageService;
+    private readonly IUserContext _userContext;
 
+    public ProductController(IProductService productService, IProductImageService productImageService, IUserContext userContext)
+    {
+        _productService = productService;
+        _productImageService = productImageService;
+        _userContext = userContext;
+    }
+    
     [HttpGet]
     public async Task<ActionResult<PaginatedResponse<ProductDto>>> GetProductsAsync([FromQuery] ProductFilterParams filterParams)
     {
@@ -71,9 +77,9 @@ public class ProductController(ISharedContainer container) : BaseController(cont
     [HttpPost]
     public async Task<ActionResult<ProductDetailDto>> CreateProduct([FromBody] ProductFormDto dto)
     {
-        if (UserId == null)
+        if (_userContext.UserId == null)
             return Result<ProductDetailDto>.Failure("You are not logged in.").ToActionResult();
-        var result = await _productService.CreateProductAsync(dto, UserId.Value);
+        var result = await _productService.CreateProductAsync(dto, _userContext.UserId.Value);
         return result.IsSuccess
             ? CreatedAtAction(nameof(GetProduct), new { productId = result.Data.ProductId }, result.Data)
             : BadRequest(result.Error);

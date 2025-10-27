@@ -1,5 +1,5 @@
+using API.Database;
 using API.Models.DsfTables;
-using API.Setup;
 
 namespace API.Services;
 
@@ -9,15 +9,22 @@ public interface IUserService
     Task<User?> GetUserByUsernameAsync(string username);
 }
 
-public class UserService(ISharedContainer container) : BaseService(container), IUserService
+public class UserService : IUserService
 {
+    private readonly IDataContextDapper _dapper;
+
+    public UserService(IDataContextDapper dapper)
+    {
+        _dapper = dapper;
+    }
+    
     public async Task<User?> GetUserByIdAsync(int id)
     {
-        return await Dapper.GetByIdAsync<User>(id);
+        return await _dapper.GetByIdAsync<User>(id);
     }
     
     public async Task<User?> GetUserByUsernameAsync(string username)
     {
-        return (await Dapper.GetByFieldAsync<User>("username", username)).FirstOrDefault();
+        return (await _dapper.GetByFieldAsync<User>("username", username)).FirstOrDefault();
     }
 }

@@ -1,11 +1,10 @@
-using API.Setup;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers.Tests;
 
 [Route("test")]
-public class TestController(ISharedContainer container) : BaseController(container)
+public class TestController : ControllerBase
 {
     [HttpGet("valid")]
     public ActionResult GetValid()

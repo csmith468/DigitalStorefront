@@ -2,21 +2,25 @@ using API.Extensions;
 using API.Models.Constants;
 using API.Models.Dtos;
 using API.Services;
-using API.Setup;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers;
 
 [ApiController]
 [Route("common")]
-public class CommonController(ISharedContainer container) : BaseController(container)
+public class CommonController : ControllerBase
 {
-    private ICommonService _commonService => DepInj<ICommonService>();
+    private readonly IProductService _productService;
+
+    public CommonController(IProductService productService)
+    {
+        _productService = productService;
+    }
     
     [HttpGet("product-types")]
     public async Task<ActionResult<List<ProductTypeDto>>> GetProductTypesAsync()
     {
-        return (await _commonService.GetProductTypesAsync()).ToActionResult();
+        return (await _productService.GetProductTypesAsync()).ToActionResult();
     }
 
     [HttpGet("price-types")]

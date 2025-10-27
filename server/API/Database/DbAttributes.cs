@@ -34,6 +34,13 @@ public static class DbAttributes
         };
     }
 
+    public static bool ValidateColumnExists<T>(string columnName)
+    {
+        var metadata = GetTableMetadata<T>();
+        return string.Equals(metadata.PrimaryKey.Name, columnName, StringComparison.CurrentCultureIgnoreCase) 
+                    || metadata.Columns.Any(c => string.Equals(c.Name, columnName, StringComparison.CurrentCultureIgnoreCase));
+    }
+
     private static void ValidateTable<T>()
     {
         var tableName = GetTableName(typeof(T));

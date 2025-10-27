@@ -1,10 +1,10 @@
 using System.Net;
+using API.Database;
 using API.Extensions;
 using API.Models;
 using API.Models.DboTables;
 using API.Models.Dtos;
 using API.Services.Images;
-using API.Setup;
 
 namespace API.Services;
 
@@ -19,17 +19,32 @@ public interface IProductImageService
     Task<Result<bool>> ReorderProductImagesAsync(int productId, List<int> orderedImageIds);
 }
 
-public class ProductImageService(ISharedContainer container) : BaseService(container), IProductImageService
+public class ProductImageService : IProductImageService
 {
-    private IImageStorageService _imageStorageService => DepInj<IImageStorageService>();
+    private readonly IDataContextDapper _dapper;
+    private readonly ILogger<ProductImageService> _logger;
+    private readonly IImageStorageService _imageStorageService;
+    private readonly IProductAuthorizationService _productAuthService;
+
+    public ProductImageService(IDataContextDapper dapper, 
+        ILogger<ProductImageService> logger,
+        IImageStorageService imageStorageService,
+        IProductAuthorizationService productAuthService)
+    {
+        _dapper = dapper;
+        _logger = logger;
+        _imageStorageService = imageStorageService;
+        _productAuthService = productAuthService;
+    }
+    
 
     public async Task<Result<ProductImageDto?>> GetPrimaryProductImageAsync(int productId)
     {
-        var validateProduct = await ValidateExistsAsync<Product>(productId);
-        if (!validateProduct.IsSuccess)
-            return validateProduct.ToFailure<bool, ProductImageDto?>();
+        var productExists = await _dapper.ExistsAsync<Product>(productId);
+        if (!productExists)
+            return Result<ProductImageDto?>.Failure($"Product {productId} not found", HttpStatusCode.NotFound);
 
-        var productImage = await Dapper.FirstOrDefaultAsync<ProductImage>(
+        var productImage = await _dapper.FirstOrDefaultAsync<ProductImage>(
             """
             SELECT * FROM dbo.productImage 
             WHERE productId = @productId AND displayOrder = 0
@@ -39,18 +54,18 @@ public class ProductImageService(ISharedContainer container) : BaseService(conta
 
     public async Task<Result<List<ProductImageDto>>> GetAllProductImagesAsync(int productId)
     {
-        var validateProduct = await ValidateExistsAsync<Product>(productId);
-        if (!validateProduct.IsSuccess)
-            return validateProduct.ToFailure<bool, List<ProductImageDto>>();
+        var productExists = await _dapper.ExistsAsync<Product>(productId);
+        if (!productExists)
+            return Result<List<ProductImageDto>>.Failure($"Product {productId} not found", HttpStatusCode.NotFound);
 
-        var result = (await Dapper.GetByFieldAsync<ProductImage>("productId", productId))
+        var result = (await _dapper.GetByFieldAsync<ProductImage>("productId", productId))
             .Select(MapToDto).OrderBy(pi => pi.DisplayOrder).ToList();
         return Result<List<ProductImageDto>>.Success(result);
     }
 
     public async Task<Result<List<ProductImageDto>>> GetPrimaryImagesForProductIds(List<int> productIds)
     {
-        var result = (await Dapper.GetWhereInAsync<ProductImage>("productId", productIds))
+        var result = (await _dapper.GetWhereInAsync<ProductImage>("productId", productIds))
             .Where(img => img.DisplayOrder == 0)
             .Select(MapToDto)
             .OrderBy(pi => pi.ProductId)
@@ -60,7 +75,7 @@ public class ProductImageService(ISharedContainer container) : BaseService(conta
 
     public async Task<Result<ProductImageDto>> AddProductImageAsync(int productId, AddProductImageDto dto)
     {
-        var validateProduct = await ValidateExistsAsync<Product>(productId);
+        var validateProduct = await ValidateProduct(productId);
         if (!validateProduct.IsSuccess)
             return validateProduct.ToFailure<bool, ProductImageDto>();
 
@@ -68,10 +83,10 @@ public class ProductImageService(ISharedContainer container) : BaseService(conta
         {
             ProductImage productImage = null!;
 
-            await Dapper.WithTransactionAsync(async () =>
+            await _dapper.WithTransactionAsync(async () =>
             {
                 var relativePath = await _imageStorageService.SaveImageAsync(dto.File, "products", productId.ToString());
-                var imageCount = await Dapper.GetCountByFieldAsync<ProductImage>("productId", productId);
+                var imageCount = await _dapper.GetCountByFieldAsync<ProductImage>("productId", productId);
 
                 productImage = new ProductImage
                 {
@@ -81,7 +96,7 @@ public class ProductImageService(ISharedContainer container) : BaseService(conta
                     DisplayOrder = imageCount
                 };
 
-                var imageId = await Dapper.InsertAsync(productImage);
+                var imageId = await _dapper.InsertAsync(productImage);
                 productImage.ProductImageId = imageId;
 
                 // Move to display order = 0 and shift others
@@ -92,6 +107,8 @@ public class ProductImageService(ISharedContainer container) : BaseService(conta
                 }
             });
 
+            _logger.LogInformation("Product Image Added: ProductId {ProductId}, ImageId {ProductImageId}", 
+                productId, productImage.ProductImageId);
             return Result<ProductImageDto>.Success(MapToDto(productImage));
         }
         catch (Exception ex)
@@ -103,20 +120,26 @@ public class ProductImageService(ISharedContainer container) : BaseService(conta
     // Primary means displayOrder = 0
     public async Task<Result<bool>> SetPrimaryImageAsync(int productId, int productImageId)
     {
-        var image = await Dapper.GetByIdAsync<ProductImage>(productImageId);
+        var validateProduct = await ValidateProduct(productId);
+        if (!validateProduct.IsSuccess)
+            return validateProduct.ToFailure<bool, bool>();
+        
+        var image = await _dapper.GetByIdAsync<ProductImage>(productImageId);
         if (image == null || image.ProductId != productId)
             return Result<bool>.Failure("Image not found", HttpStatusCode.NotFound);
-
+        
         if (image.DisplayOrder == 0)
             return Result<bool>.Success(true);
 
         try
         {
-            await Dapper.WithTransactionAsync(async () =>
+            await _dapper.WithTransactionAsync(async () =>
             {
                 await FixDisplayOrderAsync(image.ProductId, productImageId);
             });
 
+            _logger.LogInformation("Product Image Set to Primary: ProductId {ProductId}, ImageId {ProductImageId}", 
+                productId, productImageId);
             return Result<bool>.Success(true);
         }
         catch (Exception ex)
@@ -127,15 +150,19 @@ public class ProductImageService(ISharedContainer container) : BaseService(conta
 
     public async Task<Result<bool>> DeleteProductImageAsync(int productId, int productImageId)
     {
-        var image = await Dapper.GetByIdAsync<ProductImage>(productImageId);
+        var validateProduct = await ValidateProduct(productId);
+        if (!validateProduct.IsSuccess)
+            return validateProduct.ToFailure<bool, bool>();
+        
+        var image = await _dapper.GetByIdAsync<ProductImage>(productImageId);
         if (image == null || image.ProductId != productId)
             return Result<bool>.Failure("Image not found", HttpStatusCode.NotFound);
 
         try
         {
-            await Dapper.WithTransactionAsync(async () =>
+            await _dapper.WithTransactionAsync(async () =>
             {
-                await Dapper.DeleteByIdAsync<ProductImage>(productImageId);
+                await _dapper.DeleteByIdAsync<ProductImage>(productImageId);
 
                 var deleted = await _imageStorageService.DeleteImageAsync(image.ImageUrl);
                 if (!deleted)
@@ -144,6 +171,8 @@ public class ProductImageService(ISharedContainer container) : BaseService(conta
                 await FixDisplayOrderAsync(image.ProductId);
             });
 
+            _logger.LogInformation("Product Image Deleted: ProductId {ProductId}, ImageId {ProductImageId}", 
+                productId, productImageId);
             return Result<bool>.Success(true);
         }
         catch (Exception ex)
@@ -154,15 +183,15 @@ public class ProductImageService(ISharedContainer container) : BaseService(conta
 
     public async Task<Result<bool>> ReorderProductImagesAsync(int productId, List<int> orderedImageIds)
     {
-        var validateProduct = await ValidateExistsAsync<Product>(productId);
+        var validateProduct = await ValidateProduct(productId);
         if (!validateProduct.IsSuccess)
             return validateProduct.ToFailure<bool, bool>();
         
         try
         {
-            await Dapper.WithTransactionAsync(async () =>
+            await _dapper.WithTransactionAsync(async () =>
             {
-                var allImages = await Dapper.GetByFieldAsync<ProductImage>("productId", productId);
+                var allImages = await _dapper.GetByFieldAsync<ProductImage>("productId", productId);
                 var imageDict = allImages.ToDictionary(i => i.ProductImageId);
 
                 if (orderedImageIds.Any(imageId => !imageDict.ContainsKey(imageId)))
@@ -172,10 +201,11 @@ public class ProductImageService(ISharedContainer container) : BaseService(conta
                 {
                     var image = imageDict[orderedImageIds[i]];
                     image.DisplayOrder = i;
-                    await Dapper.UpdateAsync(image);
+                    await _dapper.UpdateAsync(image);
                 }
             });
 
+            _logger.LogInformation("Product Images Re-ordered: ProductId {ProductId}", productId);
             return Result<bool>.Success(true);
         }
         catch (Exception ex)
@@ -186,7 +216,7 @@ public class ProductImageService(ISharedContainer container) : BaseService(conta
     
     private async Task FixDisplayOrderAsync(int productId, int? newPrimaryImageId = null)
     {
-        var images = (await Dapper.GetByFieldAsync<ProductImage>("productId", productId)).OrderBy(i => i.DisplayOrder).ToList();
+        var images = (await _dapper.GetByFieldAsync<ProductImage>("productId", productId)).OrderBy(i => i.DisplayOrder).ToList();
 
         // If setting a new primary, move it to displayOrder = 0
         if (newPrimaryImageId.HasValue)
@@ -204,8 +234,17 @@ public class ProductImageService(ISharedContainer container) : BaseService(conta
         for (var i = 0; i < images.Count; i++)
         {
             images[i].DisplayOrder = i;
-            await Dapper.UpdateAsync(images[i]);
+            await _dapper.UpdateAsync(images[i]);
         }
+    }
+
+    private async Task<Result<bool>> ValidateProduct(int productId)
+    {
+        var productExists = await _dapper.ExistsAsync<Product>(productId);
+        if (!productExists)
+            return Result<bool>.Failure($"Product {productId} not found", HttpStatusCode.NotFound);
+        
+        return await _productAuthService.CanUserManageProductAsync(productId);
     }
 
     private ProductImageDto MapToDto(ProductImage image)
