@@ -100,7 +100,7 @@ public class AuthService : IAuthService
             return Result<AuthResponseDto>.Failure(errorMessage, HttpStatusCode.Unauthorized);
         }
         
-        _logger.LogInformation("User Registered: UserId: {UserId} Username: {Username}", user.UserId, user.Username);
+        _logger.LogInformation("User Logged In: UserId: {UserId} Username: {Username}", user.UserId, user.Username);
         return Result<AuthResponseDto>.Success(await CreateAuthResponseDtoFromUser(user));
     }
 

@@ -3,6 +3,7 @@ using API.Models.Constants;
 using API.Models.Dtos;
 using API.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 
 namespace API.Controllers;
 
@@ -18,12 +19,14 @@ public class CommonController : ControllerBase
     }
     
     [HttpGet("product-types")]
+    [OutputCache(PolicyName = "StaticData")]
     public async Task<ActionResult<List<ProductTypeDto>>> GetProductTypesAsync()
     {
         return (await _productService.GetProductTypesAsync()).ToActionResult();
     }
 
     [HttpGet("price-types")]
+    [OutputCache(PolicyName = "StaticData")]
     public async Task<ActionResult<List<PriceType>>> GetPriceTypesAsync()
     {
         var priceTypes = PriceTypes.All;

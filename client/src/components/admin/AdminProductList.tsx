@@ -80,7 +80,7 @@ export function AdminProductList() {
         <PageHeader 
           title="Product Management"
           returnLink='/'
-          returnText='Back to Home' // TODO: eventually admin main
+          returnText='Back to Home' // FUTURE: eventually admin main
         />
         <button
           onClick={() => navigate("/admin/products/create")}
@@ -185,7 +185,7 @@ export function AdminProductList() {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        {/* TODO: make form editor read-only for demo products */}
+                        {/* FUTURE: make form editor read-only for demo products */}
                           {product.isDemoProduct && !isAdmin() ? (
                           <div className="flex items-center justify-end gap-2 text-gray-400">
                             <LockClosedIcon className="h-5 w-5" />

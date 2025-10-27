@@ -28,7 +28,7 @@ public class ProductDetailDto : ProductDto
     public List<SubcategoryDto> Subcategories { get; set; } = [];
 }
 
-// TODO: IsActive 
+// FUTURE: IsActive 
 public class ProductFormDto
 {
     public string Name { get; set; } = "";

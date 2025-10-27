@@ -66,9 +66,9 @@ public class ProductService : IProductService
     {
         var product = (await _dapper.GetByFieldAsync<Product>("slug", slug)).FirstOrDefault();
         if (product == null)
-            Result<ProductDetailDto>.Failure("Product could not be found");
+            return Result<ProductDetailDto>.Failure("Product could not be found");
         
-        var productDetailDto = await ConvertProductToProductDetailDto(product!);
+        var productDetailDto = await ConvertProductToProductDetailDto(product);
         return Result<ProductDetailDto>.Success(productDetailDto);
     }
 
@@ -123,11 +123,19 @@ public class ProductService : IProductService
                          LEFT JOIN dbo.category c ON c.categoryId = s.categoryId
                          {whereClause}
                          """;
-        var orderBy = !string.IsNullOrWhiteSpace(filterParams.Search)
-            ? "Relevance ASC, isDemoProduct DESC, p.productId"
-            : "isDemoProduct DESC, p.productId";
+        var customOrderBy = !string.IsNullOrWhiteSpace(filterParams.Search)
+            ? "Relevance ASC, isDemoProduct DESC, p.productId DESC"
+            : null;
+        var orderByColumn = string.IsNullOrWhiteSpace(filterParams.Search) ? "productId" : null;
         
-        var (products, totalCount) = await _dapper.GetPaginatedWithSqlAsync<Product>(baseQuery, filterParams, parameters, orderBy);
+        var (products, totalCount) = await _dapper.GetPaginatedWithSqlAsync<Product>(
+            baseQuery,
+            filterParams,
+            parameters,
+            orderByColumn: orderByColumn,
+            descending: true,
+            customOrderBy: customOrderBy
+        );
         
         var productDtosResult = await ConvertProductsToProductDtos(products.ToList());
         return Result<PaginatedResponse<ProductDto>>.Success(new PaginatedResponse<ProductDto>
@@ -267,11 +275,12 @@ public class ProductService : IProductService
         var subcategoriesToRemove = existingSubcategories.Where(es => 
             !updatedSubcategoriesIds.Contains(es.SubcategoryId)).ToList();
         
-        if (subcategoryIdsToAdd.Count != 0)
+        foreach (var subcategoryId in subcategoryIdsToAdd)
         {
-            var values = string.Join(",", subcategoryIdsToAdd.Select(id => $"({productId}, {id})"));
-            var sql = $"INSERT INTO dbo.productSubcategory (productId, subcategoryId) VALUES {values}";
-            await _dapper.ExecuteAsync(sql);
+            await _dapper.ExecuteAsync(
+                "INSERT INTO dbo.productSubcategory (productId, subcategoryId) VALUES (@productId, @subcategoryId)",
+                new { productId, subcategoryId }
+            );
         }
 
         if (subcategoriesToRemove.Count != 0)
