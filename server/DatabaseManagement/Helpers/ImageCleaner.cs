@@ -6,18 +6,18 @@ namespace DatabaseManagement.Helpers;
 
 public class ImageCleaner
 {
-    private readonly IDataContextDapper _dapper;
+    private readonly IQueryExecutor _queryExecutor;
     private readonly IImageStorageService _imageService;
-    public ImageCleaner(IDataContextDapper dapper, IImageStorageService imageService)
+    public ImageCleaner(IQueryExecutor queryExecutor, IImageStorageService imageService)
     {
-        _dapper = dapper;
+        _queryExecutor = queryExecutor;
         _imageService = imageService;
     }
     
     public async Task DeleteImagesOnlyAsync()
     {
         Console.WriteLine("   Fetching all product images from database...");
-        var images = (await _dapper.QueryAsync<ProductImage>("SELECT * FROM dbo.productImage")).ToList();
+        var images = (await _queryExecutor.QueryAsync<ProductImage>("SELECT * FROM dbo.productImage")).ToList();
         Console.WriteLine($"   Found {images.Count} images to delete.");
 
         Console.WriteLine("   Deleting images from storage...");

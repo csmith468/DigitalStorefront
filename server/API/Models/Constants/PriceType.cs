@@ -2,7 +2,6 @@ using API.Database;
 
 namespace API.Models.Constants;
 
-[DbTable("dbo.priceType")]
 public class PriceType
 {
     public int PriceTypeId { get; set; }

@@ -11,20 +11,20 @@ public interface IUserService
 
 public class UserService : IUserService
 {
-    private readonly IDataContextDapper _dapper;
+    private readonly IQueryExecutor _queryExecutor;
 
-    public UserService(IDataContextDapper dapper)
+    public UserService(IQueryExecutor queryExecutor)
     {
-        _dapper = dapper;
+        _queryExecutor = queryExecutor;
     }
     
     public async Task<User?> GetUserByIdAsync(int id)
     {
-        return await _dapper.GetByIdAsync<User>(id);
+        return await _queryExecutor.GetByIdAsync<User>(id);
     }
     
     public async Task<User?> GetUserByUsernameAsync(string username)
     {
-        return (await _dapper.GetByFieldAsync<User>("username", username)).FirstOrDefault();
+        return (await _queryExecutor.GetByFieldAsync<User>("username", username)).FirstOrDefault();
     }
 }

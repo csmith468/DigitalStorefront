@@ -18,20 +18,26 @@ public interface IAuthService
 
 public class AuthService : IAuthService
 {
-    private readonly IDataContextDapper _dapper;
     private readonly ILogger<AuthService> _logger;
+    private readonly IQueryExecutor _queryExecutor;
+    private readonly ICommandExecutor _commandExecutor;
+    private readonly ITransactionManager _transactionManager;
     private readonly TokenGenerator _tokenGen;
     private readonly PasswordHasher _passwordHasher;
     private readonly IUserService _userService;
     
-    public AuthService(IDataContextDapper dapper,
-        ILogger<AuthService> logger,
+    public AuthService(ILogger<AuthService> logger,
+        IQueryExecutor queryExecutor,
+        ICommandExecutor commandExecutor,
+        ITransactionManager transactionManager,
         TokenGenerator tokenGen,
         PasswordHasher passwordHasher,
         IUserService userService)
     {
-        _dapper = dapper;
         _logger = logger;
+        _queryExecutor = queryExecutor;
+        _commandExecutor = commandExecutor;
+        _transactionManager = transactionManager;
         _tokenGen = tokenGen;
         _passwordHasher = passwordHasher;
         _userService = userService;
@@ -44,9 +50,9 @@ public class AuthService : IAuthService
             return validateResult.ToFailure<bool, AuthResponseDto>();
         
         var userId = 0;
-        await _dapper.WithTransactionAsync(async () =>
+        await _transactionManager.WithTransactionAsync(async () =>
         {
-            userId = await _dapper.InsertAsync(new User
+            userId = await _commandExecutor.InsertAsync(new User
             {
                 Username = userDto.Username,
                 Email = userDto.Email,
@@ -55,14 +61,14 @@ public class AuthService : IAuthService
             });
             await CreateAuthAsync(userId, userDto.Password);
 
-            var roles = (await _dapper.QueryAsync<Role>(
+            var roles = (await _queryExecutor.QueryAsync<Role>(
                 "SELECT * FROM dsf.role WHERE roleName in ('ProductWriter', 'ImageManager')")).ToList();
 
             if (roles.Count != 0)
             {
                 var values = string.Join(",", roles.Select(r => $"({userId}, {r.RoleId})"));
                 var sqlInsertRoles = $"INSERT INTO dsf.UserRole (userId, roleId) VALUES {values}";
-                await _dapper.ExecuteAsync(sqlInsertRoles);
+                await _commandExecutor.ExecuteAsync(sqlInsertRoles);
             }
             
         });
@@ -93,7 +99,7 @@ public class AuthService : IAuthService
             _logger.LogWarning("Failed login attempt for username: {Username}", userDto.Username);
             return Result<AuthResponseDto>.Failure(errorMessage, HttpStatusCode.Unauthorized);
         }
-        var userAuth = (await _dapper.GetByFieldAsync<Auth>("userId", user.UserId)).FirstOrDefault();
+        var userAuth = (await _queryExecutor.GetByFieldAsync<Auth>("userId", user.UserId)).FirstOrDefault();
         if (userAuth == null || !_passwordHasher.VerifyPassword(userDto.Password, userAuth.PasswordSalt, userAuth.PasswordHash))
         {
             _logger.LogWarning("Failed login attempt for username: {Username}", userDto.Username);
@@ -118,9 +124,9 @@ public class AuthService : IAuthService
     
     private async Task<Result<bool>> ValidateRegistrationAsync(UserRegisterDto user)
     {
-        if (user.Email is not null && await _dapper.ExistsByFieldAsync<User>("email", user.Email))
+        if (user.Email is not null && await _queryExecutor.ExistsByFieldAsync<User>("email", user.Email))
             return Result<bool>.Failure("Email already exists.", HttpStatusCode.BadRequest);
-        if (await _dapper.ExistsByFieldAsync<User>("username", user.Username))
+        if (await _queryExecutor.ExistsByFieldAsync<User>("username", user.Username))
             return Result<bool>.Failure("Username already exists.", HttpStatusCode.BadRequest);
         return Result<bool>.Success(true);
     }
@@ -128,7 +134,7 @@ public class AuthService : IAuthService
     private async Task CreateAuthAsync(int userId, string password)
     {
         var (passwordSalt, passwordHash) = _passwordHasher.HashPassword(password);
-        await _dapper.InsertAsync(new Auth
+        await _commandExecutor.InsertAsync(new Auth
         {
             UserId = userId,
             PasswordHash = passwordHash,
@@ -157,6 +163,6 @@ public class AuthService : IAuthService
                   JOIN dsf.role r ON ur.roleId = r.roleId
                   WHERE ur.userId = @userId
                   """;
-        return (await _dapper.QueryAsync<string>(sql, new { userId })).ToList();
+        return (await _queryExecutor.QueryAsync<string>(sql, new { userId })).ToList();
     }
 }
