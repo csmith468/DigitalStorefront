@@ -1,6 +1,8 @@
+using System.Security;
+
 namespace API.Services.Images;
 
-public abstract class ImageStorageServiceBase(ILogger<ImageStorageServiceBase> logger) : IImageStorageService
+public abstract class ImageStorageServiceBase(ILogger logger) : IImageStorageService
 {
     public abstract Task<string> SaveImageAsync(IFormFile file, string subfolder, string? prefix = null);
     public abstract string GetImageUrl(string fileName);
@@ -31,5 +33,31 @@ public abstract class ImageStorageServiceBase(ILogger<ImageStorageServiceBase> l
         var allowedMimeTypes = new[] { "image/jpeg", "image/png", "image/webp", "image/gif" };
         if (!allowedMimeTypes.Contains(file.ContentType))
             throw new ArgumentException($"Invalid file content type: {file.ContentType}");
+    }
+
+    protected void ValidateFileNameStructure(string fileName)
+    {
+        if (string.IsNullOrWhiteSpace(fileName))
+            throw new ArgumentException("File name is required");
+        
+        if (fileName.StartsWith('/') || fileName.StartsWith('\\'))
+        {
+            logger.LogWarning("Security: Absolute path attempt in file name: {FileName}", fileName);
+            throw new SecurityException($"File name ({fileName}) cannot start with a path separator");
+        }
+        if (fileName.Contains(".."))
+        {
+            logger.LogWarning("Security: Path traversal attempt in filename: {FileName}", fileName);
+            throw new SecurityException($"File name ({fileName}) contains path traversal");
+        }
+        var invalidChars = new[] { '\\', '\0', ':', '*', '?', '"', '<', '>', '|' };
+        if (fileName.Any(c => invalidChars.Contains(c)))
+        {
+            var invalidCharsFound = string.Join(", ", fileName.Where(c => invalidChars.Contains(c)).Distinct());
+            logger.LogWarning("Security: Invalid characters found in file name: {FileName} includes {InvalidChars}",
+                fileName, invalidCharsFound);
+            throw new SecurityException($"File name ({fileName}) contains invalid characters: {invalidCharsFound}");
+        }
+        
     }
 }

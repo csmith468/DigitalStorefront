@@ -27,9 +27,9 @@ public class CommonController : ControllerBase
 
     [HttpGet("price-types")]
     [OutputCache(PolicyName = "StaticData")]
-    public async Task<ActionResult<List<PriceType>>> GetPriceTypesAsync()
+    public Task<ActionResult<List<PriceType>>> GetPriceTypesAsync()
     {
         var priceTypes = PriceTypes.All;
-        return Ok(priceTypes);
+        return Task.FromResult<ActionResult<List<PriceType>>>(priceTypes);
     }
 }

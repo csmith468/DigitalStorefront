@@ -1,6 +1,7 @@
 using System.Data;
 using API.Models.Dtos;
 using API.Services;
+using API.Services.Contexts;
 using Microsoft.Data.SqlClient;
 using Dapper;
 
@@ -43,17 +44,18 @@ public class DataContextDapper : IDataContextDapper
 {
       private readonly IDbConnection _db;
       private IDbTransaction? _transaction;
-      private IUserContext _userContext;
+      private IAuditContext _auditContext;
 
-      // NOTE: I decided to make Dapper depend on IUserContext to auto-populate CreatedBy/UpdatedBy
-      // on all Inserts/Updates. I know the data layer shouldn't typically know about users,
-      // but I wanted to make sure audit fields are always set. They aren't in DTOs so they can
+      // NOTE: Dapper uses IAuditContext to auto-populate CreatedBy/UpdatedBy on all Inserts/Updates.
+      // I did this so it abstracts away the user source (HTTP context vs system user) so the data layer
+      // doesn't depend on ASP.NET Core. This keeps audit fields dry without violating any layer boundaries
+      // I wanted to make sure audit fields are always set, and since they aren't in DTOs, they can
       // easily be forgotten, and passing userID each time leads to a lot of repetition (not DRY).
-      public DataContextDapper(IConfiguration config, IUserContext userContext)
+      public DataContextDapper(IConfiguration config, IAuditContext auditContext)
       {
           _db = new SqlConnection(config.GetConnectionString("DefaultConnection"));
           _db.Open();
-          _userContext = userContext;
+          _auditContext = auditContext;
       }
 
       public async Task<IEnumerable<T>> QueryAsync<T>(string sql, object? parameters = null)
@@ -117,7 +119,7 @@ public class DataContextDapper : IDataContextDapper
           if (metadata.Columns.Any(c => c.Name == "CreatedAt"))
               obj = SetEntityProp(obj, "CreatedAt", DateTime.UtcNow);
           
-          var userId = _userContext.UserId;
+          var userId = _auditContext.UserId;
           if (userId != null && metadata.Columns.Any(c => c.Name == "CreatedBy"))
               obj = SetEntityProp(obj, "CreatedBy", userId.Value);
           
@@ -138,7 +140,7 @@ public class DataContextDapper : IDataContextDapper
           if (metadata.Columns.Any(c => c.Name == "UpdatedAt"))
               obj = SetEntityProp(obj, "UpdatedAt", DateTime.UtcNow);
 
-          var userId = _userContext.UserId;
+          var userId = _auditContext.UserId;
           if (userId != null && metadata.Columns.Any(c => c.Name == "UpdatedBy"))
               obj = SetEntityProp(obj, "UpdatedBy", userId.Value);
           

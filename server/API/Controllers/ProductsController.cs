@@ -79,12 +79,7 @@ public class ProductsController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<ProductDetailDto>> CreateProduct([FromBody] ProductFormDto dto)
     {
-        if (_userContext.UserId == null)
-            return Result<ProductDetailDto>.Failure("You are not logged in.").ToActionResult();
-        var result = await _productService.CreateProductAsync(dto, _userContext.UserId.Value);
-        return result.IsSuccess
-            ? CreatedAtAction(nameof(GetProduct), new { productId = result.Data.ProductId }, result.Data)
-            : BadRequest(result.Error);
+        return (await _productService.CreateProductAsync(dto, _userContext.UserId!.Value)).ToActionResult();
     }
 
     [Authorize(Policy = "CanManageProducts")]
