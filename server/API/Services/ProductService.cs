@@ -124,7 +124,7 @@ public class ProductService : IProductService
                          {whereClause}
                          """;
         var customOrderBy = !string.IsNullOrWhiteSpace(filterParams.Search)
-            ? "Relevance ASC, isDemoProduct DESC, p.productId DESC"
+            ? "Relevance ASC, isDemoProduct DESC, p.productId"
             : null;
         var orderByColumn = string.IsNullOrWhiteSpace(filterParams.Search) ? "productId" : null;
         
@@ -133,7 +133,7 @@ public class ProductService : IProductService
             filterParams,
             parameters,
             orderByColumn: orderByColumn,
-            descending: true,
+            descending: false,
             customOrderBy: customOrderBy
         );
         
