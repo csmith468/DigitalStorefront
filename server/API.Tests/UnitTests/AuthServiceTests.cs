@@ -1,5 +1,6 @@
 using System.Net;
-  using API.Database;
+using API.Configuration;
+using API.Database;
   using API.Models.DsfTables;
   using API.Models.Dtos;
   using API.Services;
@@ -15,7 +16,9 @@ using System.Net;
 
   public class AuthServiceTests
   {
-      private readonly Mock<IDataContextDapper> _mockDapper;
+      private readonly Mock<IQueryExecutor> _mockQueryExecutor;
+      private readonly Mock<ICommandExecutor> _mockCommandExecutor;
+      private readonly Mock<ITransactionManager> _mockTransactionManager;
       private readonly Mock<ILogger<AuthService>> _mockLogger;
       private readonly TokenGenerator _tokenGen;
       private readonly PasswordHasher _passwordHasher;
@@ -24,26 +27,26 @@ using System.Net;
 
       public AuthServiceTests()
       {
-          _mockDapper = new Mock<IDataContextDapper>();
+          _mockQueryExecutor = new Mock<IQueryExecutor>();
+          _mockCommandExecutor = new Mock<ICommandExecutor>();
+          _mockTransactionManager = new Mock<ITransactionManager>();
           _mockLogger = new Mock<ILogger<AuthService>>();
           _mockUserService = new Mock<IUserService>();
 
-          var mockConfig = new ConfigurationBuilder()
-              .AddInMemoryCollection(new Dictionary<string, string>
-              {
-                  { "AppSettings:TokenKey", "test-key-minimum-32-characters-long-for-jwt-tokens" },
-                  { "AppSettings:PasswordKey", "test-password-key" }
-              }!)
-              .Build();
-
-          var serviceProvider = new TestServiceProvider(mockConfig);
-
-          _passwordHasher = new PasswordHasher(serviceProvider);
-          _tokenGen = new TokenGenerator(serviceProvider);
+          var securityOptions = Microsoft.Extensions.Options.Options.Create(new SecurityOptions
+          {
+              TokenKey = "test-token-key-minimum-32-characters-long-for-jwt-tokens",
+              PasswordKey = "test-password-key-minimum-32-characters-long-for-jwt-tokens"
+          });
+          
+         _passwordHasher = new PasswordHasher(securityOptions);
+          _tokenGen = new TokenGenerator(securityOptions);
 
           _authService = new AuthService(
-              _mockDapper.Object,
               _mockLogger.Object,
+              _mockQueryExecutor.Object,
+              _mockCommandExecutor.Object,
+              _mockTransactionManager.Object,
               _tokenGen,
               _passwordHasher,
               _mockUserService.Object
@@ -67,21 +70,21 @@ using System.Net;
           var userId = 123;
           var roles = new List<string> { "ProductWriter", "ImageManager" };
 
-          _mockDapper.Setup(d => d.ExistsByFieldAsync<User>("email", registerDto.Email)).ReturnsAsync(false);
-          _mockDapper.Setup(d => d.ExistsByFieldAsync<User>("username", registerDto.Username)).ReturnsAsync(false);
-          _mockDapper.Setup(d => d.WithTransactionAsync(It.IsAny<Func<Task>>()))
+          _mockQueryExecutor.Setup(d => d.ExistsByFieldAsync<User>("email", registerDto.Email)).ReturnsAsync(false);
+          _mockQueryExecutor.Setup(d => d.ExistsByFieldAsync<User>("username", registerDto.Username)).ReturnsAsync(false);
+          _mockTransactionManager.Setup(d => d.WithTransactionAsync(It.IsAny<Func<Task>>()))
               .Callback<Func<Task>>(async action => await action())
               .Returns(Task.CompletedTask);
-          _mockDapper.Setup(d => d.InsertAsync(It.IsAny<User>())).ReturnsAsync(userId);
-          _mockDapper.Setup(d => d.InsertAsync(It.IsAny<Auth>())).ReturnsAsync(1);
-          _mockDapper.Setup(d => d.QueryAsync<Role>(It.IsAny<string>(), It.IsAny<object>()))
+          _mockCommandExecutor.Setup(d => d.InsertAsync(It.IsAny<User>())).ReturnsAsync(userId);
+          _mockCommandExecutor.Setup(d => d.InsertAsync(It.IsAny<Auth>())).ReturnsAsync(1);
+          _mockQueryExecutor.Setup(d => d.QueryAsync<Role>(It.IsAny<string>(), It.IsAny<object>()))
               .ReturnsAsync(new List<Role>
               {
                   new() { RoleId = 1, RoleName = "ProductWriter" },
                   new() { RoleId = 2, RoleName = "ImageManager" }
               });
-          _mockDapper.Setup(d => d.ExecuteAsync(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(1);
-          _mockDapper.Setup(d => d.QueryAsync<string>(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(roles);
+          _mockCommandExecutor.Setup(d => d.ExecuteAsync(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(1);
+          _mockQueryExecutor.Setup(d => d.QueryAsync<string>(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(roles);
 
           // Act
           var result = await _authService.RegisterUser(registerDto);
@@ -110,7 +113,7 @@ using System.Net;
               ConfirmPassword = "Test123!"
           };
 
-          _mockDapper.Setup(d => d.ExistsByFieldAsync<User>("email", registerDto.Email)).ReturnsAsync(true);
+          _mockQueryExecutor.Setup(d => d.ExistsByFieldAsync<User>("email", registerDto.Email)).ReturnsAsync(true);
 
           // Act
           var result = await _authService.RegisterUser(registerDto);
@@ -134,8 +137,8 @@ using System.Net;
               ConfirmPassword = "Test123!"
           };
 
-          _mockDapper.Setup(d => d.ExistsByFieldAsync<User>("email", registerDto.Email)).ReturnsAsync(false);
-          _mockDapper.Setup(d => d.ExistsByFieldAsync<User>("username", registerDto.Username)).ReturnsAsync(true);
+          _mockQueryExecutor.Setup(d => d.ExistsByFieldAsync<User>("email", registerDto.Email)).ReturnsAsync(false);
+          _mockQueryExecutor.Setup(d => d.ExistsByFieldAsync<User>("username", registerDto.Username)).ReturnsAsync(true);
 
           // Act
           var result = await _authService.RegisterUser(registerDto);
@@ -160,8 +163,8 @@ using System.Net;
           var roles = new List<string> { "ProductWriter" };
 
           _mockUserService.Setup(u => u.GetUserByUsernameAsync(loginDto.Username)).ReturnsAsync(user);
-          _mockDapper.Setup(d => d.GetByFieldAsync<Auth>("userId", user.UserId)).ReturnsAsync(new List<Auth> { auth });
-          _mockDapper.Setup(d => d.QueryAsync<string>(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(roles);
+          _mockQueryExecutor.Setup(d => d.GetByFieldAsync<Auth>("userId", user.UserId)).ReturnsAsync(new List<Auth> { auth });
+          _mockQueryExecutor.Setup(d => d.QueryAsync<string>(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(roles);
 
           // Act
           var result = await _authService.LoginUser(loginDto);
@@ -187,7 +190,7 @@ using System.Net;
           var auth = new Auth { UserId = 123, PasswordSalt = salt, PasswordHash = hash };
 
           _mockUserService.Setup(u => u.GetUserByUsernameAsync(loginDto.Username)).ReturnsAsync(user);
-          _mockDapper.Setup(d => d.GetByFieldAsync<Auth>("userId", user.UserId)).ReturnsAsync(new List<Auth> { auth });
+          _mockQueryExecutor.Setup(d => d.GetByFieldAsync<Auth>("userId", user.UserId)).ReturnsAsync(new List<Auth> { auth });
 
           // Act
           var result = await _authService.LoginUser(loginDto);
@@ -227,7 +230,7 @@ using System.Net;
           var roles = new List<string> { "ProductWriter" };
 
           _mockUserService.Setup(u => u.GetUserByIdAsync(123)).ReturnsAsync(user);
-          _mockDapper.Setup(d => d.QueryAsync<string>(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(roles);
+          _mockQueryExecutor.Setup(d => d.QueryAsync<string>(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(roles);
 
           // Act
           var result = await _authService.RefreshToken(userIdStr);

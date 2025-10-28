@@ -13,17 +13,17 @@ public interface IProductAuthorizationService
 
 public class ProductAuthorizationService : IProductAuthorizationService
 {
-    private readonly IDataContextDapper _dapper;
+    private readonly IQueryExecutor _queryExecutor;
     private readonly ILogger<ProductAuthorizationService> _logger;
     private readonly IConfiguration _config;
     private readonly IUserContext _userContext;
 
-    public ProductAuthorizationService(IDataContextDapper dapper, 
+    public ProductAuthorizationService(IQueryExecutor queryExecutor, 
         ILogger<ProductAuthorizationService> logger,
         IConfiguration config, 
         IUserContext userContext)
     {
-        _dapper = dapper;
+        _queryExecutor = queryExecutor;
         _logger = logger;
         _config = config;
         _userContext = userContext;
@@ -31,7 +31,7 @@ public class ProductAuthorizationService : IProductAuthorizationService
     
     public async Task<Result<bool>> CanUserManageProductAsync(int productId)
     {
-        var product = await _dapper.GetByIdAsync<Product>(productId);
+        var product = await _queryExecutor.GetByIdAsync<Product>(productId);
         if (product == null)
             return Result<bool>.Failure("Product not found", HttpStatusCode.NotFound);
         

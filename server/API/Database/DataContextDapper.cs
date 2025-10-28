@@ -1,173 +1,48 @@
 using System.Data;
 using API.Models.Dtos;
 using API.Services;
+using API.Services.Contexts;
 using Microsoft.Data.SqlClient;
 using Dapper;
 
 namespace API.Database;
 
-public interface IDataContextDapper : IDisposable
-{
-    Task<IEnumerable<T>> QueryAsync<T>(string sql, object? parameters = null);
-    Task<T> FirstAsync<T>(string sql, object? parameters = null);
-    Task<T?> FirstOrDefaultAsync<T>(string sql, object? parameters = null);
-
-    Task<int> ExecuteAsync(string sql, object? parameters = null);
-    Task<int> ExecuteStoredProcedureAsync(string sql, object? parameters = null);
-
-    Task<T> WithTransactionAsync<T>(Func<Task<T>> func);
-    Task WithTransactionAsync(Func<Task> func);
-
-    Task<int> InsertAsync<T>(T obj) where T : class;
-    Task UpdateAsync<T>(T obj) where T : class;
-    Task DeleteByIdAsync<T>(int id) where T : class;
-    Task DeleteWhereInAsync<T>(string fieldName, List<int> values) where T : class;
-    
-    Task<IEnumerable<T>> GetAllAsync<T>() where T : class;
-    Task<T?> GetByIdAsync<T>(int id) where T : class;
-    Task<IEnumerable<T>> GetWhereAsync<T>(Dictionary<string, object> whereConditions) where T : class;
-    Task<IEnumerable<T>> GetByFieldAsync<T>(string fieldName, object value) where T : class;
-    Task<IEnumerable<T>> GetWhereInAsync<T>(string fieldName, List<int> values) where T : class;
-    Task<(IEnumerable<T> items, int totalCount)> GetPaginatedWithSqlAsync<T>(string baseQuery, PaginationParams paginationParams,
-        object? parameters = null, string? orderByColumn = null, bool descending = true, string? customOrderBy = null) where T : class;
-    
-    Task<bool> ExistsAsync<T>(int id) where T : class;
-    Task<bool> ExistsByFieldAsync<T>(string fieldName, object value) where T : class;
-    Task<int> GetCountByFieldAsync<T>(string fieldName, object value) where T : class;
-    
-    string? Database { get; }
-    IDbTransaction? Transaction { get; }
-}
-
-public class DataContextDapper : IDataContextDapper
+public class DataContextDapper : IQueryExecutor, ICommandExecutor, ITransactionManager, IDisposable
 {
       private readonly IDbConnection _db;
       private IDbTransaction? _transaction;
-      private IUserContext _userContext;
+      private IAuditContext _auditContext;
 
-      // NOTE: I decided to make Dapper depend on IUserContext to auto-populate CreatedBy/UpdatedBy
-      // on all Inserts/Updates. I know the data layer shouldn't typically know about users,
-      // but I wanted to make sure audit fields are always set. They aren't in DTOs so they can
+      // NOTE: Dapper uses IAuditContext to auto-populate CreatedBy/UpdatedBy on all Inserts/Updates.
+      // I did this so it abstracts away the user source (HTTP context vs system user) so the data layer
+      // doesn't depend on ASP.NET Core. This keeps audit fields dry without violating any layer boundaries
+      // I wanted to make sure audit fields are always set, and since they aren't in DTOs, they can
       // easily be forgotten, and passing userID each time leads to a lot of repetition (not DRY).
-      public DataContextDapper(IConfiguration config, IUserContext userContext)
+      public DataContextDapper(IConfiguration config, IAuditContext auditContext)
       {
           _db = new SqlConnection(config.GetConnectionString("DefaultConnection"));
-          _db.Open();
-          _userContext = userContext;
+          _auditContext = auditContext;
       }
 
+      // IQueryExecutor Implementations
       public async Task<IEnumerable<T>> QueryAsync<T>(string sql, object? parameters = null)
       {
+          EnsureConnectionOpen();
           return await _db.QueryAsync<T>(sql, parameters, _transaction);
       }
 
       public async Task<T> FirstAsync<T>(string sql, object? parameters = null)
       {
+          EnsureConnectionOpen();
           return await _db.QueryFirstAsync<T>(sql, parameters, _transaction);
       }
       
       public async Task<T?> FirstOrDefaultAsync<T>(string sql, object? parameters = null)
       {
+          EnsureConnectionOpen();
           return await _db.QueryFirstOrDefaultAsync<T>(sql, parameters, _transaction);
       }
-
-      public async Task<int> ExecuteAsync(string sql, object? parameters = null)
-      {
-          return await _db.ExecuteAsync(sql, parameters, _transaction);
-      }
-
-      public async Task<int> ExecuteStoredProcedureAsync(string sql, object? parameters = null)
-      {
-          return await _db.ExecuteAsync(sql, parameters, _transaction, commandType: CommandType.StoredProcedure);
-      }
-
-      public async Task<T> WithTransactionAsync<T>(Func<Task<T>> func)
-      {
-          if (_transaction != null) return await func();
-          
-          try
-          {
-              _transaction = _db.BeginTransaction();
-              var result = await func();
-              _transaction.Commit();
-              _transaction = null;
-              return result;
-          }
-          catch
-          {
-              _transaction?.Rollback();
-              _transaction = null;
-              throw;
-          }
-      }
-
-      public async Task WithTransactionAsync(Func<Task> func)
-      {
-          await WithTransactionAsync<object?>(async () =>
-          {
-              await func();
-              return null;
-          });
-      }
-
-      public async Task<int> InsertAsync<T>(T obj) where T : class
-      {
-          var metadata = DbAttributes.GetTableMetadata<T>();
-          
-          if (metadata.Columns.Any(c => c.Name == "CreatedAt"))
-              obj = SetEntityProp(obj, "CreatedAt", DateTime.UtcNow);
-          
-          var userId = _userContext.UserId;
-          if (userId != null && metadata.Columns.Any(c => c.Name == "CreatedBy"))
-              obj = SetEntityProp(obj, "CreatedBy", userId.Value);
-          
-          var columnNames = string.Join(",", metadata.Columns.Select(c => $"[{c.Name}]"));
-          var parameterNames = string.Join(",", metadata.Columns.Select(c => $"@{c.Name}"));
-          
-          var parameters = DbAttributes.CreateParameters(obj, metadata.Columns);
-          var sql = $"INSERT INTO {metadata.TableName} ({columnNames}) VALUES ({parameterNames}); SELECT CAST(SCOPE_IDENTITY() AS INT);";
-          
-          var result = (await QueryAsync<int>(sql, parameters)).FirstOrDefault();
-          return result == 0 ? throw new InvalidOperationException("Insert failed - no identity returned") : result;
-      }
-
-      public async Task UpdateAsync<T>(T obj) where T : class
-      {
-          var metadata = DbAttributes.GetTableMetadata<T>();
-
-          if (metadata.Columns.Any(c => c.Name == "UpdatedAt"))
-              obj = SetEntityProp(obj, "UpdatedAt", DateTime.UtcNow);
-
-          var userId = _userContext.UserId;
-          if (userId != null && metadata.Columns.Any(c => c.Name == "UpdatedBy"))
-              obj = SetEntityProp(obj, "UpdatedBy", userId.Value);
-          
-          var columnUpdates = string.Join(",", metadata.Columns.Select(c => $"[{c.Name}] = @{c.Name}"));
-          var parameters = DbAttributes.CreateParameters(obj, metadata.Columns);
-          parameters[metadata.PrimaryKey.Name] = metadata.PrimaryKey.GetValue(obj)!;
-          
-          var sql = $"UPDATE {metadata.TableName} SET {columnUpdates} WHERE [{metadata.PrimaryKey.Name}] = @{metadata.PrimaryKey.Name}";
-          await ExecuteAsync(sql, parameters);
-      }
-
-      public async Task DeleteByIdAsync<T>(int id) where T : class
-      {
-          var metadata = DbAttributes.GetTableMetadata<T>();
-          var sql = $"DELETE FROM {metadata.TableName} WHERE [{metadata.PrimaryKey.Name}] = @id";
-          await ExecuteAsync(sql, new { id });
-      }
       
-      public async Task DeleteWhereInAsync<T>(string fieldName, List<int> values) where T : class
-      {
-          ValidateFieldName<T>(fieldName);
-          if (values.Count == 0) return;
-          
-          var metadata = DbAttributes.GetTableMetadata<T>();
-          var sql = $"DELETE FROM {metadata.TableName} WHERE [{fieldName}] IN @values";
-    
-          await ExecuteAsync(sql, new { values });
-      }
-
       public async Task<IEnumerable<T>> GetAllAsync<T>() where T : class
       {
           var metadata = DbAttributes.GetTableMetadata<T>();
@@ -211,6 +86,16 @@ public class DataContextDapper : IDataContextDapper
     
           return await QueryAsync<T>(sql, new { values });
       }
+      public async Task<IEnumerable<T>> GetWhereInStrAsync<T>(string fieldName, List<string> values) where T : class
+      {
+          ValidateFieldName<T>(fieldName);
+          if (values.Count == 0) return [];
+          
+          var metadata = DbAttributes.GetTableMetadata<T>();
+          var sql = $"SELECT * FROM {metadata.TableName} WHERE [{fieldName}] IN @values";
+    
+          return await QueryAsync<T>(sql, new { values });
+      }
 
       public async Task<(IEnumerable<T> items, int totalCount)> GetPaginatedWithSqlAsync<T>(
           string baseQuery,
@@ -218,18 +103,20 @@ public class DataContextDapper : IDataContextDapper
           object? parameters = null,
           string? orderByColumn = null,
           bool descending = true,
-          string? customOrderBy = null) where T : class
+          TrustedOrderByExpression? customOrderBy = null) where T : class
       {
+          EnsureConnectionOpen();
           var countSql = $"SELECT COUNT(*) FROM ({baseQuery}) AS CountQuery";
           var totalCount = await _db.ExecuteScalarAsync<int>(countSql, parameters, _transaction);
 
           string orderBy;
 
-          if (!string.IsNullOrWhiteSpace(customOrderBy))
+          if (customOrderBy != null)
           {
-              // For security, I'm only trusting customOrderBy  when it comes from service layer
-              // (I still want to allow dynamic expressions like relevance scoring in search)
-              orderBy = customOrderBy;
+              // Order by must be marked as "Trusted" in function calling GetPaginatedWithSqlAsync
+              // or it will fail (this is not marked as trusted because calling this function should not
+              // automatically trust the 
+              orderBy = customOrderBy.ToSql();
           }
           else if (!string.IsNullOrWhiteSpace(orderByColumn))
           {
@@ -275,6 +162,155 @@ public class DataContextDapper : IDataContextDapper
           return (await GetWhereAsync<T>(new Dictionary<string, object> { { fieldName, value } })).Count();
       }
       
+      
+      // ICommandExecutor Implementations
+      public async Task<int> ExecuteAsync(string sql, object? parameters = null)
+      {
+          EnsureConnectionOpen();
+          return await _db.ExecuteAsync(sql, parameters, _transaction);
+      }
+
+      public async Task<int> ExecuteStoredProcedureAsync(string sql, object? parameters = null)
+      {
+          EnsureConnectionOpen();
+          return await _db.ExecuteAsync(sql, parameters, _transaction, commandType: CommandType.StoredProcedure);
+      }
+
+      public async Task<int> InsertAsync<T>(T obj) where T : class
+      {
+          var metadata = DbAttributes.GetTableMetadata<T>();
+          
+          if (metadata.Columns.Any(c => c.Name == "CreatedAt"))
+              obj = SetEntityProp(obj, "CreatedAt", DateTime.UtcNow);
+          
+          var userId = _auditContext.UserId;
+          if (userId != null && metadata.Columns.Any(c => c.Name == "CreatedBy"))
+              obj = SetEntityProp(obj, "CreatedBy", userId.Value);
+          
+          var columnNames = string.Join(",", metadata.Columns.Select(c => $"[{c.Name}]"));
+          var parameterNames = string.Join(",", metadata.Columns.Select(c => $"@{c.Name}"));
+          
+          var parameters = DbAttributes.CreateParameters(obj, metadata.Columns);
+          var sql = $"INSERT INTO {metadata.TableName} ({columnNames}) VALUES ({parameterNames}); SELECT CAST(SCOPE_IDENTITY() AS INT);";
+          
+          var result = (await QueryAsync<int>(sql, parameters)).FirstOrDefault();
+          return result == 0 ? throw new InvalidOperationException("Insert failed - no identity returned") : result;
+      }
+
+      public async Task UpdateAsync<T>(T obj) where T : class
+      {
+          var metadata = DbAttributes.GetTableMetadata<T>();
+
+          if (metadata.Columns.Any(c => c.Name == "UpdatedAt"))
+              obj = SetEntityProp(obj, "UpdatedAt", DateTime.UtcNow);
+
+          var userId = _auditContext.UserId;
+          if (userId != null && metadata.Columns.Any(c => c.Name == "UpdatedBy"))
+              obj = SetEntityProp(obj, "UpdatedBy", userId.Value);
+          
+          var columnUpdates = string.Join(",", metadata.Columns.Select(c => $"[{c.Name}] = @{c.Name}"));
+          var parameters = DbAttributes.CreateParameters(obj, metadata.Columns);
+          parameters[metadata.PrimaryKey.Name] = metadata.PrimaryKey.GetValue(obj)!;
+          
+          var sql = $"UPDATE {metadata.TableName} SET {columnUpdates} WHERE [{metadata.PrimaryKey.Name}] = @{metadata.PrimaryKey.Name}";
+          await ExecuteAsync(sql, parameters);
+      }
+
+      public async Task UpdateFieldAsync<T>(int id, string fieldName, object value) where T : class
+      {
+          ValidateFieldName<T>(fieldName);
+          var metadata = DbAttributes.GetTableMetadata<T>();
+          var sql = $"UPDATE {metadata.TableName} SET [{fieldName}] = @value WHERE [{metadata.PrimaryKey.Name}] = @id";
+          await ExecuteAsync(sql, new { id, value });
+      }
+      
+      public async Task BulkInsertAsync<T>(IEnumerable<T> entities) where T : class
+      {
+          var entityList = entities.ToList();
+          if (entityList.Count == 0) return;
+
+          var metadata = DbAttributes.GetTableMetadata<T>();
+
+          entityList = entityList.Select(e =>
+          {
+              if (metadata.Columns.Any(c => c.Name == "CreatedAt"))
+                  e = SetEntityProp(e, "CreatedAt", DateTime.UtcNow);
+
+              var userId = _auditContext.UserId;
+              if (userId != null && metadata.Columns.Any(c => c.Name == "CreatedBy"))
+                  e = SetEntityProp(e, "CreatedBy", userId.Value);
+
+              return e;
+          }).ToList();
+
+          var columnNames = string.Join(",", metadata.Columns.Select(c => $"[{c.Name}]"));
+          var parameterNames = string.Join(",", metadata.Columns.Select(c => $"@{c.Name}"));
+
+          var sql = $"INSERT INTO {metadata.TableName} ({columnNames}) VALUES ({parameterNames})";
+
+          await ExecuteAsync(sql, entityList);
+      }
+      
+      public async Task DeleteByIdAsync<T>(int id) where T : class
+      {
+          var metadata = DbAttributes.GetTableMetadata<T>();
+          var sql = $"DELETE FROM {metadata.TableName} WHERE [{metadata.PrimaryKey.Name}] = @id";
+          await ExecuteAsync(sql, new { id });
+      }
+
+      public async Task DeleteByFieldAsync<T>(string fieldName, object value) where T : class
+      {
+          ValidateFieldName<T>(fieldName);
+          var metadata = DbAttributes.GetTableMetadata<T>();
+          var sql = $"DELETE FROM {metadata.TableName} WHERE [{fieldName}] = @value";
+          await ExecuteAsync(sql, new { value });
+      }
+      
+      public async Task DeleteWhereInAsync<T>(string fieldName, List<int> values) where T : class
+      {
+          ValidateFieldName<T>(fieldName);
+          if (values.Count == 0) return;
+          
+          var metadata = DbAttributes.GetTableMetadata<T>();
+          var sql = $"DELETE FROM {metadata.TableName} WHERE [{fieldName}] IN @values";
+    
+          await ExecuteAsync(sql, new { values });
+      }
+
+      // ITransactionManager Implementations
+      
+      public async Task<T> WithTransactionAsync<T>(Func<Task<T>> func)
+      {
+          if (_transaction != null) return await func();
+          EnsureConnectionOpen();
+          
+          try
+          {
+              _transaction = _db.BeginTransaction();
+              var result = await func();
+              _transaction.Commit();
+              _transaction = null;
+              return result;
+          }
+          catch
+          {
+              _transaction?.Rollback();
+              _transaction = null;
+              throw;
+          }
+      }
+
+      public async Task WithTransactionAsync(Func<Task> func)
+      {
+          await WithTransactionAsync<object?>(async () =>
+          {
+              await func();
+              return null;
+          });
+      }
+      
+      // Other
+      
       private T SetEntityProp<T>(T obj, string field, object value) where T : class
       {
           var type = typeof(T);
@@ -291,6 +327,12 @@ public class DataContextDapper : IDataContextDapper
               throw new ArgumentException("Field name is required", nameof(fieldName));
           if (!DbAttributes.ValidateColumnExists<T>(fieldName))
               throw new ArgumentException("Field not found", nameof(fieldName));
+      }
+
+      private void EnsureConnectionOpen()
+      {
+          if (_db.State != ConnectionState.Open)
+              _db.Open();
       }
 
 

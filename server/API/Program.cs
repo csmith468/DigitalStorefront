@@ -1,22 +1,32 @@
+using API.Database;
 using API.Extensions;
 using API.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Validate Custom Attributes
+DbAttributeValidator.ValidateAllEntities(typeof(Program).Assembly);
 
 // Framework Services
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddHttpContextAccessor();
 
-// Application Services
+// Security
 builder.Services.AddCorsConfiguration();
-builder.Services.AddAuthentication(builder.Configuration);
+builder.Services.AddJwtAuthentication(builder.Configuration);
 builder.Services.AddAuthorizationPolicies();
+builder.Services.AddSecurityOptions();
+
+// Validation & Documentation
 builder.Services.AddValidation();
 builder.Services.AddSwaggerAuth();
+
+// Infrastructure
 builder.Services.AddHealthChecksConfiguration(builder.Configuration);
 builder.Services.AddRateLimiting();
 builder.Services.AddResponseCachingConfiguration();
+builder.Services.AddDirectoryBrowser();
 
 // Dependency Injection
 builder.Services.AddAutoRegistration(typeof(Program).Assembly);
@@ -27,9 +37,6 @@ builder.Services.AddMappings();
 builder.Services.AddPollyPolicies();
 
 var app = builder.Build();
-
-// Configure Static Files
-builder.Services.AddDirectoryBrowser();
 
 // Exception Handling
 app.UseMiddleware<ExceptionMiddleware>();

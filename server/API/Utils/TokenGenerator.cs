@@ -1,22 +1,27 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using API.Configuration;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
 namespace API.Utils;
 
-public class TokenGenerator(IServiceProvider serviceProvider)
+public class TokenGenerator
 {
-    private IConfiguration Config => serviceProvider.GetService<IConfiguration>()!;
+    private readonly SecurityOptions _securityOptions;
+
+    public TokenGenerator(IOptions<SecurityOptions> securityOptions)
+    {
+        _securityOptions = securityOptions.Value;
+    }
     
     public string GenerateToken(int userId, List<string> roles)
     {
         var claims = new List<Claim> { new ("userId", userId.ToString()) };
         claims.AddRange(roles.Select(role => new Claim("role", role)));
 
-        var configTokenKey = Config.GetSection("AppSettings:TokenKey").Value;
-        if (configTokenKey is null) throw new Exception("Cannot create token.");
-        var tokenKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configTokenKey));
+        var tokenKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_securityOptions.TokenKey));
         
         var credentials = new SigningCredentials(tokenKey, SecurityAlgorithms.HmacSha256);
         var descriptor = new SecurityTokenDescriptor

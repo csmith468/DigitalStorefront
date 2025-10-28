@@ -1,6 +1,7 @@
 using System.Reflection;
 using API.Database;
 using API.Services;
+using API.Services.Contexts;
 using API.Services.Images;
 using API.Utils;
 
@@ -12,7 +13,7 @@ public static class DependencyInjectionExtensions
     {
         var types = assembly.GetTypes()
             .Where(t => t is { IsClass: true, IsAbstract: false, IsGenericType: false })
-            .Where(t => t.Name.EndsWith("Service"))
+            .Where(t => t.Name.EndsWith("Service") || t.Name.EndsWith("Context"))
             .ToList();
 
         foreach (var implementationType in types)
@@ -29,9 +30,14 @@ public static class DependencyInjectionExtensions
 
     public static IServiceCollection AddManualRegistrations(this IServiceCollection services)
     {
-        services.AddScoped<IDataContextDapper, DataContextDapper>();
-        services.AddScoped<IUserContext, UserContext>();
+        services.AddScoped<DataContextDapper>();
+        services.AddScoped<IQueryExecutor>(sp => sp.GetRequiredService<DataContextDapper>());
+        services.AddScoped<ICommandExecutor>(sp => sp.GetRequiredService<DataContextDapper>());
+        services.AddScoped<ITransactionManager>(sp => sp.GetRequiredService<DataContextDapper>());
+        
         services.AddScoped<IImageStorageService, LocalImageStorageService>();
+        services.AddScoped<IAuditContext, HttpAuditContext>();
+        services.AddScoped<IStoragePathProvider, WebStoragePathProvider>();
         services.AddScoped<TokenGenerator>();
         services.AddScoped<PasswordHasher>();
         return services;

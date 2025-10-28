@@ -15,7 +15,9 @@ namespace API.Tests.UnitTests;
 
 public class ProductServiceTests
 {
-    private readonly Mock<IDataContextDapper> _mockDapper;
+    private readonly Mock<IQueryExecutor> _mockQueryExecutor;
+    private readonly Mock<ICommandExecutor> _mockCommandExecutor;
+    private readonly Mock<ITransactionManager> _mockTransactionManager;
     private readonly Mock<ILogger<ProductService>> _mockLogger;
     private readonly Mock<IMapper> _mockMapper;
     private readonly IConfiguration _config;
@@ -27,7 +29,9 @@ public class ProductServiceTests
 
     public ProductServiceTests()
     {
-        _mockDapper = new Mock<IDataContextDapper>();
+        _mockQueryExecutor = new Mock<IQueryExecutor>();
+        _mockCommandExecutor = new Mock<ICommandExecutor>();
+        _mockTransactionManager = new Mock<ITransactionManager>();
         _mockLogger = new Mock<ILogger<ProductService>>();
         _mockMapper = new Mock<IMapper>();
         _mockUserContext = new Mock<IUserContext>();
@@ -45,7 +49,9 @@ public class ProductServiceTests
             .Build();
 
         _service = new ProductService(
-            _mockDapper.Object,
+            _mockQueryExecutor.Object,
+            _mockCommandExecutor.Object,
+            _mockTransactionManager.Object,
             _mockLogger.Object,
             _mockMapper.Object,
             _config,
@@ -64,13 +70,13 @@ public class ProductServiceTests
         var product = new Product { ProductId = productId, Name = "Test Product" };
         var productDto = new ProductDetailDto { ProductId = productId, Name = "Test Product" };
 
-        _mockDapper.Setup(d => d.GetByIdAsync<Product>(productId)).ReturnsAsync(product);
+        _mockQueryExecutor.Setup(d => d.GetByIdAsync<Product>(productId)).ReturnsAsync(product);
         _mockMapper.Setup(m => m.Map<Product, ProductDetailDto>(product)).Returns(productDto);
         _mockImageService.Setup(i => i.GetAllProductImagesAsync(productId))
             .ReturnsAsync(Result<List<ProductImageDto>>.Success([]));
-        _mockDapper.Setup(d => d.GetByFieldAsync<ProductSubcategory>("productId", productId))
+        _mockQueryExecutor.Setup(d => d.GetByFieldAsync<ProductSubcategory>("productId", productId))
             .ReturnsAsync(new List<ProductSubcategory>());
-        _mockDapper.Setup(d => d.GetWhereInAsync<Subcategory>("subcategoryId", It.IsAny<List<int>>()))
+        _mockQueryExecutor.Setup(d => d.GetWhereInAsync<Subcategory>("subcategoryId", It.IsAny<List<int>>()))
             .ReturnsAsync(new List<Subcategory>());
 
         // Act
@@ -88,7 +94,7 @@ public class ProductServiceTests
     {
         // Arrange
         const int productId = 999;
-        _mockDapper.Setup(d => d.GetByIdAsync<Product>(productId)).ReturnsAsync((Product?)null);
+        _mockQueryExecutor.Setup(d => d.GetByIdAsync<Product>(productId)).ReturnsAsync((Product?)null);
 
         // Act
         var result = await _service.GetProductByIdAsync(productId);
@@ -107,7 +113,7 @@ public class ProductServiceTests
         var dto = new ProductFormDto { Name = "Existing Product", Slug = "existing-product" };
         const int userId = 1;
 
-        _mockDapper.Setup(d => d.ExistsByFieldAsync<Product>("name", dto.Name)).ReturnsAsync(true);
+        _mockQueryExecutor.Setup(d => d.ExistsByFieldAsync<Product>("name", dto.Name)).ReturnsAsync(true);
 
         // Act
         var result = await _service.CreateProductAsync(dto, userId);
@@ -126,8 +132,8 @@ public class ProductServiceTests
         var dto = new ProductFormDto { Name = "New Product", Slug = "existing-slug" };
         const int userId = 1;
 
-        _mockDapper.Setup(d => d.ExistsByFieldAsync<Product>("name", dto.Name)).ReturnsAsync(false);
-        _mockDapper.Setup(d => d.ExistsByFieldAsync<Product>("slug", dto.Slug)).ReturnsAsync(true);
+        _mockQueryExecutor.Setup(d => d.ExistsByFieldAsync<Product>("name", dto.Name)).ReturnsAsync(false);
+        _mockQueryExecutor.Setup(d => d.ExistsByFieldAsync<Product>("slug", dto.Slug)).ReturnsAsync(true);
 
         // Act
         var result = await _service.CreateProductAsync(dto, userId);
@@ -151,8 +157,8 @@ public class ProductServiceTests
         };
         const int userId = 1;
 
-        _mockDapper.Setup(d => d.ExistsByFieldAsync<Product>("name", dto.Name)).ReturnsAsync(false);
-        _mockDapper.Setup(d => d.ExistsByFieldAsync<Product>("slug", dto.Slug)).ReturnsAsync(false);
+        _mockQueryExecutor.Setup(d => d.ExistsByFieldAsync<Product>("name", dto.Name)).ReturnsAsync(false);
+        _mockQueryExecutor.Setup(d => d.ExistsByFieldAsync<Product>("slug", dto.Slug)).ReturnsAsync(false);
 
         // Act
         var result = await _service.CreateProductAsync(dto, userId);
@@ -177,7 +183,9 @@ public class ProductServiceTests
             .Build();
         
         var service = new ProductService(
-            _mockDapper.Object,
+            _mockQueryExecutor.Object,
+            _mockCommandExecutor.Object,
+            _mockTransactionManager.Object,
             _mockLogger.Object,
             _mockMapper.Object,
             demoConfig,
@@ -195,7 +203,7 @@ public class ProductServiceTests
         };
         const int userId = 1;
 
-        _mockDapper.Setup(d => d.GetCountByFieldAsync<Product>("createdBy", userId))
+        _mockQueryExecutor.Setup(d => d.GetCountByFieldAsync<Product>("createdBy", userId))
             .ReturnsAsync(4);  // Demo mode allows up to 3 products created
 
         // Act

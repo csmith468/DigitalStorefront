@@ -8,6 +8,10 @@ public interface IUserContext
     List<string> GetRoles();
 }
 
+/// <summary>
+/// Allows services to get user ID for validation
+/// Example: In demo mode, users with certain roles can only add up to 3 products
+/// </summary>
 public class UserContext(IHttpContextAccessor httpContextAccessor) : IUserContext
 {
     public int? UserId
