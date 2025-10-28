@@ -1,5 +1,6 @@
 using System.Net;
-  using API.Database;
+using API.Configuration;
+using API.Database;
   using API.Models.DsfTables;
   using API.Models.Dtos;
   using API.Services;
@@ -28,18 +29,14 @@ using System.Net;
           _mockLogger = new Mock<ILogger<AuthService>>();
           _mockUserService = new Mock<IUserService>();
 
-          var mockConfig = new ConfigurationBuilder()
-              .AddInMemoryCollection(new Dictionary<string, string>
-              {
-                  { "AppSettings:TokenKey", "test-key-minimum-32-characters-long-for-jwt-tokens" },
-                  { "AppSettings:PasswordKey", "test-password-key" }
-              }!)
-              .Build();
-
-          var serviceProvider = new TestServiceProvider(mockConfig);
-
-          _passwordHasher = new PasswordHasher(serviceProvider);
-          _tokenGen = new TokenGenerator(serviceProvider);
+          var securityOptions = Microsoft.Extensions.Options.Options.Create(new SecurityOptions
+          {
+              TokenKey = "test-token-key-minimum-32-characters-long-for-jwt-tokens",
+              PasswordKey = "test-password-key-minimum-32-characters-long-for-jwt-tokens"
+          });
+          
+         _passwordHasher = new PasswordHasher(securityOptions);
+          _tokenGen = new TokenGenerator(securityOptions);
 
           _authService = new AuthService(
               _mockDapper.Object,

@@ -5,7 +5,7 @@ namespace API.Services.Images;
 public interface IImageStorageService
 {
     /// <summary>
-    /// Saves an uploaded file with optional prefix for oganization
+    /// Saves an uploaded file with optional prefix for organization
     /// </summary>
     /// <param name="file">Uploaded file</param>
     /// <param name="subfolder">Subfolder in wwwroot/images ("products", "subcategories", etc.)</param>
