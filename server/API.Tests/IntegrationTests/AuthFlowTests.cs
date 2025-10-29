@@ -3,7 +3,6 @@ using System.Net.Http.Json;
 using API.Models.Dtos;
 using API.Tests.Helpers;
 using FluentAssertions;
-using Xunit;
 
 namespace API.Tests.IntegrationTests;
 
@@ -33,7 +32,7 @@ public class AuthFlowTests(CustomWebApplicationFactory factory) : IClassFixture<
 
         var authResponse = await response.Content.ReadFromJsonAsync<AuthResponseDto>();
         authResponse.Should().NotBeNull();
-        authResponse!.Token.Should().NotBeNullOrEmpty();
+        authResponse.Token.Should().NotBeNullOrEmpty();
         authResponse.Username.Should().Be(registerDto.Username);
         authResponse.Roles.Should().Contain("ProductWriter");
         authResponse.Roles.Should().Contain("ImageManager");
@@ -44,7 +43,7 @@ public class AuthFlowTests(CustomWebApplicationFactory factory) : IClassFixture<
     {
         // Arrange
         var username = $"duplicate_{Guid.NewGuid():N}";
-        var password = "SecurePass123!";
+        const string password = "SecurePass123!";
         var registerDto1 = new UserRegisterDto
         {
             Username = username,
@@ -79,7 +78,7 @@ public class AuthFlowTests(CustomWebApplicationFactory factory) : IClassFixture<
     {
         // Arrange - Register user first
         var username = $"logintest_{Guid.NewGuid():N}";
-        var password = "CorrectPassword123!";
+        const string password = "CorrectPassword123!";
 
         var registerDto = new UserRegisterDto
         {
@@ -106,17 +105,17 @@ public class AuthFlowTests(CustomWebApplicationFactory factory) : IClassFixture<
 
         var authResponse = await response.Content.ReadFromJsonAsync<AuthResponseDto>();
         authResponse.Should().NotBeNull();
-        authResponse!.Token.Should().NotBeNullOrEmpty();
+        authResponse.Token.Should().NotBeNullOrEmpty();
         authResponse.Username.Should().Be(loginDto.Username);
     }
 
     [Fact]
     public async Task LoginUser_WithInvalidPassword_ReturnsUnauthorized()
     {
-        // Arrange - Register user with one password, try to login with another
+        // Arrange - Register user with one password, try to log in with another
         var username = $"pwdtest_{Guid.NewGuid():N}";
-        var correctPassword = "CorrectPassword123!";
-        var wrongPassword = "WrongPassword123!";
+        const string correctPassword = "CorrectPassword123!";
+        const string wrongPassword = "WrongPassword123!";
 
         var registerDto = new UserRegisterDto
         {
