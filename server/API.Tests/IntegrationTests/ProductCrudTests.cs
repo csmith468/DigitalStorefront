@@ -17,34 +17,11 @@ public class ProductCrudTests : IClassFixture<CustomWebApplicationFactory>
         _factory = factory;
     }
 
-    private async Task<(HttpClient client, AuthResponseDto auth)> CreateAuthenticatedClientAsync()
-    {
-        var client = _factory.CreateClient();
-
-        var registerDto = new UserRegisterDto
-        {
-            Username = $"testUser_{Guid.NewGuid():N}",
-            Email = $"test_{Guid.NewGuid():N}@example.com",
-            Password = "Test123!",
-            ConfirmPassword = "Test123!",
-            FirstName = "Test",
-            LastName = "User"
-        };
-
-        var response = await client.PostAsJsonAsync("/auth/register", registerDto);
-        var authResponse = await response.Content.ReadFromJsonAsync<AuthResponseDto>();
-
-        client.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", authResponse!.Token);
-
-        return (client, authResponse);
-    }
-
     [Fact]
     public async Task CreateProduct_UpdateProduct_DeleteProduct_FullFlow()
     {
         // Arrange
-        var (client, auth) = await CreateAuthenticatedClientAsync();
+        var (client, auth) = await TestAuthHelpers.CreateAuthenticatedClientAsync(_factory);
 
         var createDto = new ProductFormDto
         {
