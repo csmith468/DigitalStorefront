@@ -84,4 +84,36 @@ public class ProductCrudTests : IClassFixture<CustomWebApplicationFactory>
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
+
+    [Fact]
+    public async Task CreateProduct_WithInvalidSubcategory_RollsBackTransaction()
+    {
+        // Arrange
+        var (client, auth) = await TestAuthHelpers.CreateAuthenticatedClientAsync(_factory);
+        var uniqueName = $"Test Product {Guid.NewGuid():N}";
+        var uniqueSlug = $"test-product-{Guid.NewGuid():N}";
+
+        var createDto = new ProductFormDto
+        {
+            Name = uniqueName,
+            Slug = uniqueSlug,
+            Description = "Test description",
+            Price = 100,
+            PremiumPrice = 90,
+            PriceTypeId = 1,
+            ProductTypeId = 1,
+            SubcategoryIds = [999999]  // Invalid subcategory ID - should trigger rollback
+        };
+
+        // Act
+        var createResponse = await client.PostAsJsonAsync("/products", createDto);
+
+        // Assert - Request should fail
+        createResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var errorContent = await createResponse.Content.ReadAsStringAsync();
+        errorContent.Should().ContainEquivalentOf("subcategor");
+
+        var getBySlugResponse = await client.GetAsync($"/products/slug/{uniqueSlug}");
+        getBySlugResponse.StatusCode.Should().Be(HttpStatusCode.NotFound, "Product should not exist in database due to transaction rollback");
+    }
 }

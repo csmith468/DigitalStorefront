@@ -26,8 +26,6 @@ public static class ErrorMessages
             new($"Product name {name} already exists", HttpStatusCode.BadRequest);
         public static ErrorMessage SlugExists(string slug) => 
             new($"Product slug {slug} already exists", HttpStatusCode.BadRequest);
-        public static readonly ErrorMessage PremiumPriceExceedsPrice = 
-            new("Premium price cannot exceed regular price", HttpStatusCode.BadRequest);
         public static readonly ErrorMessage CreationFailed = 
             new("Product could not be created.", HttpStatusCode.InternalServerError);
         public static readonly ErrorMessage DeleteFailed = 
