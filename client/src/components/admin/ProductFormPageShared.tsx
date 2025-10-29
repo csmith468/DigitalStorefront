@@ -1,21 +1,31 @@
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { useProduct } from '../../hooks/queries/useProducts';
-import { ProductForm } from '../../components/admin/ProductForm';
-import { LoadingScreen } from '../../components/primitives/LoadingScreen';
+import { useSearchParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { ProductImageManager } from '../../components/admin/ProductImageManager';
-import { PageHeader } from '../../components/primitives/PageHeader';
+import { ProductForm } from './ProductForm';
+import { ProductImageManager } from './ProductImageManager';
+import { PageHeader } from '../primitives/PageHeader';
+import type { ProductDetail } from '../../types/product';
+import type { ProductFormMode } from './ProductForm';
+import { useUser } from '../../contexts/useUser';
 
 type TabType = 'details' | 'images';
 
-export function EditProductPage() {
-  const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const productId = Number(id);
+interface ProductFormPageSharedProps {
+  product: ProductDetail;
+  mode: ProductFormMode;
+  title: string;
+  onSuccess: () => void;
+  onCancel: () => void;
+  onImagesChange: () => void;
+}
 
+export function ProductFormPageShared({ 
+  product, mode, title, onSuccess, onCancel, onImagesChange 
+}: ProductFormPageSharedProps) {
+  const [searchParams, setSearchParams] = useSearchParams();
   const initialTab = (searchParams.get('tab') === 'images' ? 'images' : 'details') as TabType;
   const [activeTab, setActiveTab] = useState<TabType>(initialTab);
+
+  const { isLoggedIn } = useUser();
 
   useEffect(() => {
     const tabParam = searchParams.get('tab');
@@ -23,27 +33,10 @@ export function EditProductPage() {
       setActiveTab(tabParam as TabType);
   }, [searchParams]);
 
-  const { data: product, isLoading, error, refetch } = useProduct(productId);
-
   const handleTabChange = (tab: TabType) => {
     setActiveTab(tab);
     setSearchParams({ tab });
   };
-
-  if (isLoading) {
-    return <LoadingScreen message="Loading product..." />;
-  }
-
-  if (error || !product) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-danger text-center">
-          <p className="text-lg font-semibold mb-2">Error</p>
-          <p>Failed to load product. Please try again.</p>
-        </div>
-      </div>
-    );
-  }
 
   const tabs = [
     { id: 'details' as TabType, label: 'Product Details' },
@@ -52,12 +45,37 @@ export function EditProductPage() {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <PageHeader 
-        title={`Edit Product: ${product.name}`}
-        returnLink='/admin/products'
-        returnText='Back to Products'
-      />
+      <PageHeader title={title} returnLink='/admin/products' returnText='Back to Products' />
 
+      {mode === 'view' && (
+        <div className="bg-blue-50 border border-blue-200 p-4 rounded-md mb-6">
+          <p className="text-blue-800">
+            <strong>Read-Only Demo:</strong> This shows what the product form looks like.
+            {!isLoggedIn && (
+              <>
+                <br /><a href="/?auth=signup" className="text-blue-600 underline font-medium">
+                  Create an Account
+                </a> to add your own products!
+              </>
+            )}
+          </p>
+        </div>
+      )}
+
+      {mode === 'try' && (
+        <div className="bg-green-50 border border-green-200 p-4 rounded-md mb-6">
+          <p className="text-green-800">
+            <strong>Try It Out!</strong> Test the form. Changes won't be saved.
+            {!isLoggedIn && (
+              <>
+                <br /><a href="/?auth=signup" className="text-blue-600 underline font-medium">
+                  Create an Account
+                </a> to add your own products!
+              </>
+            )}
+          </p>
+        </div>
+      )}
       <div className="mb-6">
         <nav className="flex gap-1 border-b-2 border-gray-200">
           {tabs.map((tab) => (
@@ -68,8 +86,7 @@ export function EditProductPage() {
                 activeTab === tab.id
                   ? 'bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-accent)] text-white shadow-lg -mb-0.5 border-b-2 border-transparent'
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300 hover:text-gray-900 border border-gray-300 border-b-0'
-              }`}
-            >
+              }`}>
               <span>{tab.label}</span>
               {tab.badge !== undefined && (
                 <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
@@ -87,19 +104,16 @@ export function EditProductPage() {
 
       <div className="bg-white rounded-lg shadow p-6">
         {activeTab === 'details' ? (
-          <ProductForm
-            existingProduct={product}
-            onSuccess={() => navigate('/admin/products')}
-            onCancel={() => navigate('/admin/products')}
-          />
+          <ProductForm existingProduct={product} mode={mode} onSuccess={onSuccess} onCancel={onCancel} />
         ) : (
           <ProductImageManager
-            productId={productId}
+            productId={product.productId}
             images={product.images || []}
-            onImagesChange={() => refetch()}
+            onImagesChange={onImagesChange}
+            isViewOnly={mode !== 'edit'}
           />
         )}
       </div>
     </div>
-    );
-  }
+  );
+}

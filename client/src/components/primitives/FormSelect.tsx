@@ -11,6 +11,7 @@ interface FormSelectProps<T = any> {
   placeholder?: string;
   disablePlaceholder?: boolean;
   options: T[];
+  disabled?: boolean;
   getOptionValue: (option: T) => string | number;
   getOptionLabel: (option: T) => string;
   type?: "string" | "number";
@@ -26,6 +27,7 @@ export function FormSelect<T>({
   placeholder = "Select an option...",
   disablePlaceholder = false,
   options,
+  disabled = false,
   getOptionValue,
   getOptionLabel,
   type = "string",
@@ -50,6 +52,7 @@ export function FormSelect<T>({
         required={required}
         value={value ?? ""}
         onChange={handleChange}
+        disabled={disabled}
         className={overrideClass || formStyles.input}>
         {!disablePlaceholder && <option value="">{placeholder}</option>}
         {options?.map((option, index) => {

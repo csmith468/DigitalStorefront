@@ -1,3 +1,5 @@
+using System.Security.Claims;
+
 namespace API.Services;
 
 public interface IUserContext
@@ -30,6 +32,6 @@ public class UserContext(IHttpContextAccessor httpContextAccessor) : IUserContex
     public List<string> GetRoles()
     {
         return httpContextAccessor.HttpContext?.User
-            .FindAll("role").Select(r => r.Value).ToList() ?? [];
+            .FindAll(ClaimTypes.Role).Select(r => r.Value).ToList() ?? [];
     }
 }

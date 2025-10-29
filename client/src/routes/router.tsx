@@ -6,14 +6,16 @@ import { toasterConfig } from "../config/toastConfig";
 import { AppLayout } from "./AppLayout";
 import { HomePage } from "../pages/HomePage";
 import { AdminProductList } from "../components/admin/AdminProductList";
-import { CreateProductPage } from "../pages/admin/CreateProductPage";
-import { EditProductPage } from "../pages/admin/EditProductPage";
+import { CreateProductFormPage } from "../pages/admin/CreateProductFormPage";
+import { EditProductFormPage } from "../pages/admin/EditProductFormPage";
+import { ViewProductFormPage } from "../pages/admin/ViewProductFormPage";
 import { ProductDetailPage } from "../pages/ProductDetailPage";
 import { ProductsView } from "../pages/ProductsView";
 import { ProtectedRoute } from "../components/auth/ProtectedRoute";
 import { RouteErrorPage } from "./RouteErrorPage";
 import { SearchResults } from "../pages/SearchResults";
 import { UserProvider } from "../contexts/UserContext";
+import { TryProductFormPage } from "../pages/admin/TryProductFormPage";
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -50,15 +52,18 @@ export const router = createBrowserRouter([
           { path: "/search", element: <SearchResults /> },
           { path: "/products/:categorySlug/:subcategorySlug", element: <ProductsView /> },
           { path: "/product/:slug", element: <ProductDetailPage /> },
-          { path: "/admin", 
-            element: <ProtectedRoute><Outlet /></ProtectedRoute>,
-            children: [
-              { index: true, element: <Navigate to="/admin/products" replace /> },
-              { path: "products", element: <AdminProductList /> },
-              { path: "products/create", element: <CreateProductPage /> },
-              { path: "products/:id/edit", element: <EditProductPage /> },
-            ]
-          }
+          { path: "/admin", element: <Navigate to="/admin/products" replace /> },
+          { path: "/admin/products", element: <AdminProductList /> },
+          { path: "/admin/products/try", element: <TryProductFormPage /> },
+          { path: "/admin/products/:id/view", element: <ViewProductFormPage /> },
+          {
+            path: "/admin/products/create",
+            element: <ProtectedRoute><CreateProductFormPage /></ProtectedRoute>
+          },
+          {
+            path: "/admin/products/:id/edit",
+            element: <ProtectedRoute><EditProductFormPage /></ProtectedRoute>
+          },
         ]
       }
     ]

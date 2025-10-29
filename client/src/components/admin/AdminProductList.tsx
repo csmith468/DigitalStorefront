@@ -5,7 +5,7 @@ import { usePagination } from "../../hooks/utilities/usePagination";
 import { useState } from "react";
 import { useProductTypes } from "../../hooks/queries/useMetadata";
 import { PaginationWrapper } from "../primitives/PaginationWrapper";
-import { LockClosedIcon, MagnifyingGlassIcon, PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
+import { EyeIcon, MagnifyingGlassIcon, PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { FormInput } from "../primitives/FormInput";
 import { FormSelect } from "../primitives/FormSelect";
 import { PageHeader } from "../primitives/PageHeader";
@@ -30,7 +30,7 @@ export function AdminProductList() {
     page: pagination.page,
     pageSize: pagination.pageSize,
   });
-  const { isAdmin } = useUser();
+  const { isAdmin, canManageProducts } = useUser();
 
   const deleteMutation = useDeleteProduct();
 
@@ -138,6 +138,31 @@ export function AdminProductList() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
+              <tr className="bg-green-50 hover:bg-green-100 border-b-2 border-green-300">
+                <td className="px-6 py-4" colSpan={2}>
+                  <div className="flex items-center gap-3">
+                    <div>
+                      <div className="text-sm font-bold text-green-800">TRY IT OUT</div>
+                      <div className="text-xs text-green-600">Test the product form without signing up</div>
+                    </div>
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-green-700 font-sm">
+                  Interactive Demo
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <div>FREE</div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-right">
+                  <button
+                    onClick={() => navigate('/admin/products/try')}
+                    className="text-green-600 hover:text-green-800 flex items-center gap-1 justify-end w-full"
+                  >
+                    <PencilIcon className="h-5 w-5" />
+                    <span>Try Now</span>
+                  </button>
+                </td>
+              </tr>
               {products.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
@@ -185,13 +210,18 @@ export function AdminProductList() {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        {/* FUTURE: make form editor read-only for demo products */}
-                          {product.isDemoProduct && !isAdmin() ? (
-                          <div className="flex items-center justify-end gap-2 text-gray-400">
-                            <LockClosedIcon className="h-5 w-5" />
-                            <span>Demo Product</span>
+                        {!canManageProducts() || (product.isDemoProduct && !isAdmin()) ? (
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => navigate(`/admin/products/${product.productId}/view`)}
+                              className="text-[var(--color-primary)] hover:text-[var(--color-primary-light)] flex items-center gap-1"
+                              aria-label="View Product"
+                            >
+                              <EyeIcon className="h-5 w-5" />
+                              <span className="hidden sm:inline">View</span>
+                            </button>
                           </div>
-                          ) : (
+                        ) : (
                           <div className="flex items-center justify-end gap-2">
                             <button
                               onClick={() => navigate(`/admin/products/${product.productId}/edit`)}
@@ -207,7 +237,7 @@ export function AdminProductList() {
                               <TrashIcon className="h-5 w-5" />
                             </button>
                           </div>
-                          )}
+                        )}
                       </td>
                     </tr>
                   );

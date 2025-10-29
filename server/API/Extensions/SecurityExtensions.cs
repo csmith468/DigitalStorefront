@@ -1,3 +1,4 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using API.Configuration;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -41,6 +42,7 @@ public static class SecurityExtensions
     
     public static IServiceCollection AddJwtAuthentication(this IServiceCollection services, IConfiguration config)
     {
+        JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
         var tokenKey = config.GetSection("AppSettings:TokenKey").Value
                        ?? throw new InvalidOperationException("AppSettings:TokenKey is not configured");
         var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(tokenKey));

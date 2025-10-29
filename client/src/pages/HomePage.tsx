@@ -48,25 +48,40 @@ export function HomePage() {
       </div>
 
       <div className="md:col-span-2">
-        <FeatureCard
-          title='Admin Console'
-          description={user
-            ? "Access the admin console to create and manage products with image uploads, category assignments, and more. You can create up to 3 products with 5 images each (5MB max per image). Demo products are protected from editing."
-            : "Register for a free account to access the admin console where you can create products, upload images, and manage inventory. No email required! Demo accounts can create up to 3 products with 5 images each to protect server resources."}
-          features='CRUD operations, form validation, protected routes, image management'
-        >
-        {user ? (
-          <button
-            onClick={() => navigate('/admin/products')}
-            className={adminButtonStyle}
-          >Go to Admin Console →</button>
-        ) : (
-          <button
-            onClick={() => openAuthModal('register')}
-            className={adminButtonStyle}
-          >Register to Try Admin Features</button>
-        )}
-        </FeatureCard>
+        <div className="bg-gradient-to-br from-green-50 to-blue-50 rounded-lg shadow-lg p-6 border-2 border-green-200">
+          <div className="flex items-start justify-between mb-3">
+            <h2 className="text-xl font-semibold text-text-primary">Admin Console Demo</h2>
+            <span className="px-3 py-1 bg-green-500 text-white text-xs font-bold rounded-full">
+              No Login Required
+            </span>
+          </div>
+          <p className="text-text-secondary mb-3 text-sm">
+            Explore the full admin interface without signing up! View product management, image uploads, and CRUD operations.
+            {user
+              ? " You can create up to 3 products with 5 images each (5MB max per image)."
+              : " Create a free account to test creating your own products (no email required)."
+            }
+          </p>
+          <div className="text-xs text-gray-600 mb-4">
+            <strong>Features:</strong> CRUD operations, drag-and-drop image management, form validation, tag search, protected routes
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <button
+              onClick={() => navigate('/admin/products')}
+              className="px-5 py-2.5 bg-[var(--color-primary)] text-white rounded-md hover:opacity-90 font-medium text-sm shadow-md"
+            >
+              Explore Admin Console →
+            </button>
+            {!user && (
+              <button
+                onClick={() => openAuthModal('register')}
+                className="px-5 py-2.5 bg-white text-[var(--color-primary)] border-2 border-[var(--color-primary)] rounded-md hover:bg-gray-50 font-medium text-sm"
+              >
+                Create Account to Add Products
+              </button>
+            )}
+          </div>
+        </div>
       </div>
 
       <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 border border-blue-200 mb-4 mt-5">

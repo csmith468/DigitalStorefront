@@ -1,5 +1,7 @@
 import { Link } from "react-router-dom";
 import type { Product } from "../../types/product";
+import { logger } from "../../utils/logger";
+import toast from "react-hot-toast";
 
 function ProductCard({ product }: { product: Product }) {
   const formatPrice = (price: number, priceType: string) => {
@@ -7,7 +9,8 @@ function ProductCard({ product }: { product: Product }) {
   };
 
   const handleAddToCart = (productId: number) => {
-    console.log(`Add product ${productId} to cart`);
+    logger.info(`Add product ${productId} to cart`);
+    toast.success('Product added to cart!');
   };
 
   const baseBadge = "px-2 py-0.5 rounded-full text-xs font-semibold";

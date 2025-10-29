@@ -8,15 +8,17 @@ interface FormTextAreaProps {
   value: string;
   onChange: (field: string, value: string | number | null) => void;
   placeholder?: string;
+  disabled?: boolean;
 }
 
 export function FormTextArea ({ 
-  id, 
-  label, 
-  required = false, 
-  value, 
-  onChange, 
-  placeholder 
+  id,
+  label,
+  required = false,
+  value,
+  onChange,
+  placeholder,
+  disabled = false,
 }: FormTextAreaProps) {
   return (
     <div>
@@ -27,6 +29,7 @@ export function FormTextArea ({
         value={value} 
         onChange={(e) => onChange(id, e.target.value)} 
         placeholder={placeholder}
+        disabled={disabled}
         className={formStyles.input}
       />
     </div>

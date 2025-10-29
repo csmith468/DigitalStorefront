@@ -1,6 +1,7 @@
 import axios from 'axios';
+import { logger } from '../utils/logger';
 
-const API_BASE_URL = 'http://localhost:5000'; //import.meta.env.VITE_API_URL || 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -18,7 +19,7 @@ apiClient.interceptors.request.use(
     return config;
   },
   (error) => {
-    console.error('Request error:', error);
+    logger.error('Request error:', error);
     return Promise.reject(error);
   }
 );
@@ -26,11 +27,13 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    const isAuthEndpoint = error.config?.url?.includes('/auth/');
+
+    if (error.response?.status === 401 && !isAuthEndpoint) {
       localStorage.removeItem('token');
       window.location.href = '/?auth=login&reason=session-expired';
     }
-    console.error('Response Error: ', error);
+    logger.error('Response Error: ', error);
     return Promise.reject(error);
   }
 );
