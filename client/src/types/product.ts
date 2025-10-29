@@ -1,3 +1,4 @@
+import type { Tag } from "./metadata";
 import type { Subcategory } from "./subcategory";
 
 export interface Product {
@@ -32,6 +33,7 @@ export interface ProductDetail extends Product {
   priceTypeId: number;
   images: ProductImage[];
   subcategories: Subcategory[];
+  tags: Tag[];
 }
 
 export interface ProductFormRequest {
@@ -47,6 +49,7 @@ export interface ProductFormRequest {
   premiumPrice: number;
   priceTypeId: number;
   subcategoryIds: number[];
+  tags: string[];
 }
 
 export interface AddProductImageRequest {

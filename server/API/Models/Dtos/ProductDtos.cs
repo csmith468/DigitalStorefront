@@ -26,6 +26,7 @@ public class ProductDetailDto : ProductDto
     public int PriceTypeId { get; set; }
     public List<ProductImageDto> Images { get; set; } = [];
     public List<SubcategoryDto> Subcategories { get; set; } = [];
+    public List<TagDto> Tags { get; set; } = [];
 }
 
 // FUTURE: IsActive 
@@ -43,6 +44,7 @@ public class ProductFormDto
     public decimal PremiumPrice { get; set; }
     public int PriceTypeId { get; set; }
     public List<int> SubcategoryIds { get; set; } = [];
+    public List<string> Tags { get; set; } = [];
 }
 
 public class ProductTypeDto: ProductType;

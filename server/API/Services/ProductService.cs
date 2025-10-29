@@ -19,7 +19,6 @@ public interface IProductService
     Task<Result<ProductDetailDto>> CreateProductAsync(ProductFormDto dto, int userId);
     Task<Result<ProductDetailDto>> UpdateProductAsync(int productId, ProductFormDto dto);
     Task<Result<bool>> DeleteProductAsync(int productId);
-    Task<Result<List<ProductTypeDto>>> GetProductTypesAsync();
 }
 
 public class ProductService : IProductService
@@ -34,6 +33,7 @@ public class ProductService : IProductService
     private readonly IProductImageService _productImageService;
     private readonly IImageStorageService _imageStorageService;
     private readonly IProductAuthorizationService _productAuthService;
+    private readonly ITagService _tagService;
 
     public ProductService(
         IQueryExecutor queryExecutor,
@@ -45,7 +45,8 @@ public class ProductService : IProductService
         IUserContext userContext,
         IProductImageService productImageService,
         IImageStorageService imageStorageService,
-        IProductAuthorizationService productAuthService)
+        IProductAuthorizationService productAuthService,
+        ITagService tagService)
     {
         _queryExecutor = queryExecutor;
         _commandExecutor = commandExecutor;
@@ -57,13 +58,14 @@ public class ProductService : IProductService
         _productImageService = productImageService;
         _imageStorageService = imageStorageService;
         _productAuthService = productAuthService;
+        _tagService = tagService;
     }
     
     public async Task<Result<ProductDetailDto>> GetProductByIdAsync(int productId)
     {
         var product = await _queryExecutor.GetByIdAsync<Product>(productId);
         if (product == null)
-            return Result<ProductDetailDto>.Failure($"Product {productId} not found", HttpStatusCode.NotFound);
+            return Result<ProductDetailDto>.Failure($"Product {productId} not found");
         
         var productDetailDto = await ConvertProductToProductDetailDto(product);
         return Result<ProductDetailDto>.Success(productDetailDto);
@@ -103,10 +105,11 @@ public class ProductService : IProductService
         var relevanceExpression = "";
         if (!string.IsNullOrWhiteSpace(filterParams.Search))
         {
-            var prefixes = new[] { "p.", "c.", "s." };
-            var searchCondition = "(" + string.Join(" OR ", 
-                prefixes.SelectMany(p => new[] { $"{p}name LIKE @search", $"{p}slug LIKE @search" })
-            ) + ")";
+            var searchCondition = string.Join(" OR ", 
+                "p.name LIKE @search", "p.slug LIKE @search", 
+                "c.name LIKE @search", "c.slug LIKE @search", 
+                "s.name LIKE @search", "s.slug LIKE @search", 
+                "t.name LIKE @search");
 
             whereConditions.Add(searchCondition);
             parameters.Add("search", $"%{filterParams.Search}%");
@@ -114,9 +117,10 @@ public class ProductService : IProductService
             relevanceExpression = """
                                   , CASE
                                     WHEN p.name LIKE @search OR p.slug LIKE @search THEN 1
-                                    WHEN s.name LIKE @search OR s.slug LIKE @search THEN 2
-                                    WHEN c.name LIKE @search OR c.slug LIKE @search THEN 3
-                                    ELSE 4
+                                    WHEN t.name LIKE @search THEN 2
+                                    WHEN s.name LIKE @search OR s.slug LIKE @search THEN 3
+                                    WHEN c.name LIKE @search OR c.slug LIKE @search THEN 4
+                                    ELSE 5
                                   END AS Relevance
                                   """;
         }
@@ -128,6 +132,8 @@ public class ProductService : IProductService
                          LEFT JOIN dbo.productSubcategory ps ON p.productId = ps.productId
                          LEFT JOIN dbo.subcategory s ON s.subcategoryId = ps.subcategoryId
                          LEFT JOIN dbo.category c ON c.categoryId = s.categoryId
+                         LEFT JOIN dbo.productTag pt ON p.productId = pt.productId
+                         LEFT JOIN dbo.tag t ON t.tagId = pt.tagId
                          {whereClause}
                          """;
         var customOrderBy = !string.IsNullOrWhiteSpace(filterParams.Search)
@@ -171,7 +177,11 @@ public class ProductService : IProductService
             
             product.Sku = GenerateSku(product.ProductId, product.Slug);
             await _commandExecutor.UpdateFieldAsync<Product>(product.ProductId, "sku", product.Sku);
+            
             await SetProductSubcategoriesAsync(product.ProductId, dto.SubcategoryIds);
+
+            var tagIds = await _tagService.GetOrCreateTagsAsync(dto.Tags);
+            await SetProductTagsAsync(product.ProductId, tagIds);
         });
 
         if (product.ProductId == 0)
@@ -203,6 +213,9 @@ public class ProductService : IProductService
             await _commandExecutor.UpdateAsync(product);
 
             await SetProductSubcategoriesAsync(productId, dto.SubcategoryIds);
+            
+            var tagIds = await _tagService.GetOrCreateTagsAsync(dto.Tags);
+            await SetProductTagsAsync(product.ProductId, tagIds);
         });
         
         _logger.LogInformation("Product Modified: ProductId {ProductId}, Name {ProductName}, ModifiedBy {UserId}",
@@ -215,7 +228,7 @@ public class ProductService : IProductService
     {
         var product = await _queryExecutor.GetByIdAsync<Product>(productId);
         if (product == null)
-            return Result<bool>.Failure("Product not found", HttpStatusCode.NotFound);
+            return Result<bool>.Failure("Product not found");
         
         var manageProductResult = _productAuthService.CanUserManageProduct(product);
         if (!manageProductResult.IsSuccess)
@@ -235,6 +248,7 @@ public class ProductService : IProductService
                         await _imageStorageService.DeleteImageAsync(image.ImageUrl);
                 }
                 await _commandExecutor.DeleteByFieldAsync<ProductSubcategory>("productId", productId);
+                await _commandExecutor.DeleteByFieldAsync<ProductTag>("productId", productId);
                 await _commandExecutor.DeleteByIdAsync<Product>(productId);
             });
 
@@ -246,13 +260,6 @@ public class ProductService : IProductService
         {
             return Result<bool>.Failure($"Failed to delete product: {ex.Message}", HttpStatusCode.InternalServerError);
         }
-    }
-    
-    public async Task<Result<List<ProductTypeDto>>> GetProductTypesAsync()
-    {
-        var productTypes = await _queryExecutor.GetAllAsync<ProductType>();
-        var productTypeDtos = productTypes.Select(pt => _mapper.Map<ProductTypeDto>(pt)).ToList();
-        return Result<List<ProductTypeDto>>.Success(productTypeDtos);
     }
     
     private async Task<bool> CanUserCreateProduct(int userId)
@@ -273,11 +280,11 @@ public class ProductService : IProductService
             !existingSubcategories.Select(es => es.SubcategoryId).Contains(us)).ToList();
         var subcategoriesToRemove = existingSubcategories.Where(es => 
             !updatedSubcategoriesIds.Contains(es.SubcategoryId)).ToList();
-        
-        foreach (var subcategoryId in subcategoryIdsToAdd)
+
+        if (subcategoryIdsToAdd.Count > 0)
         {
-            var productSubcategory = new ProductSubcategory { ProductId = productId, SubcategoryId = subcategoryId };
-            await _commandExecutor.InsertAsync(productSubcategory);
+            var subcategoriesToAdd = subcategoryIdsToAdd.Select(s => new ProductSubcategory { ProductId = productId, SubcategoryId = s });
+            await _commandExecutor.BulkInsertAsync(subcategoriesToAdd);
         }
 
         if (subcategoriesToRemove.Count != 0)
@@ -298,6 +305,13 @@ public class ProductService : IProductService
         var productSubcategories = await _queryExecutor.GetByFieldAsync<ProductSubcategory>("productId", product.ProductId);
         var subcategories = await _queryExecutor.GetWhereInAsync<Subcategory>("subcategoryId", productSubcategories.Select(s => s.SubcategoryId).ToList());
         detailDto.Subcategories = subcategories.Select(s => _mapper.Map<Subcategory, SubcategoryDto>(s)).ToList();
+        
+        var productTags = (await _queryExecutor.GetByFieldAsync<ProductTag>("productId", product.ProductId)).ToList();
+        if (productTags.Count != 0)
+        {
+            var tags = await _queryExecutor.GetWhereInAsync<Tag>("tagId", productTags.Select(pt => pt.TagId).ToList());
+            detailDto.Tags = tags.Select(t => _mapper.Map<Tag, TagDto>(t)).ToList();
+        }
         
         var priceType = PriceTypes.All.FirstOrDefault(pt => pt.PriceTypeId == product.PriceTypeId);
         detailDto.PriceIcon = priceType != null ? priceType.Icon : "";
@@ -359,5 +373,26 @@ public class ProductService : IProductService
         var nonexistentIds = string.Join(", ", distinctIds.Where(id => !existingIds.Contains(id)).ToList());
         _logger.LogWarning("Invalid subcategoryIds attempted: {NonexistentIds}", nonexistentIds);
         return Result<bool>.Failure($"Invalid subcategoryIds: {nonexistentIds}", HttpStatusCode.BadRequest);
+    }
+
+    
+    private async Task SetProductTagsAsync(int productId, List<int> updatedTagIds)
+    {
+        var existingTags = await _queryExecutor.GetByFieldAsync<ProductTag>("productId", productId);
+
+        var tagIdsToAdd = updatedTagIds.Where(ut => !existingTags.Select(et => et.TagId).Contains(ut)).ToList();
+        var tagsToRemove = existingTags.Where(et => !updatedTagIds.Contains(et.TagId)).ToList();
+
+        if (tagIdsToAdd.Count > 0)
+        {
+            var productTagsToAdd = tagIdsToAdd.Select(t => new ProductTag { ProductId = productId, TagId = t });
+            await _commandExecutor.BulkInsertAsync(productTagsToAdd);
+        }
+
+        if (tagsToRemove.Count != 0)
+        {
+            var idsToRemove = tagsToRemove.Select(t => t.ProductTagId).ToList();
+            await _commandExecutor.DeleteWhereInAsync<ProductTag>("productTagId", idsToRemove);
+        }
     }
 }

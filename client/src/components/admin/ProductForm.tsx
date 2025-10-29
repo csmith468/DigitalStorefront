@@ -1,13 +1,14 @@
 import type { ProductDetail, ProductFormRequest } from "../../types/product";
 import { useCreateProduct, useUpdateProduct } from "../../hooks/queries/useProducts";
-import { useCategories } from "../../hooks/queries/useCategories";
-import { useProductTypes, usePriceTypes } from "../../hooks/queries/useCommon";
+import { useCategories, useTags } from "../../hooks/queries/useMetadata";
+import { useProductTypes, usePriceTypes } from "../../hooks/queries/useMetadata";
 import { FormInput } from "../primitives/FormInput";
 import { FormTextArea } from "../primitives/FormTextArea";
 import { FormSelect } from "../primitives/FormSelect";
 import { FormCheckbox } from "../primitives/FormCheckbox";
 import { FormShell } from "../primitives/FormShell";
 import { OverlappingLabelBox } from "../primitives/OverlappingLabelBox";
+import { FormChipInput } from "../primitives/FormChipInput";
 
 interface ProductFormProps {
   existingProduct?: ProductDetail; // if exists, edit mode
@@ -35,14 +36,15 @@ export function ProductForm ({
     price: existingProduct?.price || 0,
     premiumPrice: existingProduct?.premiumPrice || 0,
     priceTypeId: existingProduct?.priceTypeId || 0,
-    subcategoryIds:
-      existingProduct?.subcategories?.map((s) => s.subcategoryId) || [],
+    subcategoryIds: existingProduct?.subcategories?.map((s) => s.subcategoryId) || [],
+    tags: existingProduct?.tags?.map((t) => t.name) || [],
   };
 
   // Hooks (queries and mutations)
   const { data: categories } = useCategories();
   const { data: productTypes } = useProductTypes();
   const { data: priceTypes } = usePriceTypes();
+  const { data: tags } = useTags();
 
   const createMutation = useCreateProduct();
   const updateMutation = useUpdateProduct();
@@ -187,6 +189,18 @@ export function ProductForm ({
                   step={formData.priceTypeId === 1 ? "100" : "0.01"}
                 />
               </div>
+            </div>
+            <div>
+              <FormChipInput
+                id="tags"
+                label="Search Tags"
+                value={formData.tags}
+                onChange={updateField}
+                suggestions={tags?.map(t => t.name) || []}
+                placeholder="Type tags like 'dog', 'furniture', or 'fruit'..."
+                helperText="Press enter or space to add multiple tags (new or existing) to help users find your product."
+                maxItems={10}
+              />
             </div>
 
             <OverlappingLabelBox label="Tags" columns={2}>
