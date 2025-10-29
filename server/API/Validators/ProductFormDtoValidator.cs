@@ -27,7 +27,9 @@ public class ProductFormDtoValidator : AbstractValidator<ProductFormDto>
         
         RuleFor(p => p.PremiumPrice)
             .GreaterThan(0).WithMessage("Premium price must be greater than 0")
-            .LessThanOrEqualTo(99999).WithMessage("Premium price must be less than 99999");
+            .LessThanOrEqualTo(99999).WithMessage("Premium price must be less than 99999")
+            .LessThanOrEqualTo(p => p.Price)
+            .WithMessage("Premium price cannot exceed regular price");
 
         RuleFor(p => p.PriceTypeId)
             .Must(BeValidPriceType).WithMessage("Invalid price type");

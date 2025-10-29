@@ -49,7 +49,7 @@ public class ProductImageService : IProductImageService
     {
         var productExists = await _queryExecutor.ExistsAsync<Product>(productId);
         if (!productExists)
-            return Result<ProductImageDto?>.Failure($"Product {productId} not found", HttpStatusCode.NotFound);
+            return Result<ProductImageDto?>.Failure(ErrorMessages.Product.NotFound(productId));
 
         var productImage = await _queryExecutor.FirstOrDefaultAsync<ProductImage>(
             """
@@ -63,7 +63,7 @@ public class ProductImageService : IProductImageService
     {
         var productExists = await _queryExecutor.ExistsAsync<Product>(productId);
         if (!productExists)
-            return Result<List<ProductImageDto>>.Failure($"Product {productId} not found", HttpStatusCode.NotFound);
+            return Result<List<ProductImageDto>>.Failure(ErrorMessages.Product.NotFound(productId));
 
         var result = (await _queryExecutor.GetByFieldAsync<ProductImage>("productId", productId))
             .Select(MapToDto).OrderBy(pi => pi.DisplayOrder).ToList();
@@ -120,7 +120,8 @@ public class ProductImageService : IProductImageService
         }
         catch (Exception ex)
         {
-            return Result<ProductImageDto>.Failure($"Failed to add image: {ex.Message}", HttpStatusCode.InternalServerError);
+            _logger.LogError(ex, "Failed to add image to product {ProductId}: {Message}", productId, ex.Message);
+            return Result<ProductImageDto>.Failure(ErrorMessages.Image.AddFailed);
         }
     }
 
@@ -133,7 +134,7 @@ public class ProductImageService : IProductImageService
         
         var image = await _queryExecutor.GetByIdAsync<ProductImage>(productImageId);
         if (image == null || image.ProductId != productId)
-            return Result<bool>.Failure("Image not found", HttpStatusCode.NotFound);
+            return Result<bool>.Failure(ErrorMessages.Image.NotFound);
         
         if (image.DisplayOrder == 0)
             return Result<bool>.Success(true);
@@ -151,7 +152,9 @@ public class ProductImageService : IProductImageService
         }
         catch (Exception ex)
         {
-            return Result<bool>.Failure($"Failed to set primary image: {ex.Message}", HttpStatusCode.InternalServerError);
+            _logger.LogError(ex, "Failed to set primary image for product {ProductId}, image {ProductImageId}: {Message}",
+                productId, productImageId, ex.Message);
+            return Result<bool>.Failure(ErrorMessages.Image.SetPrimaryFailed);
         }
     }
 
@@ -163,7 +166,7 @@ public class ProductImageService : IProductImageService
         
         var image = await _queryExecutor.GetByIdAsync<ProductImage>(productImageId);
         if (image == null || image.ProductId != productId)
-            return Result<bool>.Failure("Image not found", HttpStatusCode.NotFound);
+            return Result<bool>.Failure(ErrorMessages.Image.NotFound);
 
         try
         {
@@ -184,7 +187,9 @@ public class ProductImageService : IProductImageService
         }
         catch (Exception ex)
         {
-            return Result<bool>.Failure($"Failed to delete image: {ex.Message}", HttpStatusCode.InternalServerError);
+            _logger.LogError(ex, "Failed to delete image {ProductImageId} from product {ProductId}: {Message}",
+                productImageId, productId, ex.Message);
+            return Result<bool>.Failure(ErrorMessages.Image.DeleteFailed);
         }
     }
 
@@ -217,7 +222,8 @@ public class ProductImageService : IProductImageService
         }
         catch (Exception ex)
         {
-            return Result<bool>.Failure($"Failed to reorder images: {ex.Message}", HttpStatusCode.InternalServerError);
+            _logger.LogError(ex, "Failed to reorder images for product {ProductId}: {Message}", productId, ex.Message);
+            return Result<bool>.Failure(ErrorMessages.Image.ReorderFailed);
         }
     }
     
@@ -249,7 +255,7 @@ public class ProductImageService : IProductImageService
     {
         var productExists = await _queryExecutor.ExistsAsync<Product>(productId);
         if (!productExists)
-            return Result<bool>.Failure($"Product {productId} not found", HttpStatusCode.NotFound);
+            return Result<bool>.Failure(ErrorMessages.Product.NotFound(productId));
         
         return await _productAuthService.CanUserManageProductAsync(productId);
     }

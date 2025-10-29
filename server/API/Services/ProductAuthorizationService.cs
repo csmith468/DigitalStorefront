@@ -33,7 +33,7 @@ public class ProductAuthorizationService : IProductAuthorizationService
     {
         var product = await _queryExecutor.GetByIdAsync<Product>(productId);
         if (product == null)
-            return Result<bool>.Failure("Product not found", HttpStatusCode.NotFound);
+            return Result<bool>.Failure(ErrorMessages.Product.NotFound(productId));
         
         return CanUserManageProduct(product);
     }
@@ -44,7 +44,7 @@ public class ProductAuthorizationService : IProductAuthorizationService
         {
             _logger.LogWarning("Demo product access denied: ProductId {ProductId}, IsDemoProduct {IsDemoProduct}, UserId {UserId}",
                 product.ProductId, product.IsDemoProduct, _userContext.UserId);
-            return Result<bool>.Failure("Demo products can only be managed by administrators", HttpStatusCode.Forbidden);
+            return Result<bool>.Failure(ErrorMessages.Product.DemoProductRestricted);
         }
         return Result<bool>.Success(true);
 

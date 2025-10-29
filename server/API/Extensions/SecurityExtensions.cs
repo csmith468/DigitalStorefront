@@ -8,24 +8,32 @@ namespace API.Extensions;
 
 public static class SecurityExtensions
 {
-    public static IServiceCollection AddCorsConfiguration(this IServiceCollection services)
+    public static IServiceCollection AddCorsConfiguration(this IServiceCollection services, IConfiguration config)
     {
+        services.AddOptions<CorsOptions>()
+            .BindConfiguration(CorsOptions.SectionName)
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+        
+        var corsOptions = config.GetSection(CorsOptions.SectionName).Get<CorsOptions>()
+                          ?? throw new InvalidOperationException("CORS configuration is missing.");
+        
         services.AddCors(options =>
         {
             options.AddPolicy("DevCors", corsBuilder =>
             {
-                corsBuilder.WithOrigins("http://localhost:5173")
+                corsBuilder.WithOrigins(corsOptions.DevOrigins.ToArray())
                     .AllowAnyMethod()
                     .AllowAnyHeader()
                     .AllowCredentials();
             });
-            // options.AddPolicy("ProdCors", (corsBuilder) =>
-            //     {
-            //         corsBuilder.WithOrigins("eventual link")
-            //             .AllowAnyMethod()
-            //             .AllowAnyHeader()
-            //             .AllowCredentials();
-            //     });
+            options.AddPolicy("ProdCors", corsBuilder =>
+                {
+                    corsBuilder.WithOrigins(corsOptions.ProdOrigins.ToArray())
+                        .AllowAnyMethod()
+                        .AllowAnyHeader()
+                        .AllowCredentials();
+                });
         });
 
         return services;

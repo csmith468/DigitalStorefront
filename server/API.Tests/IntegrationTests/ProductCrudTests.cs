@@ -17,34 +17,11 @@ public class ProductCrudTests : IClassFixture<CustomWebApplicationFactory>
         _factory = factory;
     }
 
-    private async Task<(HttpClient client, AuthResponseDto auth)> CreateAuthenticatedClientAsync()
-    {
-        var client = _factory.CreateClient();
-
-        var registerDto = new UserRegisterDto
-        {
-            Username = $"testUser_{Guid.NewGuid():N}",
-            Email = $"test_{Guid.NewGuid():N}@example.com",
-            Password = "Test123!",
-            ConfirmPassword = "Test123!",
-            FirstName = "Test",
-            LastName = "User"
-        };
-
-        var response = await client.PostAsJsonAsync("/auth/register", registerDto);
-        var authResponse = await response.Content.ReadFromJsonAsync<AuthResponseDto>();
-
-        client.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", authResponse!.Token);
-
-        return (client, authResponse);
-    }
-
     [Fact]
     public async Task CreateProduct_UpdateProduct_DeleteProduct_FullFlow()
     {
         // Arrange
-        var (client, auth) = await CreateAuthenticatedClientAsync();
+        var (client, auth) = await TestAuthHelpers.CreateAuthenticatedClientAsync(_factory);
 
         var createDto = new ProductFormDto
         {
@@ -106,5 +83,37 @@ public class ProductCrudTests : IClassFixture<CustomWebApplicationFactory>
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task CreateProduct_WithInvalidSubcategory_RollsBackTransaction()
+    {
+        // Arrange
+        var (client, auth) = await TestAuthHelpers.CreateAuthenticatedClientAsync(_factory);
+        var uniqueName = $"Test Product {Guid.NewGuid():N}";
+        var uniqueSlug = $"test-product-{Guid.NewGuid():N}";
+
+        var createDto = new ProductFormDto
+        {
+            Name = uniqueName,
+            Slug = uniqueSlug,
+            Description = "Test description",
+            Price = 100,
+            PremiumPrice = 90,
+            PriceTypeId = 1,
+            ProductTypeId = 1,
+            SubcategoryIds = [999999]  // Invalid subcategory ID - should trigger rollback
+        };
+
+        // Act
+        var createResponse = await client.PostAsJsonAsync("/products", createDto);
+
+        // Assert - Request should fail
+        createResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var errorContent = await createResponse.Content.ReadAsStringAsync();
+        errorContent.Should().ContainEquivalentOf("subcategor");
+
+        var getBySlugResponse = await client.GetAsync($"/products/slug/{uniqueSlug}");
+        getBySlugResponse.StatusCode.Should().Be(HttpStatusCode.NotFound, "Product should not exist in database due to transaction rollback");
     }
 }

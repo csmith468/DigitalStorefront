@@ -73,7 +73,7 @@ public class AuthService : IAuthService
             
         });
         if (userId == 0)
-            return Result<AuthResponseDto>.Failure("Failed to register user.");
+            return Result<AuthResponseDto>.Failure(ErrorMessages.Auth.RegistrationFailed);
 
         var roles = await GetUserRolesAsync(userId);
         var token = _tokenGen.GenerateToken(userId, roles);
@@ -91,19 +91,17 @@ public class AuthService : IAuthService
 
     public async Task<Result<AuthResponseDto>> LoginUser(UserLoginDto userDto)
     {
-        const string errorMessage = "Invalid username or password";
-        
         var user = await _userService.GetUserByUsernameAsync(userDto.Username);
         if (user == null)
         {
             _logger.LogWarning("Failed login attempt for username: {Username}", userDto.Username);
-            return Result<AuthResponseDto>.Failure(errorMessage, HttpStatusCode.Unauthorized);
+            return Result<AuthResponseDto>.Failure(ErrorMessages.Auth.InvalidCredentials);
         }
         var userAuth = (await _queryExecutor.GetByFieldAsync<Auth>("userId", user.UserId)).FirstOrDefault();
         if (userAuth == null || !_passwordHasher.VerifyPassword(userDto.Password, userAuth.PasswordSalt, userAuth.PasswordHash))
         {
             _logger.LogWarning("Failed login attempt for username: {Username}", userDto.Username);
-            return Result<AuthResponseDto>.Failure(errorMessage, HttpStatusCode.Unauthorized);
+            return Result<AuthResponseDto>.Failure(ErrorMessages.Auth.InvalidCredentials);
         }
         
         _logger.LogInformation("User Logged In: UserId: {UserId} Username: {Username}", user.UserId, user.Username);
@@ -113,11 +111,11 @@ public class AuthService : IAuthService
     public async Task<Result<AuthResponseDto>> RefreshToken(string userIdStr)
     {
         if (!int.TryParse(userIdStr, out var userId))
-            return Result<AuthResponseDto>.Failure("Invalid token.", HttpStatusCode.Unauthorized);
+            return Result<AuthResponseDto>.Failure(ErrorMessages.Auth.InvalidCredentials);
         
         var user = await _userService.GetUserByIdAsync(userId);
         if (user == null) 
-            return Result<AuthResponseDto>.Failure("Invalid token.", HttpStatusCode.Unauthorized);
+            return Result<AuthResponseDto>.Failure(ErrorMessages.Auth.InvalidCredentials);
 
         return Result<AuthResponseDto>.Success(await CreateAuthResponseDtoFromUser(user));
     }
@@ -125,9 +123,9 @@ public class AuthService : IAuthService
     private async Task<Result<bool>> ValidateRegistrationAsync(UserRegisterDto user)
     {
         if (user.Email is not null && await _queryExecutor.ExistsByFieldAsync<User>("email", user.Email))
-            return Result<bool>.Failure("Email already exists.", HttpStatusCode.BadRequest);
+            return Result<bool>.Failure(ErrorMessages.Auth.EmailExists);
         if (await _queryExecutor.ExistsByFieldAsync<User>("username", user.Username))
-            return Result<bool>.Failure("Username already exists.", HttpStatusCode.BadRequest);
+            return Result<bool>.Failure(ErrorMessages.Auth.UsernameExists);
         return Result<bool>.Success(true);
     }
     

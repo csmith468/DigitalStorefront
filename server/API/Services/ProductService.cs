@@ -65,7 +65,7 @@ public class ProductService : IProductService
     {
         var product = await _queryExecutor.GetByIdAsync<Product>(productId);
         if (product == null)
-            return Result<ProductDetailDto>.Failure($"Product {productId} not found");
+            return Result<ProductDetailDto>.Failure(ErrorMessages.Product.NotFound(productId));
         
         var productDetailDto = await ConvertProductToProductDetailDto(product);
         return Result<ProductDetailDto>.Success(productDetailDto);
@@ -75,7 +75,7 @@ public class ProductService : IProductService
     {
         var product = (await _queryExecutor.GetByFieldAsync<Product>("slug", slug)).FirstOrDefault();
         if (product == null)
-            return Result<ProductDetailDto>.Failure("Product could not be found");
+            return Result<ProductDetailDto>.Failure(ErrorMessages.Product.NotFound(slug));
         
         var productDetailDto = await ConvertProductToProductDetailDto(product);
         return Result<ProductDetailDto>.Success(productDetailDto);
@@ -163,7 +163,7 @@ public class ProductService : IProductService
     public async Task<Result<ProductDetailDto>> CreateProductAsync(ProductFormDto dto, int userId)
     {
         if (!await CanUserCreateProduct(userId))
-            return Result<ProductDetailDto>.Failure("You do not have permission to create a product", HttpStatusCode.Unauthorized);
+            return Result<ProductDetailDto>.Failure(ErrorMessages.Product.Unauthorized);
         
         var validateProductResult = await ValidateProductAsync(dto);
         if (!validateProductResult.IsSuccess)
@@ -185,7 +185,7 @@ public class ProductService : IProductService
         });
 
         if (product.ProductId == 0)
-            return Result<ProductDetailDto>.Failure("Product could not be created.", HttpStatusCode.InternalServerError);
+            return Result<ProductDetailDto>.Failure(ErrorMessages.Product.CreationFailed);
         
         _logger.LogInformation("Product Created: ProductId {ProductId}, Name {ProductName}, CreatedBy {UserId}",
             product.ProductId, product.Name, userId);
@@ -197,7 +197,7 @@ public class ProductService : IProductService
     {
         var product = await _queryExecutor.GetByIdAsync<Product>(productId);
         if (product == null)
-            return Result<ProductDetailDto>.Failure("Product could not be found");
+            return Result<ProductDetailDto>.Failure(ErrorMessages.Product.NotFound(productId));
         
         var manageProductResult = _productAuthService.CanUserManageProduct(product);
         if (!manageProductResult.IsSuccess)
@@ -228,7 +228,7 @@ public class ProductService : IProductService
     {
         var product = await _queryExecutor.GetByIdAsync<Product>(productId);
         if (product == null)
-            return Result<bool>.Failure("Product not found");
+            return Result<bool>.Failure(ErrorMessages.Product.NotFound(productId));
         
         var manageProductResult = _productAuthService.CanUserManageProduct(product);
         if (!manageProductResult.IsSuccess)
@@ -258,7 +258,9 @@ public class ProductService : IProductService
         }
         catch (Exception ex)
         {
-            return Result<bool>.Failure($"Failed to delete product: {ex.Message}", HttpStatusCode.InternalServerError);
+            _logger.LogError(ex, "Failed to delete product {ProductId} ({ProductName}). User: {UserId}",
+                productId, product.Name, _userContext.UserId);
+            return Result<bool>.Failure(ErrorMessages.Product.DeleteFailed);
         }
     }
     
@@ -343,11 +345,9 @@ public class ProductService : IProductService
     private async Task<Result<bool>> ValidateProductAsync(ProductFormDto dto, Product? originalProduct = null)
     {
         if (await _queryExecutor.ExistsByFieldAsync<Product>("name", dto.Name) && (originalProduct == null || originalProduct.Name != dto.Name))
-            return Result<bool>.Failure($"Product name {dto.Name} already exists", HttpStatusCode.BadRequest);
+            return Result<bool>.Failure(ErrorMessages.Product.NameExists(dto.Name));
         if (await _queryExecutor.ExistsByFieldAsync<Product>("slug", dto.Slug) && (originalProduct == null || originalProduct.Slug != dto.Slug))
-            return Result<bool>.Failure($"Product slug {dto.Slug} already exists", HttpStatusCode.BadRequest);
-        if (dto.PremiumPrice > dto.Price)
-            return Result<bool>.Failure("Premium price cannot exceed regular price", HttpStatusCode.BadRequest);
+            return Result<bool>.Failure(ErrorMessages.Product.SlugExists(dto.Slug));
         if (dto.SubcategoryIds.Count != 0)
         {
             var subcategoryValidationResult = await ValidateSubcategoryIdsAsync(dto.SubcategoryIds);
@@ -372,7 +372,7 @@ public class ProductService : IProductService
         var existingIds = existingSubcategories.Select(s => s.SubcategoryId).ToHashSet();
         var nonexistentIds = string.Join(", ", distinctIds.Where(id => !existingIds.Contains(id)).ToList());
         _logger.LogWarning("Invalid subcategoryIds attempted: {NonexistentIds}", nonexistentIds);
-        return Result<bool>.Failure($"Invalid subcategoryIds: {nonexistentIds}", HttpStatusCode.BadRequest);
+        return Result<bool>.Failure(ErrorMessages.Metadata.InvalidSubcategories(nonexistentIds));
     }
 
     

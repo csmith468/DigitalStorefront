@@ -13,7 +13,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddHttpContextAccessor();
 
 // Security
-builder.Services.AddCorsConfiguration();
+builder.Services.AddCorsConfiguration(builder.Configuration);
 builder.Services.AddJwtAuthentication(builder.Configuration);
 builder.Services.AddAuthorizationPolicies();
 builder.Services.AddSecurityOptions();
@@ -24,8 +24,8 @@ builder.Services.AddSwaggerAuth();
 
 // Infrastructure
 builder.Services.AddHealthChecksConfiguration(builder.Configuration);
-builder.Services.AddRateLimiting();
-builder.Services.AddResponseCachingConfiguration();
+builder.Services.AddRateLimiting(builder.Configuration);
+builder.Services.AddResponseCachingConfiguration(builder.Configuration);
 builder.Services.AddDirectoryBrowser();
 
 // Dependency Injection
