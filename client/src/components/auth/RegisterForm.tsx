@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useUser } from "../../contexts/useUser";
 import type { RegisterRequest } from "../../types/auth";
 import { FormInput } from "../primitives/FormInput";
@@ -15,6 +16,7 @@ export function RegisterForm ({
   onSwitchToLogin,
 }: RegisterFormProps) {
   const { register } = useUser();
+  const [serverError, setServerError] = useState<string | null>(null);
 
   const initial: RegisterRequest = {
     username: '',
@@ -26,25 +28,33 @@ export function RegisterForm ({
   };
 
   const onSubmit = async (form: RegisterRequest) => {
-    const dto: RegisterRequest = {
-      username: form.username,
-      password: form.password,
-      confirmPassword: form.confirmPassword,
-      firstName: form.firstName != '' ? form.firstName : undefined,
-      lastName: form.lastName != '' ? form.lastName : undefined,
-      email: form.email != '' ? form.email : undefined
-    };
-    await register(dto);
-    onSuccess();
+    try {
+      setServerError(null);
+      const dto: RegisterRequest = {
+        username: form.username,
+        password: form.password,
+        confirmPassword: form.confirmPassword,
+        firstName: form.firstName != '' ? form.firstName : undefined,
+        lastName: form.lastName != '' ? form.lastName : undefined,
+        email: form.email != '' ? form.email : undefined
+      };
+      await register(dto);
+      onSuccess();
+    } catch (error: any) {
+      const message = error.response?.data || "Registration failed. Please try again.";
+      setServerError(message);
+    }
   };
 
   const validate = (form: RegisterRequest): string | null => {
-    if (!form.username.trim()) return "Username is required";
-    if (!form.password) return "Password is required";
-    if (!form.confirmPassword) return "Please confirm your password";
-    if (form.password !== form.confirmPassword) return "Passwords do not match";
+    setServerError(null);
+
+    if (!form.username.trim()) return "Username is required.";
+    if (!form.password) return "Password is required.";
+    if (!form.confirmPassword) return "Please confirm your password.";
+    if (form.password !== form.confirmPassword) return "Passwords do not match.";
     if (form.email && !/^\S+@\S+\.\S+$/.test(form.email))
-      return "Enter a valid email";
+      return "Enter a valid email.";
     return null;
   };
 
@@ -119,6 +129,12 @@ export function RegisterForm ({
               Login
             </button>
           </div>
+
+          {serverError && (
+            <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded">
+              {serverError}
+            </div>
+          )}
         </>
       )}
     </FormShell>

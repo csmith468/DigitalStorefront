@@ -14,9 +14,16 @@ interface ProductImageManagerProps {
   productId: number;
   images: ProductImage[];
   onImagesChange: () => void;
+  isViewOnly?: boolean;
 }
 
-export function ProductImageManager({ productId, images, onImagesChange }: ProductImageManagerProps) {
+export function ProductImageManager({ 
+  productId, 
+  images, 
+  onImagesChange, 
+  isViewOnly = true // defaulting to be true because I made the pages that use this visible to anyone 
+                    // (not only when logged in) so view mode is the safest default
+}: ProductImageManagerProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [altText, setAltText] = useState('');
@@ -149,7 +156,7 @@ export function ProductImageManager({ productId, images, onImagesChange }: Produ
           <h3 className="text-lg font-semibold text-text-primary">
             Current Images ({images.length} of {MAX_IMAGES})
           </h3>
-          {images.length > 1 && (
+          {images.length > 1 && !isViewOnly && (
             <p className="text-sm text-gray-500">Drag Images to Reorder</p>
           )}
         </div>
@@ -160,7 +167,7 @@ export function ProductImageManager({ productId, images, onImagesChange }: Produ
           </div>
         ) : (
           <DndContext
-            sensors={sensors}
+            sensors={isViewOnly ? [] : sensors}
             collisionDetection={closestCenter}
             onDragEnd={handleDragEnd}
           >
@@ -176,6 +183,7 @@ export function ProductImageManager({ productId, images, onImagesChange }: Produ
                     onSetPrimary={handleSetPrimary}
                     onDelete={setImageIdToDelete}
                     isLoading={loadingImageId == image.productImageId}
+                    disabled={isViewOnly}
                   />
                 ))}
               </div>
@@ -184,20 +192,19 @@ export function ProductImageManager({ productId, images, onImagesChange }: Produ
         )}
       </div>
 
-      {/* Upload New Image */}
-      <div className="border-t pt-6">
-        <h3 className="text-lg font-semibold text-text-primary mb-4">Upload New Image</h3>
+      {!isViewOnly && 
+        <div className="border-t pt-6">
+          <h3 className="text-lg font-semibold text-text-primary mb-4">Upload New Image</h3>
 
-        {!canUploadMore && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-            <p className="text-yellow-800 text-sm">
-              You've reached the maximum of {MAX_IMAGES} images per product. Delete an existing image to upload a new one.
-            </p>
-          </div>
-        )}
+          {!canUploadMore && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+              <p className="text-yellow-800 text-sm">
+                You've reached the maximum of {MAX_IMAGES} images per product. Delete an existing image to upload a new one.
+              </p>
+            </div>
+          )}
 
         <div className="space-y-4">
-          {/* File Input */}
           <div>
             <label className={formStyles.label}>Select Image</label>
             <input
@@ -227,7 +234,6 @@ export function ProductImageManager({ productId, images, onImagesChange }: Produ
             </div>
           )}
 
-          {/* Alt Text Input */}
           <FormInput 
             id="altText"
             label="Alt Text"
@@ -237,7 +243,6 @@ export function ProductImageManager({ productId, images, onImagesChange }: Produ
             placeholder="Describe the image for accessibility"
           />
 
-          {/* Set as Primary Checkbox */}
           {images.length > 0 && (
             <div className="flex items-center gap-2">
               <FormCheckbox
@@ -250,7 +255,6 @@ export function ProductImageManager({ productId, images, onImagesChange }: Produ
             </div>
           )}
 
-          {/* Upload Button */}
           <button
             onClick={handleUpload}
             disabled={!selectedFile || isUploading || !canUploadMore || !!fileError}
@@ -260,6 +264,7 @@ export function ProductImageManager({ productId, images, onImagesChange }: Produ
           </button>
         </div>
       </div>
+      }
 
       <ConfirmModal
         isOpen={imageIdToDelete !== null}

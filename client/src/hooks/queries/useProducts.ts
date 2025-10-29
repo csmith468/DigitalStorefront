@@ -69,6 +69,7 @@ export const useCreateProduct = () => {
     onSuccess: (data, _, queryClient) => {
       queryClient.setQueryData(['product', data.productId], data);
       queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['metadata', 'tags'] });
     },
     successMessage: 'Product created!',
     errorMessage: 'Failed to create product. Please try again.',
@@ -84,6 +85,7 @@ export const useUpdateProduct = () => {
     onSuccess: (data: ProductDetail, _, queryClient) => {
       queryClient.setQueryData(['product', data.productId], data);
       queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['metadata', 'tags'] });
     },
     successMessage: 'Product updated!',
     errorMessage: 'Failed to update product. Please try again.',

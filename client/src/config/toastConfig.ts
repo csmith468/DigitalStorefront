@@ -4,7 +4,7 @@ export const toasterConfig: ToasterProps = {
   position: 'top-right',
   containerStyle: {
     top: '100px',
-    zIndex: 40,
+    zIndex: 9999,
   },
   toastOptions: {
     duration: 4000,
