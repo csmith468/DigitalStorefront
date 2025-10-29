@@ -12,11 +12,10 @@ export interface Product {
   isExclusive: boolean;
   isDemoProduct: boolean;
   sku: string;
-  priceTypeId: number;
   price: number;
   premiumPrice: number;
-  primaryImage: ProductImage | null;
   priceIcon: string;
+  primaryImage: ProductImage | null;
 }
 
 export interface ProductImage {

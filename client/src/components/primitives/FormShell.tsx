@@ -16,6 +16,7 @@ export interface FormShellProps<T> {
   header?: React.ReactNode;
   footer?: React.ReactNode;
   disableSubmit?: boolean;
+  hideSubmit?: boolean;
   enableUnsavedChangesWarning?: boolean,
   children: (ctx: {
     data: T;
@@ -34,6 +35,7 @@ export function FormShell<T>({
   cancelText = "Cancel",
   header,
   footer,
+  hideSubmit = false,
   disableSubmit = false,
   enableUnsavedChangesWarning = true,
   children,
@@ -55,6 +57,7 @@ export function FormShell<T>({
   // Removing error handling - FormShell will just show validation errors, useMutationWithToast will handle server errors
   // Hooks shouldn't need to know if they are being used here so keep server errors in hooks
   const handleSubmit = async (e: React.FormEvent) => {
+    if (hideSubmit) return;
     e.preventDefault();
     setValidationError(null);
 
@@ -81,13 +84,14 @@ export function FormShell<T>({
       <form onSubmit={handleSubmit} className="space-y-6">
         {header}
 
+
+        { children({ data, setData, updateField }) }
+        
         {validationError && (
           <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded">
             {validationError}
           </div>
         )}
-
-        { children({ data, setData, updateField }) }
 
         { footer }
 
@@ -98,12 +102,14 @@ export function FormShell<T>({
             className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500">
             {cancelText}
           </button>
-          <button
-            type="submit"
-            disabled={loading || disableSubmit}
-            className="px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
-            {loading ? "Saving..." : submitText}
-          </button>
+          {!hideSubmit && (
+            <button
+              type="submit"
+              disabled={loading || disableSubmit}
+              className="px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
+              {loading ? "Saving..." : submitText}
+            </button>
+          )}
         </div>
       </form>
     </>

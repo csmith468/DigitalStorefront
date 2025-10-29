@@ -9,10 +9,16 @@ interface SortableImageItemProps {
   onSetPrimary: (id: number) => void;
   onDelete: (id: number) => void;
   isLoading: boolean;
+  disabled?: boolean;
 }
 
 export function SortableImageItem({
-  image, onSetPrimary, onDelete, isLoading
+  image, 
+  onSetPrimary, 
+  onDelete, 
+  isLoading, 
+  disabled = true // defaulting to be disabled because I made the pages that use this visible to anyone 
+                  // (not only when logged in) so view mode is the safest default
 }: SortableImageItemProps) {
   const {
     attributes,
@@ -37,16 +43,18 @@ export function SortableImageItem({
     >
       <div className="relative">
         {/* Drag Handle */}
-        <div
-          {...attributes}
-          {...listeners}
-          className="absolute top-2 right-2 bg-white rounded p-1 cursor-move z-10 shadow-md hover:bg-gray-100"
-          title="Drag to reorder"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 text-gray-600">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-          </svg>
-        </div>
+        {!disabled && (
+          <div
+            {...attributes}
+            {...listeners}
+            className="absolute top-2 right-2 bg-white rounded p-1 cursor-move z-10 shadow-md hover:bg-gray-100"
+            title="Drag to reorder"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 text-gray-600">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+            </svg>
+          </div>
+        )}
 
         <img
           src={image.imageUrl}
@@ -60,29 +68,31 @@ export function SortableImageItem({
           </div>
         )}
 
-        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all rounded-lg flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100">
-          <button
-            onClick={() => onSetPrimary(image.productImageId)}
-            disabled={image.isPrimary || isLoading}
-            className="p-2 bg-white rounded-full hover:bg-yellow-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            title={image.isPrimary ? 'Already Primary' : 'Set as Primary'}
-          >
-            {image.isPrimary ? (
-              <StarSolid className="h-5 w-5 text-yellow-500" />
-            ) : (
-              <StarOutline className="h-5 w-5 text-gray-700" />
-            )}
-          </button>
+        {!disabled && (
+          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all rounded-lg flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100">
+            <button
+              onClick={() => onSetPrimary(image.productImageId)}
+              disabled={image.isPrimary || isLoading}
+              className="p-2 bg-white rounded-full hover:bg-yellow-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              title={image.isPrimary ? 'Already Primary' : 'Set as Primary'}
+            >
+              {image.isPrimary ? (
+                <StarSolid className="h-5 w-5 text-yellow-500" />
+              ) : (
+                <StarOutline className="h-5 w-5 text-gray-700" />
+              )}
+            </button>
 
-          <button
-            onClick={() => onDelete(image.productImageId)}
-            disabled={isLoading}
-            className="p-2 bg-white rounded-full hover:bg-red-100 transition-colors disabled:opacity-50"
-            title="Delete image"
-          >
-            <TrashIcon className="h-5 w-5 text-red-600" />
-          </button>
-        </div>
+            <button
+              onClick={() => onDelete(image.productImageId)}
+              disabled={isLoading}
+              className="p-2 bg-white rounded-full hover:bg-red-100 transition-colors disabled:opacity-50"
+              title="Delete image"
+            >
+              <TrashIcon className="h-5 w-5 text-red-600" />
+            </button>
+          </div>
+        )}
 
         {isLoading && (
           <div className="absolute inset-0 bg-white bg-opacity-75 rounded-lg flex items-center justify-center z-20">

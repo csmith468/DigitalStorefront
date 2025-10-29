@@ -10,18 +10,25 @@ import { FormShell } from "../primitives/FormShell";
 import { OverlappingLabelBox } from "../primitives/OverlappingLabelBox";
 import { FormChipInput } from "../primitives/FormChipInput";
 
+export type ProductFormMode = 'edit' | 'view' | 'try';
+
 interface ProductFormProps {
   existingProduct?: ProductDetail; // if exists, edit mode
   onSuccess: (product?: ProductDetail) => void;
   onCancel: () => void;
+  mode?: ProductFormMode;
 }
 
 export function ProductForm ({
   existingProduct,
   onSuccess,
   onCancel,
+  mode = 'view', // defaulting to false because I made the pages that use this visible to anyone 
+                 // (not only when logged in) so view mode is the safest default
 }: ProductFormProps) {
   const isEditing = !!existingProduct;
+  const isViewOnly = mode === 'view';
+  const hideSubmit = mode !== 'edit';
 
   // State (equivalent to data())
   const initial: ProductFormRequest = {
@@ -88,6 +95,8 @@ export function ProductForm ({
       onCancel={onCancel}
       loading={loading}
       submitText={submitText}
+      disableSubmit={hideSubmit}
+      hideSubmit={hideSubmit}
       children={({ data: formData, updateField }) => {
         const handleSubcategoryToggle = (subcategoryId: number, checked: boolean) => {
           updateField("subcategoryIds", 
@@ -108,6 +117,7 @@ export function ProductForm ({
                   value={formData.name}
                   placeholder="Product Name"
                   onChange={(f, v) => updateField(f, v)}
+                  disabled={isViewOnly}
                 />
               </div>
               <div>
@@ -118,6 +128,7 @@ export function ProductForm ({
                   value={formData.slug}
                   placeholder="product-slug"
                   onChange={(f, v) => updateField(f, v)}
+                  disabled={isViewOnly}
                 />
               </div>
             </div>
@@ -128,6 +139,7 @@ export function ProductForm ({
                 value={formData.description || ""}
                 placeholder="Description..."
                 onChange={(f, v) => updateField(f, v || null)}
+                disabled={isViewOnly}
               />
             </div>
 
@@ -139,6 +151,7 @@ export function ProductForm ({
                   required
                   value={formData.productTypeId}
                   type="number"
+                  disabled={isViewOnly}
                   onChange={(f, v) => updateField(f, v)}
                   options={productTypes || []}
                   getOptionValue={(pt) => pt.productTypeId}
@@ -153,6 +166,7 @@ export function ProductForm ({
                   required
                   value={formData.priceTypeId}
                   type="number"
+                  disabled={isViewOnly}
                   onChange={(f, v) => updateField(f, v)}
                   options={priceTypes || []}
                   placeholder="Select Price Type..."
@@ -172,6 +186,7 @@ export function ProductForm ({
                   value={formData.price}
                   placeholder=""
                   onChange={(f, v) => updateField(f, v)}
+                  disabled={isViewOnly}
                   min="0"
                   step={formData.priceTypeId === 1 ? "100" : "0.01"}
                 />
@@ -185,6 +200,7 @@ export function ProductForm ({
                   value={formData.premiumPrice}
                   placeholder=""
                   onChange={(f, v) => updateField(f, v)}
+                  disabled={isViewOnly}
                   min="0"
                   step={formData.priceTypeId === 1 ? "100" : "0.01"}
                 />
@@ -200,33 +216,38 @@ export function ProductForm ({
                 placeholder="Type tags like 'dog', 'furniture', or 'fruit'..."
                 helperText="Press enter or space to add multiple tags (new or existing) to help users find your product."
                 maxItems={10}
+                disabled={isViewOnly}
               />
             </div>
 
-            <OverlappingLabelBox label="Tags" columns={2}>
+            <OverlappingLabelBox label="Attributes" columns={2}>
               <FormCheckbox
                 id="isNew"
                 label="New"
                 checked={formData.isNew}
                 onChange={(f, v) => updateField(f, v)}
+                disabled={isViewOnly}
               />
               <FormCheckbox
                 id="isTradeable"
                 label="Tradeable"
                 checked={formData.isTradeable}
                 onChange={(f, v) => updateField(f, v)}
+                disabled={isViewOnly}
               />
               <FormCheckbox
                 id="isExclusive"
                 label="Exclusive"
                 checked={formData.isExclusive}
                 onChange={(f, v) => updateField(f, v)}
+                disabled={isViewOnly}
               />
               <FormCheckbox
                 id="isPromotional"
                 label="Promotional"
                 checked={formData.isPromotional}
                 onChange={(f, v) => updateField(f, v)}
+                disabled={isViewOnly}
               />
             </OverlappingLabelBox>
 
@@ -242,6 +263,7 @@ export function ProductForm ({
                         key={subcategory.subcategoryId}
                         checked={formData.subcategoryIds.includes(subcategory.subcategoryId)}
                         onChange={(_, value) => handleSubcategoryToggle(subcategory.subcategoryId, value)}
+                        disabled={isViewOnly}
                       />
                     ))}
                   </div>

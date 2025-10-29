@@ -6,6 +6,7 @@ import { UserContext, type UserContextType } from "./UserContext";
 
 interface UseUserReturn extends UserContextType {
   hasRole: (roleName: string) => boolean;
+  isLoggedIn: () => boolean;
   isAdmin: () => boolean;
   canManageProducts: () => boolean;
   canManageImages: () => boolean;
@@ -19,6 +20,9 @@ export const useUser = (): UseUserReturn => {
     return context.roles?.includes(roleName) ?? false;
   };
 
+  const isLoggedIn = () => {
+    return context.user !== null && context.user !== undefined;
+  };
   const isAdmin = () => hasRole('Admin');
   const canManageProducts = () => hasRole('Admin') || hasRole('ProductWriter');
   const canManageImages = () => hasRole('Admin') || hasRole('ImageManager');
@@ -26,6 +30,7 @@ export const useUser = (): UseUserReturn => {
   return {
     ...context,
     hasRole,
+    isLoggedIn,
     isAdmin,
     canManageProducts,
     canManageImages

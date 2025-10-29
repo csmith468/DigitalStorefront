@@ -70,7 +70,18 @@ export function Header({ mobileMenuOpen, setMobileMenuOpen }: HeaderProps) {
             <Link to="/" className="header-h1 cursor-pointer">
               Digital Collectibles
             </Link>
-          </div>``
+          </div>
+
+          <div className="hidden lg:block">
+            <Link
+              to="/admin/products"
+              className="px-4 py-2 text-white/90 hover:text-white hover:bg-white/10 rounded-md transition-colors text-sm font-medium flex items-center gap-2"
+            >
+              Admin Console
+              <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">Try It</span>
+            </Link>
+          </div>
+
           <div className="flex items-center gap-1 md:gap-3">
             {!isAdminPage && (
               <>

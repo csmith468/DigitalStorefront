@@ -3,7 +3,7 @@ import { ProductForm } from '../../components/admin/ProductForm';
 import { PageHeader } from '../../components/primitives/PageHeader';
 import type { ProductDetail } from '../../types/product';
 
-export function CreateProductPage() {
+export function CreateProductFormPage() {
   const navigate = useNavigate();
 
   const handleSuccess = (product?: ProductDetail) => {
@@ -26,6 +26,7 @@ export function CreateProductPage() {
         <ProductForm
           onSuccess={handleSuccess}
           onCancel={() => navigate('/admin/products')}
+          mode='edit'
         />
       </div>
     </div>

@@ -1,11 +1,11 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace API.Controllers.Tests;
+namespace API.Controllers;
 
 [Route("test")]
 public class TestController : ControllerBase
-{
+{ 
     [HttpGet("valid")]
     public ActionResult GetValid()
     {

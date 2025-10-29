@@ -11,6 +11,7 @@ interface FormChipInputProps {
   onChange: (field: string, value: string[]) => void;
   suggestions?: string[];
   placeholder?: string;
+  disabled?: boolean;
   maxItems?: number;
   helperText?: string;
 }
@@ -23,6 +24,7 @@ export function FormChipInput({
   onChange,
   suggestions = [],
   placeholder = "Type to add items...",
+  disabled = false,
   maxItems = 10,
   helperText,
 }: FormChipInputProps) {
@@ -81,7 +83,7 @@ export function FormChipInput({
       e.preventDefault();
       setHighlightedIndex(prev => prev > 0 ? prev - 1 : -1);
     }
-    else if (e.key === 'Enter') {
+    else if (e.key === 'Enter' || e.key === 'Tab') {
       e.preventDefault();
       if (highlightedIndex >= 0 && filteredSuggestions[highlightedIndex]) {
         addItems(filteredSuggestions[highlightedIndex]);
@@ -129,14 +131,16 @@ export function FormChipInput({
               className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 text-sm rounded-md whitespace-nowrap"
             >
               {item}
-              <button
-                type="button"
-                onClick={() => removeItem(item)}
-                className="hover:text-blue-600 focus:outline-none"
-                aria-label={`Remove ${item}`}
-              >
-                <XMarkIcon className="w-4 h-4" />
-              </button>
+              {!disabled && 
+                <button
+                  type="button"
+                  onClick={() => removeItem(item)}
+                  className="hover:text-blue-600 focus:outline-none"
+                  aria-label={`Remove ${item}`}
+                >
+                  <XMarkIcon className="w-4 h-4" />
+                </button>
+              }
             </span>
           ))}
 
@@ -153,7 +157,7 @@ export function FormChipInput({
             onFocus={() => setShowSuggestions(true)}
             placeholder={value.length === 0 ? placeholder : ''}
             className="flex-1 min-w-[120px] outline-none bg-transparent"
-            disabled={value.length >= maxItems}
+            disabled={disabled || value.length >= maxItems}
           />
         </div>
 
