@@ -3,7 +3,7 @@ import { useDeleteProduct, useProducts } from "../../hooks/queries/useProducts";
 import { LoadingScreen } from "../primitives/LoadingScreen";
 import { usePagination } from "../../hooks/utilities/usePagination";
 import { useState } from "react";
-import { useProductTypes } from "../../hooks/queries/useCommon";
+import { useProductTypes } from "../../hooks/queries/useMetadata";
 import { PaginationWrapper } from "../primitives/PaginationWrapper";
 import { LockClosedIcon, MagnifyingGlassIcon, PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { FormInput } from "../primitives/FormInput";

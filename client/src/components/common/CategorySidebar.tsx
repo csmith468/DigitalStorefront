@@ -1,10 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getCategories } from "../../services/categories";
-import { ChevronDownIcon, Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
-import './CategorySidebar.css'
-import type { Category } from '../../types/category';
+import { ChevronDownIcon } from '@heroicons/react/24/outline';
 import { VIEW_ALL_SUBCATEGORY } from '../../types/subcategory';
+import { useCategories } from '../../hooks/queries/useMetadata';
+import './CategorySidebar.css'
 
 interface CategorySidebarProps {
   mobileMenuOpen: boolean;
@@ -12,26 +11,14 @@ interface CategorySidebarProps {
 }
 
 const CategorySidebar = ({ mobileMenuOpen, setMobileMenuOpen }: CategorySidebarProps) => {
-  const [categories, setCategories] = useState<Category[]>([]);
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
-  const [loading, setLoading] = useState<boolean>(true);
 
-  useEffect(() => {
-    const loadCategories = async () => {
-      try {
-        const categories = await getCategories();
-        categories.forEach(cat => {
-          cat.subcategories = [VIEW_ALL_SUBCATEGORY, ...(cat.subcategories || [])];
-        });
-        setCategories(categories);
-      } catch (error) {
-        console.error("Error fetching categories:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadCategories();
-  }, []);
+  const { data: categories = [], isLoading } = useCategories();
+
+  const categoriesWithViewAll = categories.map(cat => ({
+    ...cat,
+    subcategories: [VIEW_ALL_SUBCATEGORY, ...(cat.subcategories || [])]
+  }))
 
   const toggleCategory = (categoryId: number) => {
     setExpanded(prev => {
@@ -42,7 +29,7 @@ const CategorySidebar = ({ mobileMenuOpen, setMobileMenuOpen }: CategorySidebarP
     });
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <aside className="category-sidebar--loading">
         <div className="skeleton skeleton--title"></div>
@@ -75,7 +62,7 @@ const CategorySidebar = ({ mobileMenuOpen, setMobileMenuOpen }: CategorySidebarP
         </div>
         
         <nav className="category-sidebar__nav">
-          {categories.map(category => {
+          {categoriesWithViewAll.map(category => {
             const isExpanded = expanded.has(category.categoryId);
             return (
               <div key={category.categoryId} className="mb-1">

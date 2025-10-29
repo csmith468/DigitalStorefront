@@ -9,7 +9,6 @@ using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Xunit;
 
 namespace API.Tests.UnitTests;
 
@@ -20,12 +19,12 @@ public class ProductServiceTests
     private readonly Mock<ITransactionManager> _mockTransactionManager;
     private readonly Mock<ILogger<ProductService>> _mockLogger;
     private readonly Mock<IMapper> _mockMapper;
-    private readonly IConfiguration _config;
     private readonly Mock<IUserContext> _mockUserContext;
     private readonly Mock<IProductImageService> _mockImageService;
     private readonly Mock<IImageStorageService> _mockStorageService;
     private readonly Mock<IProductAuthorizationService> _mockAuthService;
     private readonly ProductService _service;
+    private readonly Mock<ITagService> _mockTagService;
 
     public ProductServiceTests()
     {
@@ -38,8 +37,9 @@ public class ProductServiceTests
         _mockImageService = new Mock<IProductImageService>();
         _mockStorageService = new Mock<IImageStorageService>();
         _mockAuthService = new Mock<IProductAuthorizationService>();
+        _mockTagService = new Mock<ITagService>();
         
-        _config = new ConfigurationBuilder()
+        IConfiguration config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string>
             {
                 { "DemoMode", "false" },
@@ -54,11 +54,12 @@ public class ProductServiceTests
             _mockTransactionManager.Object,
             _mockLogger.Object,
             _mockMapper.Object,
-            _config,
+            config,
             _mockUserContext.Object,
             _mockImageService.Object,
             _mockStorageService.Object,
-            _mockAuthService.Object
+            _mockAuthService.Object,
+            _mockTagService.Object
         );
     }
 
@@ -192,7 +193,8 @@ public class ProductServiceTests
             _mockUserContext.Object,
             _mockImageService.Object,
             _mockStorageService.Object,
-            _mockAuthService.Object
+            _mockAuthService.Object,
+            _mockTagService.Object
         );
 
         var dto = new ProductFormDto
