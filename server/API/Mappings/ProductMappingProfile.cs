@@ -26,5 +26,7 @@ public class ProductMappingProfile : Profile
             .ForMember(dest => dest.UpdatedBy, opt => opt.Ignore());
 
         CreateMap<ProductType, ProductTypeDto>();
+        
+        CreateMap<Tag, TagDto>();
     }
 }

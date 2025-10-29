@@ -2,7 +2,7 @@ import { useEffect, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import { isViewAllSubcategory } from "../types/subcategory";
 import { useProductsByCategory, useProductsBySubcategory } from "../hooks/queries/useProducts";
-import { useCategories } from "../hooks/queries/useCategories";
+import { useCategories } from "../hooks/queries/useMetadata";
 import { usePagination } from "../hooks/utilities/usePagination";
 import { ProductsGrid } from "../components/product/ProductsGrid";
 
