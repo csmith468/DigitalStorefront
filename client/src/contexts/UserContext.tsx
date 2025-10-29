@@ -7,6 +7,7 @@ import type { User, Auth, LoginRequest, RegisterRequest } from "../types/auth";
 import { authService } from "../services/auth";
 import { AuthModal } from "../components/auth/AuthModal";
 import toast from "react-hot-toast";
+import { useSearchParams } from "react-router-dom";
 
 export interface UserContextType {
   user: User | null;
@@ -29,6 +30,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({
   const [roles, setRoles] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
 
   useEffect(() => {
@@ -49,18 +51,17 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({
   }, []);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const authParam = params.get('auth');
-    const reasonParam = params.get('reason');
+    const authParam = searchParams.get('auth');
+    const reasonParam = searchParams.get('reason');
 
     if (authParam === 'login' || authParam === 'register') {
       openAuthModal(authParam);
       if (reasonParam === 'session-expired')
         toast.error('Your session has expired. Please log in again.');
 
-      window.history.replaceState({}, '', '/');
+      setSearchParams({});
     }
-  }, []);
+  }, [searchParams, setSearchParams]);
 
   const setUserAndTokenFromAuthResponse = (response: Auth) => {
     authService.setStoredToken(response.token);

@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
+import { logger } from "../../utils/logger";
 
 interface MutationWithToastOptions<TData, TVariables> {
   mutationFn: (variables: TVariables) => Promise<TData>;
@@ -23,7 +24,7 @@ export function useMutationWithToast<TData = unknown, TVariables = unknown>({
       onSuccess?.(data, variables, queryClient);
     },
     onError: (error) => {
-      console.error('Mutation error: ', error);
+      logger.error('Mutation error: ', error);
       toast.error(errorMessage);
     },
   });
