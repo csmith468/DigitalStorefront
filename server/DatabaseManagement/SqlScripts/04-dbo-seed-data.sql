@@ -297,3 +297,5 @@ FROM (VALUES
 JOIN dbo.product p ON p.slug = m.productSlug
 JOIN dbo.subcategory s ON s.slug = m.subcategorySlug;
 GO
+
+

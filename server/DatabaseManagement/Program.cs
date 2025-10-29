@@ -33,7 +33,7 @@ services.AddSingleton<IConfiguration>(configuration);
 services.AddLogging();
 services.AddSingleton(typeof(ILogger), sp => sp.GetRequiredService<ILoggerFactory>().CreateLogger("DatabaseManagement"));
 
-services.AddScoped<IDataContextDapper, DataContextDapper>();
+services.AddScoped<IQueryExecutor, DataContextDapper>();
 services.AddScoped<IAuditContext, SystemAuditContext>();
 services.AddScoped<ImageCleaner>();
 var apiWwwRootPath = Path.Combine(Directory.GetCurrentDirectory(), "..", "API", "wwwroot");

@@ -11,22 +11,22 @@ public interface ICategoryService
 
 public class CategoryService : ICategoryService
 {
-    private readonly IDataContextDapper _dapper;
-    public CategoryService(IDataContextDapper dapper)
+    private readonly IQueryExecutor _queryExecutor;
+    public CategoryService(IQueryExecutor queryExecutor)
     {
-        _dapper = dapper;
+        _queryExecutor = queryExecutor;
     }
     
     public async Task<Result<List<CategoryDto>>> GetCategoriesAndSubcategoriesAsync()
     {
-        var categories = (await _dapper.QueryAsync<CategoryDto>(
+        var categories = (await _queryExecutor.QueryAsync<CategoryDto>(
             "SELECT categoryId, [name], slug, displayOrder FROM dbo.category WHERE isActive = 1"
         )).OrderBy(c => c.DisplayOrder).ToList();
 
         // Looping because there are only 5 categories and this data is cached in UI
         foreach (var category in categories)
         {
-            category.Subcategories = (await _dapper.QueryAsync<SubcategoryDto>(
+            category.Subcategories = (await _queryExecutor.QueryAsync<SubcategoryDto>(
                 $"""
                  SELECT subcategoryId, [name], slug, displayOrder, imageUrl 
                  FROM dbo.subcategory 

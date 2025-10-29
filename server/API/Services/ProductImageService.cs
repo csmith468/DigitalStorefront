@@ -21,17 +21,24 @@ public interface IProductImageService
 
 public class ProductImageService : IProductImageService
 {
-    private readonly IDataContextDapper _dapper;
+    private readonly IQueryExecutor _queryExecutor;
+    private readonly ICommandExecutor _commandExecutor;
+    private readonly ITransactionManager _transactionManager;
     private readonly ILogger<ProductImageService> _logger;
     private readonly IImageStorageService _imageStorageService;
     private readonly IProductAuthorizationService _productAuthService;
 
-    public ProductImageService(IDataContextDapper dapper, 
+    public ProductImageService(
+        IQueryExecutor queryExecutor,
+        ICommandExecutor commandExecutor,
+        ITransactionManager transactionManager,
         ILogger<ProductImageService> logger,
         IImageStorageService imageStorageService,
         IProductAuthorizationService productAuthService)
     {
-        _dapper = dapper;
+        _queryExecutor = queryExecutor;
+        _commandExecutor = commandExecutor;
+        _transactionManager = transactionManager;
         _logger = logger;
         _imageStorageService = imageStorageService;
         _productAuthService = productAuthService;
@@ -40,11 +47,11 @@ public class ProductImageService : IProductImageService
 
     public async Task<Result<ProductImageDto?>> GetPrimaryProductImageAsync(int productId)
     {
-        var productExists = await _dapper.ExistsAsync<Product>(productId);
+        var productExists = await _queryExecutor.ExistsAsync<Product>(productId);
         if (!productExists)
             return Result<ProductImageDto?>.Failure($"Product {productId} not found", HttpStatusCode.NotFound);
 
-        var productImage = await _dapper.FirstOrDefaultAsync<ProductImage>(
+        var productImage = await _queryExecutor.FirstOrDefaultAsync<ProductImage>(
             """
             SELECT * FROM dbo.productImage 
             WHERE productId = @productId AND displayOrder = 0
@@ -54,18 +61,18 @@ public class ProductImageService : IProductImageService
 
     public async Task<Result<List<ProductImageDto>>> GetAllProductImagesAsync(int productId)
     {
-        var productExists = await _dapper.ExistsAsync<Product>(productId);
+        var productExists = await _queryExecutor.ExistsAsync<Product>(productId);
         if (!productExists)
             return Result<List<ProductImageDto>>.Failure($"Product {productId} not found", HttpStatusCode.NotFound);
 
-        var result = (await _dapper.GetByFieldAsync<ProductImage>("productId", productId))
+        var result = (await _queryExecutor.GetByFieldAsync<ProductImage>("productId", productId))
             .Select(MapToDto).OrderBy(pi => pi.DisplayOrder).ToList();
         return Result<List<ProductImageDto>>.Success(result);
     }
 
     public async Task<Result<List<ProductImageDto>>> GetPrimaryImagesForProductIds(List<int> productIds)
     {
-        var result = (await _dapper.GetWhereInAsync<ProductImage>("productId", productIds))
+        var result = (await _queryExecutor.GetWhereInAsync<ProductImage>("productId", productIds))
             .Where(img => img.DisplayOrder == 0)
             .Select(MapToDto)
             .OrderBy(pi => pi.ProductId)
@@ -83,10 +90,10 @@ public class ProductImageService : IProductImageService
         {
             ProductImage productImage = null!;
 
-            await _dapper.WithTransactionAsync(async () =>
+            await _transactionManager.WithTransactionAsync(async () =>
             {
                 var relativePath = await _imageStorageService.SaveImageAsync(dto.File, "products", productId.ToString());
-                var imageCount = await _dapper.GetCountByFieldAsync<ProductImage>("productId", productId);
+                var imageCount = await _queryExecutor.GetCountByFieldAsync<ProductImage>("productId", productId);
 
                 productImage = new ProductImage
                 {
@@ -96,7 +103,7 @@ public class ProductImageService : IProductImageService
                     DisplayOrder = imageCount
                 };
 
-                var imageId = await _dapper.InsertAsync(productImage);
+                var imageId = await _commandExecutor.InsertAsync(productImage);
                 productImage.ProductImageId = imageId;
 
                 // Move to display order = 0 and shift others
@@ -124,7 +131,7 @@ public class ProductImageService : IProductImageService
         if (!validateProduct.IsSuccess)
             return validateProduct.ToFailure<bool, bool>();
         
-        var image = await _dapper.GetByIdAsync<ProductImage>(productImageId);
+        var image = await _queryExecutor.GetByIdAsync<ProductImage>(productImageId);
         if (image == null || image.ProductId != productId)
             return Result<bool>.Failure("Image not found", HttpStatusCode.NotFound);
         
@@ -133,7 +140,7 @@ public class ProductImageService : IProductImageService
 
         try
         {
-            await _dapper.WithTransactionAsync(async () =>
+            await _transactionManager.WithTransactionAsync(async () =>
             {
                 await FixDisplayOrderAsync(image.ProductId, productImageId);
             });
@@ -154,15 +161,15 @@ public class ProductImageService : IProductImageService
         if (!validateProduct.IsSuccess)
             return validateProduct.ToFailure<bool, bool>();
         
-        var image = await _dapper.GetByIdAsync<ProductImage>(productImageId);
+        var image = await _queryExecutor.GetByIdAsync<ProductImage>(productImageId);
         if (image == null || image.ProductId != productId)
             return Result<bool>.Failure("Image not found", HttpStatusCode.NotFound);
 
         try
         {
-            await _dapper.WithTransactionAsync(async () =>
+            await _transactionManager.WithTransactionAsync(async () =>
             {
-                await _dapper.DeleteByIdAsync<ProductImage>(productImageId);
+                await _commandExecutor.DeleteByIdAsync<ProductImage>(productImageId);
 
                 var deleted = await _imageStorageService.DeleteImageAsync(image.ImageUrl);
                 if (!deleted)
@@ -189,9 +196,9 @@ public class ProductImageService : IProductImageService
         
         try
         {
-            await _dapper.WithTransactionAsync(async () =>
+            await _transactionManager.WithTransactionAsync(async () =>
             {
-                var allImages = await _dapper.GetByFieldAsync<ProductImage>("productId", productId);
+                var allImages = await _queryExecutor.GetByFieldAsync<ProductImage>("productId", productId);
                 var imageDict = allImages.ToDictionary(i => i.ProductImageId);
 
                 if (orderedImageIds.Any(imageId => !imageDict.ContainsKey(imageId)))
@@ -201,7 +208,7 @@ public class ProductImageService : IProductImageService
                 {
                     var image = imageDict[orderedImageIds[i]];
                     image.DisplayOrder = i;
-                    await _dapper.UpdateAsync(image);
+                    await _commandExecutor.UpdateAsync(image);
                 }
             });
 
@@ -216,7 +223,7 @@ public class ProductImageService : IProductImageService
     
     private async Task FixDisplayOrderAsync(int productId, int? newPrimaryImageId = null)
     {
-        var images = (await _dapper.GetByFieldAsync<ProductImage>("productId", productId)).OrderBy(i => i.DisplayOrder).ToList();
+        var images = (await _queryExecutor.GetByFieldAsync<ProductImage>("productId", productId)).OrderBy(i => i.DisplayOrder).ToList();
 
         // If setting a new primary, move it to displayOrder = 0
         if (newPrimaryImageId.HasValue)
@@ -234,13 +241,13 @@ public class ProductImageService : IProductImageService
         for (var i = 0; i < images.Count; i++)
         {
             images[i].DisplayOrder = i;
-            await _dapper.UpdateAsync(images[i]);
+            await _commandExecutor.UpdateAsync(images[i]);
         }
     }
 
     private async Task<Result<bool>> ValidateProduct(int productId)
     {
-        var productExists = await _dapper.ExistsAsync<Product>(productId);
+        var productExists = await _queryExecutor.ExistsAsync<Product>(productId);
         if (!productExists)
             return Result<bool>.Failure($"Product {productId} not found", HttpStatusCode.NotFound);
         

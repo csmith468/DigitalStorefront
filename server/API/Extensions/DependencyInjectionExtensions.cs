@@ -30,7 +30,11 @@ public static class DependencyInjectionExtensions
 
     public static IServiceCollection AddManualRegistrations(this IServiceCollection services)
     {
-        services.AddScoped<IDataContextDapper, DataContextDapper>();
+        services.AddScoped<DataContextDapper>();
+        services.AddScoped<IQueryExecutor>(sp => sp.GetRequiredService<DataContextDapper>());
+        services.AddScoped<ICommandExecutor>(sp => sp.GetRequiredService<DataContextDapper>());
+        services.AddScoped<ITransactionManager>(sp => sp.GetRequiredService<DataContextDapper>());
+        
         services.AddScoped<IImageStorageService, LocalImageStorageService>();
         services.AddScoped<IAuditContext, HttpAuditContext>();
         services.AddScoped<IStoragePathProvider, WebStoragePathProvider>();
