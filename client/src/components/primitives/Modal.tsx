@@ -24,7 +24,12 @@ export function Modal ({
   };
   return (
     <Transition show={isOpen}>
-      <Dialog as="div" className="relative z-50" onClose={onClose}>
+      <Dialog as="div" 
+        className="relative z-50" 
+        onClose={onClose}
+        aria-labelledby="modal-title"
+        aria-describedby="modal-description"
+      >
         {/* Background */}
         <TransitionChild
           enter="ease-out duration-300"
@@ -50,7 +55,7 @@ export function Modal ({
                 className={`w-full ${sizeClasses[size]} overflow-hidden rounded-2xl bg-white p-6 shadow-xl`}>
                 {/* Header */}
                 <div className="flex items-center justify-between mb-4">
-                  <DialogTitle className="text-lg font-medium leading-6 text-gray-900">
+                  <DialogTitle id="modal-title" className="text-lg font-medium leading-6 text-gray-900">
                     {title}
                   </DialogTitle>
                   <button
@@ -61,7 +66,7 @@ export function Modal ({
                 </div>
 
                 {/* Content */}
-                <div>{children}</div>
+                <div id="modal-description">{children}</div>
               </DialogPanel>
             </TransitionChild>
           </div>

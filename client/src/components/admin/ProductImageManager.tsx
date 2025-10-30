@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { ProductImage } from "../../types/product";
 import { useDeleteProductImage, useReorderProductImages, useSetImageAsPrimary, useUploadProductImage } from "../../hooks/queries/useProductImages";
 import { FormInput } from "../primitives/FormInput";
@@ -55,7 +55,7 @@ export function ProductImageManager({
     })
   );
 
-  const handleDragEnd = async (event: DragEndEvent) => {
+  const handleDragEnd = useCallback(async (event: DragEndEvent) => {
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
@@ -69,9 +69,9 @@ export function ProductImageManager({
       await reorderMutation.mutateAsync({ productId, orderedImageIds: orderedIds });
       onImagesChange();
     }
-  };
+  }, [localImages, productId, reorderMutation, onImagesChange]);
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!validateFile(file)) return;
@@ -79,7 +79,7 @@ export function ProductImageManager({
     setSelectedFile(file);
     const url = URL.createObjectURL(file);
     setPreviewUrl(url);
-  }
+  }, []);
 
   function validateFile(file: File): boolean {
     const isValidType = ALLOWED_TYPES.includes(file.type);
@@ -100,7 +100,7 @@ export function ProductImageManager({
     return false;
   }
 
-  const handleUpload = async () => {
+  const handleUpload = useCallback(async () => {
     if (!selectedFile) return;
 
     await uploadMutation.mutateAsync({
@@ -122,9 +122,9 @@ export function ProductImageManager({
       fileInputRef.current.value = '';
 
     onImagesChange();
-  };
+  }, [selectedFile, productId, altText, setAsPrimary, uploadMutation, onImagesChange]);
 
-  const handleDelete = async () => {
+  const handleDelete = useCallback(async () => {
     if (imageIdToDelete == null) return;
     setLoadingImageId(imageIdToDelete);
     try {
@@ -134,9 +134,9 @@ export function ProductImageManager({
       setImageIdToDelete(null);
       setLoadingImageId(null);
     }
-  };
+  }, [imageIdToDelete, productId, deleteMutation, onImagesChange]);
 
-  const handleSetPrimary = async (productImageId: number) => {
+  const handleSetPrimary = useCallback(async (productImageId: number) => {
     setLoadingImageId(productImageId);
     try {
       await setPrimaryMutation.mutateAsync({ productId, productImageId });
@@ -144,7 +144,7 @@ export function ProductImageManager({
     } finally {
       setLoadingImageId(null);
     }
-  };
+  }, [productId, setPrimaryMutation, onImagesChange]);
 
   const canUploadMore = images.length < MAX_IMAGES;
   const isUploading = uploadMutation.isPending;

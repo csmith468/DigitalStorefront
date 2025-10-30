@@ -58,10 +58,10 @@ using API.Tests.Helpers;
           var ageHeader1 = cachedResponse.Headers.TryGetValues("age", out var age1) ? age1.First() : null;
           
           // Act (create product with new tag to invalidate cache)
-          var uniqueTag = $"test-tag-{Guid.NewGuid():N}";
+          var uniqueTag = $"zz-{Guid.NewGuid():N}";
           var productDto = new ProductFormDto
           {
-              Name = "Cache Test Product",
+              Name = $"Cache Test Product {Guid.NewGuid():N}",
               Slug = $"cache-test-{Guid.NewGuid():N}",
               Description = "Testing cache invalidation",
               ProductTypeId = 1,
@@ -76,6 +76,9 @@ using API.Tests.Helpers;
           await Task.Delay(1000);
           
           // Assert
+          createProductResponse.StatusCode.Should().Be(HttpStatusCode.Created);
+              
+          var createdProduct = await createProductResponse.Content.ReadFromJsonAsync<ProductDetailDto>();
           var freshResponse = await client.GetAsync(tagsUrl);
           var freshTags = await freshResponse.Content.ReadFromJsonAsync<List<TagDto>>();
           var ageHeader2 = freshResponse.Headers.TryGetValues("age", out var age2) ? age2.First() : null;
@@ -89,6 +92,18 @@ using API.Tests.Helpers;
           {
               int.Parse(ageHeader2).Should().BeLessThan(int.Parse(ageHeader1),
                   "because cache was evicted when new tag was created");
+          }
+          
+          // Cleanup
+          if (createdProduct?.ProductId != null)
+          {
+              var deleteResponse = await client.DeleteAsync($"/products/{createdProduct.ProductId}");
+              deleteResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
+              // Verify product was actually deleted
+              var verifyDeletedResponse = await client.GetAsync($"/products/{createdProduct.ProductId}");
+              verifyDeletedResponse.StatusCode.Should().Be(HttpStatusCode.NotFound,
+                  "Product should no longer exist after deletion");
           }
       }
   }

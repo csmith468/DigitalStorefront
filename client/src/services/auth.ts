@@ -15,12 +15,14 @@ export const authService = {
     return response.data;
   },
   logout: () => {
-    localStorage.removeItem('token');
+    sessionStorage.removeItem('token');
   },
   getStoredToken: (): string | null => {
-    return localStorage.getItem('token');
+    return sessionStorage.getItem('token');
   },
+  // NOTE: using session storage so it clears on tab close (unlike localStorage)
+  // In production, I'd store them in httpOnly cookies to prevent XSS attacks
   setStoredToken: (token: string): void => {
-    localStorage.setItem('token', token);
+    sessionStorage.setItem('token', token);
   }
 }

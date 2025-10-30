@@ -1,7 +1,7 @@
 // State: user, isAuthenticated, isLoading
 // Actions: login(dto), register(dto), logout()
 
-import React, { createContext, useState, useEffect } from "react";
+import React, { createContext, useState, useEffect, useMemo } from "react";
 import type { ReactNode } from "react";
 import type { User, Auth, LoginRequest, RegisterRequest } from "../types/auth";
 import { authService } from "../services/auth";
@@ -90,7 +90,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({
     setAuthModalOpen(true);
   };
 
-  const value: UserContextType = {
+  const value = useMemo<UserContextType>(() => ({
     user,
     isAuthenticated: !!user,
     roles,
@@ -100,7 +100,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({
     logout,
     openAuthModal,
     closeAuthModal: () => setAuthModalOpen(false),
-  };
+  }), [user, roles, isLoading, login, register, logout, openAuthModal]);
 
   return (
     <UserContext.Provider value={value}>
