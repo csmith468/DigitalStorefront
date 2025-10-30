@@ -35,14 +35,40 @@ public static class DependencyInjectionExtensions
         services.AddScoped<ICommandExecutor>(sp => sp.GetRequiredService<DataContextDapper>());
         services.AddScoped<ITransactionManager>(sp => sp.GetRequiredService<DataContextDapper>());
         
-        services.AddScoped<IImageStorageService, LocalImageStorageService>();
         services.AddScoped<IAuditContext, HttpAuditContext>();
-        services.AddScoped<IStoragePathProvider, WebStoragePathProvider>();
         services.AddScoped<TokenGenerator>();
         services.AddScoped<PasswordHasher>();
         return services;
     }
 
+    public static IServiceCollection AddImageStorage(this IServiceCollection services, IConfiguration configuration)
+    {
+        var useAzureStorage = configuration.GetValue("UseAzureStorage", false);
+
+        if (useAzureStorage)
+        {
+            services.AddOptions<Configuration.AzureBlobStorageOptions>()
+                .BindConfiguration(Configuration.AzureBlobStorageOptions.SectionName)
+                .ValidateDataAnnotations()
+                .Validate(options => !string.IsNullOrWhiteSpace(options.ConnectionString)
+                                     && !string.IsNullOrWhiteSpace(options.ContainerName), 
+                    """
+                    AzureBlobStorage configuration is incomplete. ConnectionString and ContainerName are required 
+                    when UseAzureStorage is enabled. Check your appsettings.json or Azure App Service Configuration.
+                    """)
+                .ValidateOnStart();
+            
+            services.AddScoped<IImageStorageService, AzureBlobStorageService>();
+        }
+        else
+        {
+            services.AddScoped<IImageStorageService, LocalImageStorageService>();
+            services.AddScoped<IStoragePathProvider, WebStoragePathProvider>();
+        }
+
+        return services;
+    }
+    
     public static IServiceCollection AddMappings(this IServiceCollection services)
     {
         // Scans all loaded assemblies for AutoMapper Profile classes
