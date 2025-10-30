@@ -16,6 +16,13 @@ public abstract class ImageStorageServiceBase(ILogger logger) : IImageStorageSer
             : $"{prefix}_{guid}{fileExtension}";
     }
 
+    protected string PrepareAndValidateFile(IFormFile file, string? prefix = null)
+    {
+        ValidateFile(file);
+        var fileExtension = Path.GetExtension(file.FileName);
+        return GenerateUniqueFileName(fileExtension, prefix);
+    }
+
     protected void ValidateFile(IFormFile file)
     {
         if (file == null || file.Length == 0)

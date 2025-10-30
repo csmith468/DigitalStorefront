@@ -31,6 +31,7 @@ builder.Services.AddDirectoryBrowser();
 // Dependency Injection
 builder.Services.AddAutoRegistration(typeof(Program).Assembly);
 builder.Services.AddManualRegistrations();
+builder.Services.AddImageStorage(builder.Configuration);
 builder.Services.AddMappings();
 
 // Resilience

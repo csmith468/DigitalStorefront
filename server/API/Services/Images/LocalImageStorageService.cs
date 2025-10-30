@@ -6,7 +6,9 @@ public class LocalImageStorageService : ImageStorageServiceBase
 {
     private readonly ILogger _logger;
     private readonly IStoragePathProvider _storagePathProvider;
-    public LocalImageStorageService(ILogger<LocalImageStorageService> logger, IStoragePathProvider storagePathProvider) : base(logger)
+
+    public LocalImageStorageService(ILogger<LocalImageStorageService> logger, IStoragePathProvider storagePathProvider)
+        : base(logger)
     {
         _logger = logger;
         _storagePathProvider = storagePathProvider;
@@ -16,10 +18,7 @@ public class LocalImageStorageService : ImageStorageServiceBase
 
     public override async Task<string> SaveImageAsync(IFormFile file, string subfolder, string? prefix = null)
     {
-        ValidateFile(file);
-        
-        var fileExtension = Path.GetExtension(file.FileName);
-        var fileName = GenerateUniqueFileName(fileExtension, prefix);
+        var fileName = PrepareAndValidateFile(file, prefix);
         
         var directory = Path.Combine(_storagePathProvider.StorageRootPath, LocalFolder, subfolder);
         Directory.CreateDirectory(directory);
