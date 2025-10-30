@@ -31,7 +31,7 @@ export function HomePage() {
     <div className="container mx-auto px-4 py-6 max-w-4xl">
       <PageHeader
         title="Welcome to Digital Collectibles"
-        subtitle="Inspired by virtual pet game economies - demonstrating admin console architecture, complex product management, and full-stack integration beyond basic e-commerce"
+        subtitle="Inspired by a virtual pet game economy - demonstrating admin console architecture, complex product management, and full-stack integration beyond basic e-commerce"
       />
 
       <div className="grid md:grid-cols-2 gap-4 mb-6">

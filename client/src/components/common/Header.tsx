@@ -72,20 +72,20 @@ export function Header({ mobileMenuOpen, setMobileMenuOpen }: HeaderProps) {
             </Link>
           </div>
 
-          <div className="hidden lg:block">
+          <div className="hidden md:block">
             <Link
               to="/admin/products"
-              className="px-4 py-2 text-white/90 hover:text-white hover:bg-white/10 rounded-md transition-colors text-sm font-medium flex items-center gap-2"
+              className="px-4 py-2 text-white border-2 border-white rounded-md hover:bg-white hover:text-[var(--color-primary)] transition-colors text-sm font-bold flex items-center gap-2"
             >
               Admin Console
-              <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">Try It</span>
+              <span className="text-xs bg-white/30 px-2 py-0.5 rounded-full">Live Demo</span>
             </Link>
           </div>
 
           <div className="flex items-center gap-1 md:gap-3">
             {!isAdminPage && (
               <>
-                <form onSubmit={handleSearch} className="hidden md:flex gap-2">
+                <form onSubmit={handleSearch} className="hidden lg:flex gap-2">
                   <input
                     type="text"
                     placeholder="Search Products..."
@@ -104,7 +104,7 @@ export function Header({ mobileMenuOpen, setMobileMenuOpen }: HeaderProps) {
                 <button
                   onClick={() => setMobileSearchOpen(!mobileSearchOpen)}
                   aria-label={mobileSearchOpen ? "Close search" : "Open search"}
-                  className="md:hidden px-3 py-2 text-white hover:bg-white/10 rounded-md transition-colors">
+                  className="lg:hidden px-3 py-2 text-white hover:bg-white/10 rounded-md transition-colors">
                   {mobileSearchOpen ? (
                     <XMarkIcon className="h-6 w-6" />
                   ) : (
@@ -163,13 +163,13 @@ export function Header({ mobileMenuOpen, setMobileMenuOpen }: HeaderProps) {
                   onClick={openLogin}
                   className="px-3 md:px-4 py-2 text-sm font-medium text-white hover:bg-white/10 rounded-md transition-colors flex items-center gap-2">
                     <ArrowRightEndOnRectangleIcon className="h-6 w-6" />
-                    <span className="hidden md:inline">Login</span>
+                    <span className="hidden lg:inline">Login</span>
                   </button>
                 <button
                   onClick={openRegister}
-                  className="px-3 md:px-4 py-2 text-sm font-medium text-white bg-white/20 rounded-md hover:bg-white/30 transition-colors border border-white/30 flex items-center gap-2">
+                  className="px-3 md:px-4 py-2 text-sm font-medium text-white hover:bg-white/10 rounded-md transition-colors flex items-center gap-2">
                     <UserPlusIcon className="h-6 w-6" />
-                    <span className="hidden md:inline">Register</span>
+                    <span className="hidden lg:inline">Register</span>
                   </button>
                 </>
               )}

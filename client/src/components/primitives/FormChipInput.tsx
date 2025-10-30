@@ -158,6 +158,11 @@ export function FormChipInput({
             placeholder={value.length === 0 ? placeholder : ''}
             className="flex-1 min-w-[120px] outline-none bg-transparent"
             disabled={disabled || value.length >= maxItems}
+            role="combobox"
+            aria-expanded={showSuggestions && filteredSuggestions.length > 0}
+            aria-autocomplete="list"
+            aria-controls={`${id}-suggestions`}
+            aria-activedescendant={highlightedIndex >= 0 ? `${id}-option-${highlightedIndex}` : undefined}
           />
         </div>
 
@@ -166,9 +171,12 @@ export function FormChipInput({
             {filteredSuggestions.map((item, index) => (
               <button
                 key={item}
+                id={`${id}-option-${index}`}
                 ref={el => { suggestionRefs.current[index] = el; }}
                 type="button"
                 onClick={() => selectSuggestion(item)}
+                role="option"
+                aria-selected={highlightedIndex === index}
                 className={`w-full text-left px-4 py-2 text-sm focus:outline-none ${
                   highlightedIndex === index
                     ? 'bg-blue-100 text-blue-900'

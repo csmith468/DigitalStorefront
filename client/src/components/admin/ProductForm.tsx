@@ -9,6 +9,7 @@ import { FormCheckbox } from "../primitives/FormCheckbox";
 import { FormShell } from "../primitives/FormShell";
 import { OverlappingLabelBox } from "../primitives/OverlappingLabelBox";
 import { FormChipInput } from "../primitives/FormChipInput";
+import { useCallback } from "react";
 
 export type ProductFormMode = 'edit' | 'view' | 'try';
 
@@ -23,7 +24,7 @@ export function ProductForm ({
   existingProduct,
   onSuccess,
   onCancel,
-  mode = 'view', // defaulting to false because I made the pages that use this visible to anyone 
+  mode = 'view', // defaulting to view only because I made the pages that use this visible to anyone 
                  // (not only when logged in) so view mode is the safest default
 }: ProductFormProps) {
   const isEditing = !!existingProduct;
@@ -98,13 +99,14 @@ export function ProductForm ({
       disableSubmit={hideSubmit}
       hideSubmit={hideSubmit}
       children={({ data: formData, updateField }) => {
-        const handleSubcategoryToggle = (subcategoryId: number, checked: boolean) => {
+
+        const handleSubcategoryToggle = useCallback((subcategoryId: number, checked: boolean) => {
           updateField("subcategoryIds", 
             checked
               ? [...formData.subcategoryIds, subcategoryId]
               : formData.subcategoryIds.filter((id) => id !== subcategoryId)
           );
-        };
+        }, [updateField, formData.subcategoryIds]);
 
         return (
           <>
