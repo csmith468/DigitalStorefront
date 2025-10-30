@@ -127,24 +127,22 @@ export function AdminProductList() {
         totalPages={data?.totalPages || 0}
         totalCount={data?.totalCount || 0}>
         <div className="w-full overflow-x-auto bg-white rounded-lg shadow">
-          <table className="w-full divide-y divide-gray-200">
+          <table className="w-full divide-y divide-gray-200 text-center">
             <thead className="bg-gray-50">
               <tr>
                 <th className={tableHeaderStyle}>Thumbnail</th>
                 <th className={tableHeaderStyle}>Name</th>
                 <th className={tableHeaderStyle}>Type</th>
                 <th className={tableHeaderStyle}>Prices</th>
-                <th className={`${tableHeaderStyle} text-right`}>Actions</th>
+                <th className={tableHeaderStyle}>Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               <tr className="bg-green-50 hover:bg-green-100 border-b-2 border-green-300">
                 <td className="px-6 py-4" colSpan={2}>
-                  <div className="flex items-center gap-3">
-                    <div>
-                      <div className="text-sm font-bold text-green-800">TRY IT OUT</div>
-                      <div className="text-xs text-green-600">Test the product form without signing up</div>
-                    </div>
+                  <div>
+                    <div className="text-sm font-bold text-green-800">TRY IT OUT</div>
+                    <div className="text-xs text-green-600">Test the product form without signing up</div>
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-green-700 font-sm">
@@ -153,10 +151,10 @@ export function AdminProductList() {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   <div>FREE</div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right">
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold">
                   <button
                     onClick={() => navigate('/admin/products/try')}
-                    className="text-green-600 hover:text-green-800 flex items-center gap-1 justify-end w-full"
+                    className="text-green-600 hover:text-green-800 inline-flex items-center gap-1"
                   >
                     <PencilIcon className="h-5 w-5" />
                     <span>Try Now</span>
@@ -177,23 +175,25 @@ export function AdminProductList() {
 
                   return (
                     <tr key={product.productId} className="hover:bg-gray-50">
-                      <td 
+                      <td
                         onClick={() => navigate(`/admin/products/${product.productId}/edit?tab=images`)}
                         className="px-6 py-4 whitespace-nowrap cursor-pointer"
                       >
-                        {product.primaryImage ? (
-                          <img
-                            src={product.primaryImage.imageUrl}
-                            alt={product.name}
-                            className="h-12 w-12 object-cover rounded"
-                          />
-                        ) : (
-                          <div className="h-12 w-12 bg-gray-200 rounded flex items-center justify-center text-gray-400 text-xs">
-                            No Image
-                          </div>
-                        )}
+                        <div className="flex justify-center">
+                          {product.primaryImage ? (
+                            <img
+                              src={product.primaryImage.imageUrl}
+                              alt={product.name}
+                              className="h-12 w-12 object-cover rounded"
+                            />
+                          ) : (
+                            <div className="h-12 w-12 bg-gray-200 rounded flex items-center justify-center text-gray-400 text-xs">
+                              No Image
+                            </div>
+                          )}
+                        </div>
                       </td>
-                      <td 
+                      <td
                         onClick={() => navigate(`/admin/products/${product.productId}/edit?tab=details`)}
                         className="px-6 py-4 whitespace-nowrap cursor-pointer"
                       >
@@ -204,25 +204,24 @@ export function AdminProductList() {
                         {productType?.typeName || "Unknown"}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <div className="flex flex-col gap-1">
+                        <div className="flex flex-col gap-1 items-center">
                           <div>{product.priceIcon} {product.price}</div>
                           <div className="text-gray-500">{product.priceIcon} {product.premiumPrice}</div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         {!canManageProducts() || (product.isDemoProduct && !isAdmin()) ? (
-                          <div className="flex items-center justify-end gap-2">
+                          <div className="flex items-center justify-center gap-2">
                             <button
                               onClick={() => navigate(`/admin/products/${product.productId}/view`)}
-                              className="text-[var(--color-primary)] hover:text-[var(--color-primary-light)] flex items-center gap-1"
+                              className="text-[var(--color-primary)] hover:text-[var(--color-primary-light)]"
                               aria-label="View Product"
                             >
                               <EyeIcon className="h-5 w-5" />
-                              <span className="hidden sm:inline">View</span>
                             </button>
                           </div>
                         ) : (
-                          <div className="flex items-center justify-end gap-2">
+                          <div className="flex items-center justify-center gap-2">
                             <button
                               onClick={() => navigate(`/admin/products/${product.productId}/edit`)}
                               aria-label="Edit Product"
