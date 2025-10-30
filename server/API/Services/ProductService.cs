@@ -348,8 +348,6 @@ public class ProductService : IProductService
             return Result<bool>.Failure(ErrorMessages.Product.NameExists(dto.Name));
         if (await _queryExecutor.ExistsByFieldAsync<Product>("slug", dto.Slug) && (originalProduct == null || originalProduct.Slug != dto.Slug))
             return Result<bool>.Failure(ErrorMessages.Product.SlugExists(dto.Slug));
-        if (dto.PremiumPrice > dto.Price)
-            return Result<bool>.Failure(ErrorMessages.Product.PremiumPriceExceedsPrice);
         if (dto.SubcategoryIds.Count != 0)
         {
             var subcategoryValidationResult = await ValidateSubcategoryIdsAsync(dto.SubcategoryIds);

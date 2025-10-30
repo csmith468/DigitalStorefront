@@ -7,17 +7,18 @@ using Dapper;
 
 namespace API.Database;
 
-public class DataContextDapper : IQueryExecutor, ICommandExecutor, ITransactionManager, IDisposable
+public class DataContextDapper : IQueryExecutor, ICommandExecutor, ITransactionManager, IDisposable, IAsyncDisposable
 {
-      private readonly IDbConnection _db;
-      private IDbTransaction? _transaction;
+      private readonly SqlConnection _db;
+      private SqlTransaction? _transaction;
       private IAuditContext _auditContext;
+      private bool _disposed;
 
-      // NOTE: Dapper uses IAuditContext to auto-populate CreatedBy/UpdatedBy on all Inserts/Updates.
-      // I did this so it abstracts away the user source (HTTP context vs system user) so the data layer
-      // doesn't depend on ASP.NET Core. This keeps audit fields dry without violating any layer boundaries
-      // I wanted to make sure audit fields are always set, and since they aren't in DTOs, they can
-      // easily be forgotten, and passing userID each time leads to a lot of repetition (not DRY).
+      // NOTE: IAuditContext auto-populates Createdby/UpdatedBy fields on inserts/updates
+      // This abstracts the user source (HTTP vs system user) so the data layer doesn't depend on ASP.NET
+      // Keeps audit tracking DRY without pass userId everywhere or relying on people to remember to set fields
+      
+      // TODO for production: Add CancellationToken params to allow query cancellation when clients disconnect
       public DataContextDapper(IConfiguration config, IAuditContext auditContext)
       {
           _db = new SqlConnection(config.GetConnectionString("DefaultConnection"));
@@ -281,6 +282,8 @@ public class DataContextDapper : IQueryExecutor, ICommandExecutor, ITransactionM
       
       public async Task<T> WithTransactionAsync<T>(Func<Task<T>> func)
       {
+          // If a transaction is already active, reuse it to allow nested calls to have
+          // the same transaction scope (supports propagation)
           if (_transaction != null) return await func();
           EnsureConnectionOpen();
           
@@ -340,10 +343,29 @@ public class DataContextDapper : IQueryExecutor, ICommandExecutor, ITransactionM
       
       public string Database => _db.Database;
 
-
-      public virtual void Dispose()
+      public async ValueTask DisposeAsync()
       {
+          if (_disposed) return;
+
+          if (_transaction != null)
+              await _transaction.DisposeAsync();
+
+          if (_db.State == ConnectionState.Open)
+              await _db.CloseAsync();
+
+          await _db.DisposeAsync();
+          _disposed = true;
+      }
+
+      public void Dispose()
+      {
+          if (_disposed) return;
+
           _transaction?.Dispose();
+          if (_db.State == ConnectionState.Open)
+              _db.Close();
+          
           _db.Dispose();
+          _disposed = true;
       }
 }
