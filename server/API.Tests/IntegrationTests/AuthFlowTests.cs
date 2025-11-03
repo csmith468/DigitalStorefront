@@ -6,6 +6,8 @@ using FluentAssertions;
 
 namespace API.Tests.IntegrationTests;
 
+[Collection("Database")]
+[Trait("Category", "Integration")]
 public class AuthFlowTests(DatabaseFixture fixture) : IntegrationTestBase(fixture) 
 {
 
@@ -15,7 +17,7 @@ public class AuthFlowTests(DatabaseFixture fixture) : IntegrationTestBase(fixtur
         // Arrange
         var registerDto = new UserRegisterDto
         {
-            Username = $"testuser_{Guid.NewGuid():N}",
+            Username = $"testUser_{Guid.NewGuid():N}",
             Email = $"test_{Guid.NewGuid():N}@example.com",
             Password = "Test123!",
             ConfirmPassword = "Test123!",  // ✅ ADDED
@@ -76,7 +78,7 @@ public class AuthFlowTests(DatabaseFixture fixture) : IntegrationTestBase(fixtur
     public async Task LoginUser_WithValidCredentials_ReturnsToken()
     {
         // Arrange - Register user first
-        var username = $"logintest_{Guid.NewGuid():N}";
+        var username = $"loginTest_{Guid.NewGuid():N}";
         const string password = "CorrectPassword123!";
 
         var registerDto = new UserRegisterDto

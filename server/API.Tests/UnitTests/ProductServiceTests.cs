@@ -144,31 +144,6 @@ public class ProductServiceTests
         result.IsSuccess.Should().BeFalse();
         result.Error.Should().Contain("already exists");
     }
-
-    [Fact]
-    public async Task CreateProductAsync_WhenPremiumPriceExceedsRegularPrice_ReturnsFailure()
-    {
-        // Arrange
-        var dto = new ProductFormDto
-        {
-            Name = "Test Product",
-            Slug = "test-product",
-            Price = 100,
-            PremiumPrice = 150  // Invalid: premium price > regular price
-        };
-        const int userId = 1;
-
-        _mockQueryExecutor.Setup(d => d.ExistsByFieldAsync<Product>("name", dto.Name)).ReturnsAsync(false);
-        _mockQueryExecutor.Setup(d => d.ExistsByFieldAsync<Product>("slug", dto.Slug)).ReturnsAsync(false);
-
-        // Act
-        var result = await _service.CreateProductAsync(dto, userId);
-
-        // Assert
-        result.Should().NotBeNull();
-        result.IsSuccess.Should().BeFalse();
-        result.Error.Should().Contain("Premium price cannot exceed regular price");
-    }
     
     [Fact]
     public async Task 

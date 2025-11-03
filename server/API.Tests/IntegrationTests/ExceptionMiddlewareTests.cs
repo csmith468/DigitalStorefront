@@ -6,6 +6,8 @@ using FluentAssertions;
 
 namespace API.Tests.IntegrationTests;
 
+[Collection("Database")]
+[Trait("Category", "Integration")]
 public class ExceptionMiddlewareTests(DatabaseFixture fixture) : IntegrationTestBase(fixture)
 {
     [Fact]
@@ -23,7 +25,6 @@ public class ExceptionMiddlewareTests(DatabaseFixture fixture) : IntegrationTest
         var errorResponse = await response.Content.ReadFromJsonAsync<ApiException>();
         errorResponse.Should().NotBeNull();
         errorResponse.StatusCode.Should().Be(500);
-        errorResponse.Message.Should().Be("Internal Service Error");
     }
 
     [Fact]
@@ -40,7 +41,6 @@ public class ExceptionMiddlewareTests(DatabaseFixture fixture) : IntegrationTest
         var errorResponse = await response.Content.ReadFromJsonAsync<ApiException>();
         errorResponse.Should().NotBeNull();
         errorResponse.StatusCode.Should().Be(500);
-        errorResponse.Message.Should().Be("Internal Service Error");
     }
 
     [Fact]

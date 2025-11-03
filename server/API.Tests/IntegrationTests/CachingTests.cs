@@ -6,6 +6,8 @@ using FluentAssertions;
 
 namespace API.Tests.IntegrationTests;
 
+[Collection("Database")]
+[Trait("Category", "Integration")]
 public class CachingTests(DatabaseFixture fixture) : IntegrationTestBase(fixture)
 {
 

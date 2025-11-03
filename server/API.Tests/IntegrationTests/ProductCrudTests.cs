@@ -8,6 +8,8 @@ using Xunit;
 
 namespace API.Tests.IntegrationTests;
 
+[Collection("Database")]
+[Trait("Category", "Integration")]
 public class ProductCrudTests(DatabaseFixture fixture) : IntegrationTestBase(fixture) 
 {
     [Fact]
