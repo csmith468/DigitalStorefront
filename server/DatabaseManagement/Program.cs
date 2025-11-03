@@ -4,6 +4,7 @@ using API.Services;
 using API.Services.Contexts;
 using API.Services.Images;
 using DatabaseManagement.Helpers;
+using DatabaseManagement.UserInteraction;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -41,8 +42,9 @@ services.AddSingleton<IStoragePathProvider>(new ConsoleStoragePathProvider(apiWw
 services.AddScoped<IImageStorageService, LocalImageStorageService>();
 
 var serviceProvider = services.BuildServiceProvider();
+var userInteraction = new ConsoleUserInteraction();
 
-var runner = new DatabaseManagementRunner(args, serviceProvider, connectionString, configuration);
+var runner = new DatabaseManagementRunner(args, serviceProvider, connectionString, configuration, userInteraction);
 var exitCode = await runner.RunAsync();
 
 await serviceProvider.DisposeAsync();

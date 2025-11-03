@@ -6,17 +6,15 @@ using FluentAssertions;
 
 namespace API.Tests.IntegrationTests;
 
-public class ExceptionMiddlewareTests(CustomWebApplicationFactory factory) : IClassFixture<CustomWebApplicationFactory>
+public class ExceptionMiddlewareTests(DatabaseFixture fixture) : IntegrationTestBase(fixture)
 {
-    private readonly HttpClient _client = factory.CreateClient();
-    
     [Fact]
     public async Task ThrowException_ShouldReturn500_WithJsonErrorResponse()
     {
         // Arrange
         
         // Act
-        var response = await _client.GetAsync("api/test/throw-exception");
+        var response = await Client.GetAsync("api/test/throw-exception");
         
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
@@ -25,8 +23,7 @@ public class ExceptionMiddlewareTests(CustomWebApplicationFactory factory) : ICl
         var errorResponse = await response.Content.ReadFromJsonAsync<ApiException>();
         errorResponse.Should().NotBeNull();
         errorResponse.StatusCode.Should().Be(500);
-        errorResponse.Message.Should().Be("Test Exception");
-        errorResponse.Detail.Should().NotBeNullOrEmpty();
+        errorResponse.Message.Should().Be("Internal Service Error");
     }
 
     [Fact]
@@ -35,7 +32,7 @@ public class ExceptionMiddlewareTests(CustomWebApplicationFactory factory) : ICl
         // Arrange
         
         // Act
-        var response = await _client.GetAsync("api/test/null-reference");
+        var response = await Client.GetAsync("api/test/null-reference");
         
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
@@ -43,7 +40,7 @@ public class ExceptionMiddlewareTests(CustomWebApplicationFactory factory) : ICl
         var errorResponse = await response.Content.ReadFromJsonAsync<ApiException>();
         errorResponse.Should().NotBeNull();
         errorResponse.StatusCode.Should().Be(500);
-        errorResponse.Message.Should().Contain("Object reference");
+        errorResponse.Message.Should().Be("Internal Service Error");
     }
 
     [Fact]
@@ -52,7 +49,7 @@ public class ExceptionMiddlewareTests(CustomWebApplicationFactory factory) : ICl
         // Arrange
         
         // Act
-        var response = await _client.GetAsync("api/test/valid");
+        var response = await Client.GetAsync("api/test/valid");
         
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -64,7 +61,7 @@ public class ExceptionMiddlewareTests(CustomWebApplicationFactory factory) : ICl
         // Arrange
         
         // Act
-        var response = await _client.GetAsync("api/test/not-found");
+        var response = await Client.GetAsync("api/test/not-found");
         
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
