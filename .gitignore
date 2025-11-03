@@ -15,10 +15,13 @@ coverage/
 *.ntvs*
 *.njsproj
 *.tsbuildinfo
+.vite/
 
 # .NET Core / C#
 bin/
 obj/
+publish/
+*.zip
 *.user
 *.suo
 .vs/

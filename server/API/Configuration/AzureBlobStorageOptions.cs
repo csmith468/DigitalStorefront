@@ -6,7 +6,7 @@ namespace API.Configuration;
 // Could have done manual validation but wanted it to fail-fast and have declarative attributes
 public class AzureBlobStorageOptions
 {
-    public const string SectionName = "AzureBlobStorage";
+    public const string SectionName = "BlobStorage";
 
     [Required(ErrorMessage = "Azure Blob Storage connection string is required")]
     public string ConnectionString { get; set; } = "";
