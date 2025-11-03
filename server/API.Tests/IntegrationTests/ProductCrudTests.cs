@@ -36,29 +36,29 @@ public class ProductCrudTests : IClassFixture<CustomWebApplicationFactory>
         };
 
         // Act & Assert - Create
-        var createResponse = await client.PostAsJsonAsync("/products", createDto);
+        var createResponse = await client.PostAsJsonAsync("/api/products", createDto);
         createResponse.StatusCode.Should().Be(HttpStatusCode.Created);
         var created = await createResponse.Content.ReadFromJsonAsync<ProductDetailDto>();
         created.Should().NotBeNull();
         created.Name.Should().Be(createDto.Name);
 
         // Act & Assert - Get by ID
-        var getResponse = await client.GetAsync($"/products/{created.ProductId}");
+        var getResponse = await client.GetAsync($"/api/products/{created.ProductId}");
         getResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
         // Act & Assert - Update
         createDto.Name = "Updated Product Name";
-        var updateResponse = await client.PutAsJsonAsync($"/products/{created.ProductId}", createDto);
+        var updateResponse = await client.PutAsJsonAsync($"/api/products/{created.ProductId}", createDto);
         updateResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         var updated = await updateResponse.Content.ReadFromJsonAsync<ProductDetailDto>();
         updated!.Name.Should().Be("Updated Product Name");
 
         // Act & Assert - Delete
-        var deleteResponse = await client.DeleteAsync($"/products/{created.ProductId}");
+        var deleteResponse = await client.DeleteAsync($"/api/products/{created.ProductId}");
         deleteResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
         // Verify Deleted
-        var getDeletedResponse = await client.GetAsync($"/products/{created.ProductId}");
+        var getDeletedResponse = await client.GetAsync($"/api/products/{created.ProductId}");
         getDeletedResponse.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
@@ -79,7 +79,7 @@ public class ProductCrudTests : IClassFixture<CustomWebApplicationFactory>
         };
 
         // Act
-        var response = await client.PostAsJsonAsync("/products", createDto);
+        var response = await client.PostAsJsonAsync("/api/products", createDto);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -106,14 +106,14 @@ public class ProductCrudTests : IClassFixture<CustomWebApplicationFactory>
         };
 
         // Act
-        var createResponse = await client.PostAsJsonAsync("/products", createDto);
+        var createResponse = await client.PostAsJsonAsync("/api/products", createDto);
 
         // Assert - Request should fail
         createResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         var errorContent = await createResponse.Content.ReadAsStringAsync();
         errorContent.Should().ContainEquivalentOf("subcategor");
 
-        var getBySlugResponse = await client.GetAsync($"/products/slug/{uniqueSlug}");
+        var getBySlugResponse = await client.GetAsync($"/api/products/slug/{uniqueSlug}");
         getBySlugResponse.StatusCode.Should().Be(HttpStatusCode.NotFound, "Product should not exist in database due to transaction rollback");
     }
 }

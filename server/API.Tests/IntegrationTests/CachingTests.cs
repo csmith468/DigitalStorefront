@@ -22,7 +22,7 @@ using API.Tests.Helpers;
           // Arrange
           var client = _factory.CreateClient();
           
-          const string url = "/metadata/product-types";
+          const string url = "/api/metadata/product-types";
           var response1 = await client.GetAsync(url);
           var ageHeader1 = response1.Headers.TryGetValues("age", out var age1) ? age1.First() : null;
 
@@ -46,7 +46,7 @@ using API.Tests.Helpers;
           // Arrange
           var (client, auth) = await TestAuthHelpers.CreateAuthenticatedClientAsync(_factory);
           
-          const string tagsUrl = "/metadata/tags";
+          const string tagsUrl = "/api/metadata/tags";
           var initialTagsResponse = await client.GetAsync(tagsUrl);
           var initialTags = await initialTagsResponse.Content.ReadFromJsonAsync<List<TagDto>>();
           var initialCount = initialTags?.Count ?? 0;
@@ -71,7 +71,7 @@ using API.Tests.Helpers;
               Tags = [uniqueTag],
               SubcategoryIds = [1]
           };
-          var createProductResponse = await client.PostAsJsonAsync("/products", productDto);
+          var createProductResponse = await client.PostAsJsonAsync("/api/products", productDto);
 
           await Task.Delay(1000);
           
@@ -97,11 +97,11 @@ using API.Tests.Helpers;
           // Cleanup
           if (createdProduct?.ProductId != null)
           {
-              var deleteResponse = await client.DeleteAsync($"/products/{createdProduct.ProductId}");
+              var deleteResponse = await client.DeleteAsync($"/api/products/{createdProduct.ProductId}");
               deleteResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
               // Verify product was actually deleted
-              var verifyDeletedResponse = await client.GetAsync($"/products/{createdProduct.ProductId}");
+              var verifyDeletedResponse = await client.GetAsync($"/api/products/{createdProduct.ProductId}");
               verifyDeletedResponse.StatusCode.Should().Be(HttpStatusCode.NotFound,
                   "Product should no longer exist after deletion");
           }

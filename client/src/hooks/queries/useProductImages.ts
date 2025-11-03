@@ -1,7 +1,5 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { deleteProductImage, reorderProductImages, setImageAsPrimary, uploadProductImage } from "../../services/products/images";
 import type { AddProductImageRequest } from "../../types/product";
-import toast from "react-hot-toast";
 import { useMutationWithToast } from "../utilities/useMutationWithToast";
 
 export const useUploadProductImage = () => {

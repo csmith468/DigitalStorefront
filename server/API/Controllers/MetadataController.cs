@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.OutputCaching;
 namespace API.Controllers;
 
 [ApiController]
-[Route("metadata")]
+[Route("api/[controller]")]
 public class MetadataController : ControllerBase
 {
     private readonly IMetadataService _metadataService;
