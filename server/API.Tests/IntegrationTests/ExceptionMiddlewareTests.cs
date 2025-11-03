@@ -16,7 +16,7 @@ public class ExceptionMiddlewareTests(CustomWebApplicationFactory factory) : ICl
         // Arrange
         
         // Act
-        var response = await _client.GetAsync("/test/throw-exception");
+        var response = await _client.GetAsync("api/test/throw-exception");
         
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
@@ -35,7 +35,7 @@ public class ExceptionMiddlewareTests(CustomWebApplicationFactory factory) : ICl
         // Arrange
         
         // Act
-        var response = await _client.GetAsync("test/null-reference");
+        var response = await _client.GetAsync("api/test/null-reference");
         
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
@@ -52,7 +52,7 @@ public class ExceptionMiddlewareTests(CustomWebApplicationFactory factory) : ICl
         // Arrange
         
         // Act
-        var response = await _client.GetAsync("test/valid");
+        var response = await _client.GetAsync("api/test/valid");
         
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -64,7 +64,7 @@ public class ExceptionMiddlewareTests(CustomWebApplicationFactory factory) : ICl
         // Arrange
         
         // Act
-        var response = await _client.GetAsync("test/not-found");
+        var response = await _client.GetAsync("api/test/not-found");
         
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);

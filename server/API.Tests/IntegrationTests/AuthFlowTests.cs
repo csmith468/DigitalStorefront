@@ -25,7 +25,7 @@ public class AuthFlowTests(CustomWebApplicationFactory factory) : IClassFixture<
         };
 
         // Act
-        var response = await _client.PostAsJsonAsync("/auth/register", registerDto);
+        var response = await _client.PostAsJsonAsync("/api/auth/register", registerDto);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Created);
@@ -64,8 +64,8 @@ public class AuthFlowTests(CustomWebApplicationFactory factory) : IClassFixture<
         };
 
         // Act
-        await _client.PostAsJsonAsync("/auth/register", registerDto1);
-        var response = await _client.PostAsJsonAsync("/auth/register", registerDto2);
+        await _client.PostAsJsonAsync("/api/auth/register", registerDto1);
+        var response = await _client.PostAsJsonAsync("/api/auth/register", registerDto2);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -89,7 +89,7 @@ public class AuthFlowTests(CustomWebApplicationFactory factory) : IClassFixture<
             FirstName = "Test",
             LastName = "User"
         };
-        await _client.PostAsJsonAsync("/auth/register", registerDto);
+        await _client.PostAsJsonAsync("/api/auth/register", registerDto);
 
         var loginDto = new UserLoginDto
         {
@@ -98,7 +98,7 @@ public class AuthFlowTests(CustomWebApplicationFactory factory) : IClassFixture<
         };
 
         // Act
-        var response = await _client.PostAsJsonAsync("/auth/login", loginDto);
+        var response = await _client.PostAsJsonAsync("/api/auth/login", loginDto);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -126,7 +126,7 @@ public class AuthFlowTests(CustomWebApplicationFactory factory) : IClassFixture<
             FirstName = "Test",
             LastName = "User"
         };
-        await _client.PostAsJsonAsync("/auth/register", registerDto);
+        await _client.PostAsJsonAsync("/api/auth/register", registerDto);
 
         var loginDto = new UserLoginDto
         {
@@ -135,7 +135,7 @@ public class AuthFlowTests(CustomWebApplicationFactory factory) : IClassFixture<
         };
 
         // Act
-        var response = await _client.PostAsJsonAsync("/auth/login", loginDto);
+        var response = await _client.PostAsJsonAsync("/api/auth/login", loginDto);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);

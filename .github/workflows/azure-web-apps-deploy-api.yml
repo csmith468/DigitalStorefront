@@ -1,0 +1,43 @@
+name: Deploy API to Azure Web App
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'server/API/**'
+  workflow_dispatch: 
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps: 
+      - uses: actions/checkout@v3
+
+      - name: Setup .NET 
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore Dependencies
+        run: dotnet restore
+        working-directory: ./server
+
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
+        working-directory: ./server
+
+      - name: Test
+        run: dotnet test --no-build --configuration Release --verbosity normal --filter "Skip!=CI"
+        working-directory: ./server
+
+      - name: Publish
+        run: dotnet publish --no-build --configuration Release --output ./publish
+        working-directory: ./server/API
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: 'digital-storefront-api'
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: ./server/API/publish

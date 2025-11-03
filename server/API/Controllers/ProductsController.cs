@@ -15,7 +15,7 @@ namespace API.Controllers;
 /// - ProductWriter: Can manage non-demo products
 /// </summary>
 [ApiController]
-[Route("products")]
+[Route("api/[controller]")]
 public class ProductsController : ControllerBase
 {
     private readonly IProductService _productService;

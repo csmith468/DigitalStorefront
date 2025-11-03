@@ -21,7 +21,7 @@ public static class TestAuthHelpers
             LastName = "User"
         };
 
-        var response = await client.PostAsJsonAsync("/auth/register", registerDto);
+        var response = await client.PostAsJsonAsync("/api/auth/register", registerDto);
         var authResponse = await response.Content.ReadFromJsonAsync<AuthResponseDto>();
 
         client.DefaultRequestHeaders.Authorization =

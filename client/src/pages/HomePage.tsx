@@ -25,8 +25,6 @@ export function HomePage() {
     );
   };
 
-  const adminButtonStyle = "px-4 py-2 bg-[var(--color-primary)] text-white rounded-md hover:opacity-90 font-medium text-sm";
-
   return (
     <div className="container mx-auto px-4 py-6 max-w-4xl">
       <PageHeader
