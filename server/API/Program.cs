@@ -30,7 +30,7 @@ try
 
     // Validation & Documentation
     builder.Services.AddValidation();
-    builder.Services.AddSwaggerAuth();
+    builder.Services.AddSwaggerAuthorization();
 
     // Infrastructure
     builder.Services.AddHealthChecksConfiguration(builder.Configuration);
@@ -72,6 +72,7 @@ try
 
     app.UseStaticFiles();
 
+    app.UseMiddleware<RateLimitHeadersMiddleware>();
     app.UseRateLimiter();
     app.UseOutputCache();
 

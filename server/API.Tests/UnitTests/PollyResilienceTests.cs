@@ -141,7 +141,7 @@ public class PollyResilienceTests
             {
                 await pollyClient.GetAsync(MockUrl);
             }
-            catch (Exception ex)
+            catch
             {
                 // Circuit breaker throws when open
             }
