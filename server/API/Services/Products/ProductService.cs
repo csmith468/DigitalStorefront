@@ -9,7 +9,7 @@ using API.Services.Images;
 using AutoMapper;
 using Dapper;
 
-namespace API.Services;
+namespace API.Services.Products;
 
 public interface IProductService
 {
@@ -30,9 +30,10 @@ public class ProductService : IProductService
     private readonly IMapper _mapper;
     private readonly IConfiguration _config;
     private readonly IUserContext _userContext;
-    private readonly IProductImageService _productImageService;
     private readonly IImageStorageService _imageStorageService;
     private readonly IProductAuthorizationService _productAuthService;
+    private readonly IProductValidationService _productValidationService;
+    private readonly IProductMappingService _productMappingService;
     private readonly ITagService _tagService;
 
     public ProductService(
@@ -43,9 +44,10 @@ public class ProductService : IProductService
         IMapper mapper,
         IConfiguration config,
         IUserContext userContext,
-        IProductImageService productImageService,
         IImageStorageService imageStorageService,
         IProductAuthorizationService productAuthService,
+        IProductValidationService productValidationService,
+        IProductMappingService productMappingService,
         ITagService tagService)
     {
         _queryExecutor = queryExecutor;
@@ -55,9 +57,10 @@ public class ProductService : IProductService
         _mapper = mapper;
         _config = config;
         _userContext = userContext;
-        _productImageService = productImageService;
         _imageStorageService = imageStorageService;
         _productAuthService = productAuthService;
+        _productValidationService = productValidationService;
+        _productMappingService = productMappingService;
         _tagService = tagService;
     }
     
@@ -67,7 +70,7 @@ public class ProductService : IProductService
         if (product == null)
             return Result<ProductDetailDto>.Failure(ErrorMessages.Product.NotFound(productId));
         
-        var productDetailDto = await ConvertProductToProductDetailDto(product);
+        var productDetailDto = await _productMappingService.ToProductDetailDto(product);
         return Result<ProductDetailDto>.Success(productDetailDto);
     }
 
@@ -77,7 +80,7 @@ public class ProductService : IProductService
         if (product == null)
             return Result<ProductDetailDto>.Failure(ErrorMessages.Product.NotFound(slug));
         
-        var productDetailDto = await ConvertProductToProductDetailDto(product);
+        var productDetailDto = await _productMappingService.ToProductDetailDto(product);
         return Result<ProductDetailDto>.Success(productDetailDto);
     }
 
@@ -150,7 +153,7 @@ public class ProductService : IProductService
             customOrderBy: customOrderBy
         );
         
-        var productDtosResult = await ConvertProductsToProductDtos(products.ToList());
+        var productDtosResult = await _productMappingService.ToProductDtos(products.ToList());
         return Result<PaginatedResponse<ProductDto>>.Success(new PaginatedResponse<ProductDto>
         {
             Items = productDtosResult.Data,
@@ -165,7 +168,7 @@ public class ProductService : IProductService
         if (!await CanUserCreateProduct(userId))
             return Result<ProductDetailDto>.Failure(ErrorMessages.Product.Unauthorized);
         
-        var validateProductResult = await ValidateProductAsync(dto);
+        var validateProductResult = await _productValidationService.ValidateProductAsync(dto);
         if (!validateProductResult.IsSuccess)
             return validateProductResult.ToFailure<bool, ProductDetailDto>();
 
@@ -189,7 +192,7 @@ public class ProductService : IProductService
         
         _logger.LogInformation("Product Created: ProductId {ProductId}, Name {ProductName}, CreatedBy {UserId}",
             product.ProductId, product.Name, userId);
-        var productDetailDto = await ConvertProductToProductDetailDto(product);
+        var productDetailDto = await _productMappingService.ToProductDetailDto(product);
         return Result<ProductDetailDto>.Success(productDetailDto, HttpStatusCode.Created);
     }
 
@@ -203,7 +206,7 @@ public class ProductService : IProductService
         if (!manageProductResult.IsSuccess)
             return manageProductResult.ToFailure<bool, ProductDetailDto>();
         
-        var validateProductResult = await ValidateProductAsync(dto, product);
+        var validateProductResult = await _productValidationService.ValidateProductAsync(dto, product);
         if (!validateProductResult.IsSuccess)
             return validateProductResult.ToFailure<bool, ProductDetailDto>();
         
@@ -220,7 +223,7 @@ public class ProductService : IProductService
         
         _logger.LogInformation("Product Modified: ProductId {ProductId}, Name {ProductName}, ModifiedBy {UserId}",
             product.ProductId, product.Name, _userContext.UserId);
-        var productDetailDto = await ConvertProductToProductDetailDto(product);
+        var productDetailDto = await _productMappingService.ToProductDetailDto(product);
         return Result<ProductDetailDto>.Success(productDetailDto);
     }
     
@@ -296,84 +299,14 @@ public class ProductService : IProductService
         }
     }
 
-    private async Task<ProductDetailDto> ConvertProductToProductDetailDto(Product product)
-    {
-        var detailDto = _mapper.Map<Product, ProductDetailDto>(product);
-
-        var imagesResult = await _productImageService.GetAllProductImagesAsync(product.ProductId);
-        if (imagesResult.IsSuccess)
-            detailDto.Images = imagesResult.Data;
-
-        var productSubcategories = await _queryExecutor.GetByFieldAsync<ProductSubcategory>("productId", product.ProductId);
-        var subcategories = await _queryExecutor.GetWhereInAsync<Subcategory>("subcategoryId", productSubcategories.Select(s => s.SubcategoryId).ToList());
-        detailDto.Subcategories = subcategories.Select(s => _mapper.Map<Subcategory, SubcategoryDto>(s)).ToList();
-        
-        var productTags = (await _queryExecutor.GetByFieldAsync<ProductTag>("productId", product.ProductId)).ToList();
-        if (productTags.Count != 0)
-        {
-            var tags = await _queryExecutor.GetWhereInAsync<Tag>("tagId", productTags.Select(pt => pt.TagId).ToList());
-            detailDto.Tags = tags.Select(t => _mapper.Map<Tag, TagDto>(t)).ToList();
-        }
-        
-        var priceType = PriceTypes.All.FirstOrDefault(pt => pt.PriceTypeId == product.PriceTypeId);
-        detailDto.PriceIcon = priceType != null ? priceType.Icon : "";
-        
-        return detailDto;
-    }
-
-    private async Task<Result<List<ProductDto>>> ConvertProductsToProductDtos(List<Product> products)
-    {
-        var productIds = products.Select(p => p.ProductId).ToList();
-        var primaryImages = await _productImageService.GetPrimaryImagesForProductIds(productIds);
-
-        var productDtos = products.Select(p =>
-        {
-            var productDto = _mapper.Map<Product, ProductDto>(p);
-            productDto.PrimaryImage = primaryImages.Data.FirstOrDefault(pi => pi.ProductId == p.ProductId);
-            var priceType = PriceTypes.All.FirstOrDefault(pt => pt.PriceTypeId == p.PriceTypeId);
-            productDto.PriceIcon = priceType != null ? priceType.Icon : "";
-            return productDto;
-        }).ToList();
-        return Result<List<ProductDto>>.Success(productDtos);
-    }
+    
 
     private string GenerateSku(int productId, string slug)
     {
         return slug[..3].ToUpper() + "-" + productId.ToString("D5");
     }
 
-    private async Task<Result<bool>> ValidateProductAsync(ProductFormDto dto, Product? originalProduct = null)
-    {
-        if (await _queryExecutor.ExistsByFieldAsync<Product>("name", dto.Name) && (originalProduct == null || originalProduct.Name != dto.Name))
-            return Result<bool>.Failure(ErrorMessages.Product.NameExists(dto.Name));
-        if (await _queryExecutor.ExistsByFieldAsync<Product>("slug", dto.Slug) && (originalProduct == null || originalProduct.Slug != dto.Slug))
-            return Result<bool>.Failure(ErrorMessages.Product.SlugExists(dto.Slug));
-        if (dto.SubcategoryIds.Count != 0)
-        {
-            var subcategoryValidationResult = await ValidateSubcategoryIdsAsync(dto.SubcategoryIds);
-            if (!subcategoryValidationResult.IsSuccess)
-                return subcategoryValidationResult;
-        }
-        return Result<bool>.Success(true);
-    }
-
-    private async Task<Result<bool>> ValidateSubcategoryIdsAsync(List<int> subcategoriesIds)
-    {
-        if (subcategoriesIds.Count == 0)
-            return Result<bool>.Success(true);
-        
-        var distinctIds = subcategoriesIds.Distinct().ToList();
-        var existingSubcategories =
-            (await _queryExecutor.GetWhereInAsync<Subcategory>("subcategoryId", distinctIds)).ToList();
-
-        if (existingSubcategories.Count == distinctIds.Count) 
-            return Result<bool>.Success(true);
-        
-        var existingIds = existingSubcategories.Select(s => s.SubcategoryId).ToHashSet();
-        var nonexistentIds = string.Join(", ", distinctIds.Where(id => !existingIds.Contains(id)).ToList());
-        _logger.LogWarning("Invalid subcategoryIds attempted: {NonexistentIds}", nonexistentIds);
-        return Result<bool>.Failure(ErrorMessages.Metadata.InvalidSubcategories(nonexistentIds));
-    }
+    
 
     
     private async Task SetProductTagsAsync(int productId, List<int> updatedTagIds)

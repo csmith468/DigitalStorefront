@@ -3,7 +3,7 @@ using API.Database;
 using API.Models;
 using API.Models.DboTables;
 
-namespace API.Services;
+namespace API.Services.Products;
 
 public interface IProductAuthorizationService
 {

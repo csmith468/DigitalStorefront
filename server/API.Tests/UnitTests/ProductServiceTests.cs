@@ -3,6 +3,7 @@ using API.Models;
 using API.Models.DboTables;
 using API.Models.Dtos;
 using API.Services;
+using API.Services.Products;
 using API.Services.Images;
 using AutoMapper;
 using FluentAssertions;
@@ -20,9 +21,10 @@ public class ProductServiceTests
     private readonly Mock<ILogger<ProductService>> _mockLogger;
     private readonly Mock<IMapper> _mockMapper;
     private readonly Mock<IUserContext> _mockUserContext;
-    private readonly Mock<IProductImageService> _mockImageService;
     private readonly Mock<IImageStorageService> _mockStorageService;
     private readonly Mock<IProductAuthorizationService> _mockAuthService;
+    private readonly Mock<IProductValidationService> _mockProductValidationService;
+    private readonly Mock<IProductMappingService> _mockProductMappingService;
     private readonly ProductService _service;
     private readonly Mock<ITagService> _mockTagService;
 
@@ -34,7 +36,8 @@ public class ProductServiceTests
         _mockLogger = new Mock<ILogger<ProductService>>();
         _mockMapper = new Mock<IMapper>();
         _mockUserContext = new Mock<IUserContext>();
-        _mockImageService = new Mock<IProductImageService>();
+        _mockProductValidationService = new Mock<IProductValidationService>();
+        _mockProductMappingService = new Mock<IProductMappingService>();
         _mockStorageService = new Mock<IImageStorageService>();
         _mockAuthService = new Mock<IProductAuthorizationService>();
         _mockTagService = new Mock<ITagService>();
@@ -56,9 +59,10 @@ public class ProductServiceTests
             _mockMapper.Object,
             config,
             _mockUserContext.Object,
-            _mockImageService.Object,
             _mockStorageService.Object,
             _mockAuthService.Object,
+            _mockProductValidationService.Object,
+            _mockProductMappingService.Object,
             _mockTagService.Object
         );
     }
@@ -73,8 +77,7 @@ public class ProductServiceTests
 
         _mockQueryExecutor.Setup(d => d.GetByIdAsync<Product>(productId)).ReturnsAsync(product);
         _mockMapper.Setup(m => m.Map<Product, ProductDetailDto>(product)).Returns(productDto);
-        _mockImageService.Setup(i => i.GetAllProductImagesAsync(productId))
-            .ReturnsAsync(Result<List<ProductImageDto>>.Success([]));
+        _mockProductMappingService.Setup(m => m.ToProductDetailDto(product)).ReturnsAsync(productDto);
         _mockQueryExecutor.Setup(d => d.GetByFieldAsync<ProductSubcategory>("productId", productId))
             .ReturnsAsync(new List<ProductSubcategory>());
         _mockQueryExecutor.Setup(d => d.GetWhereInAsync<Subcategory>("subcategoryId", It.IsAny<List<int>>()))
@@ -114,8 +117,9 @@ public class ProductServiceTests
         var dto = new ProductFormDto { Name = "Existing Product", Slug = "existing-product" };
         const int userId = 1;
 
-        _mockQueryExecutor.Setup(d => d.ExistsByFieldAsync<Product>("name", dto.Name)).ReturnsAsync(true);
-
+        _mockProductValidationService.Setup(v => v.ValidateProductAsync(dto, null))
+            .ReturnsAsync(Result<bool>.Failure(ErrorMessages.Product.NameExists(dto.Name)));
+        
         // Act
         var result = await _service.CreateProductAsync(dto, userId);
 
@@ -133,9 +137,9 @@ public class ProductServiceTests
         var dto = new ProductFormDto { Name = "New Product", Slug = "existing-slug" };
         const int userId = 1;
 
-        _mockQueryExecutor.Setup(d => d.ExistsByFieldAsync<Product>("name", dto.Name)).ReturnsAsync(false);
-        _mockQueryExecutor.Setup(d => d.ExistsByFieldAsync<Product>("slug", dto.Slug)).ReturnsAsync(true);
-
+        _mockProductValidationService.Setup(v => v.ValidateProductAsync(dto, null))
+            .ReturnsAsync(Result<bool>.Failure(ErrorMessages.Product.SlugExists(dto.Slug)));
+        
         // Act
         var result = await _service.CreateProductAsync(dto, userId);
 
@@ -166,9 +170,10 @@ public class ProductServiceTests
             _mockMapper.Object,
             demoConfig,
             _mockUserContext.Object,
-            _mockImageService.Object,
             _mockStorageService.Object,
             _mockAuthService.Object,
+            _mockProductValidationService.Object,
+            _mockProductMappingService.Object,
             _mockTagService.Object
         );
 

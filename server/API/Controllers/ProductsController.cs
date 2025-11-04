@@ -2,6 +2,7 @@ using API.Extensions;
 using API.Models;
 using API.Models.Dtos;
 using API.Services;
+using API.Services.Products;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

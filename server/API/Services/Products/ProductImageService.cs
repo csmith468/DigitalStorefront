@@ -6,7 +6,7 @@ using API.Models.DboTables;
 using API.Models.Dtos;
 using API.Services.Images;
 
-namespace API.Services;
+namespace API.Services.Products;
 
 public interface IProductImageService
 {
