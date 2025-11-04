@@ -20,7 +20,7 @@ public class CorrelationIdMiddlewareTests
         await middleware.InvokeAsync(context);
         
         // Assert
-        context.Items["CorrelationId"].Should().Be(expectedId);
+        context.Items[ContextKeys.CorrelationId].Should().Be(expectedId);
         context.Response.Headers[HeaderNames.CorrelationId].ToString().Should().Be(expectedId);
     }
 }

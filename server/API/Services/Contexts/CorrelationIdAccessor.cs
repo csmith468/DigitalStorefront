@@ -1,3 +1,5 @@
+using API.Models.Constants;
+
 namespace API.Services.Contexts;
 
 public interface ICorrelationIdAccessor
@@ -14,5 +16,5 @@ public class CorrelationIdAccessor : ICorrelationIdAccessor
         _httpContextAccessor = httpContextAccessor;
     }
     
-    public string? CorrelationId => _httpContextAccessor.HttpContext?.Items["CorrelationId"] as string;
+    public string? CorrelationId => _httpContextAccessor.HttpContext?.Items[ContextKeys.CorrelationId]?.ToString();
 }
