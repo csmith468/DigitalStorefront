@@ -85,19 +85,21 @@ public class ProductImageService : IProductImageService
         if (!validateProduct.IsSuccess)
             return validateProduct.ToFailure<bool, ProductImageDto>();
 
+        string? uploadedImageUrl = null;
+
         try
         {
             ProductImage productImage = null!;
 
             await _transactionManager.WithTransactionAsync(async () =>
             {
-                var relativePath = await _imageStorageService.SaveImageAsync(dto.File, "products", productId.ToString(), ct);
+                uploadedImageUrl = await _imageStorageService.SaveImageAsync(dto.File, "products", productId.ToString(), ct);
                 var imageCount = await _queryExecutor.GetCountByFieldAsync<ProductImage>("productId", productId, ct);
 
                 productImage = new ProductImage
                 {
                     ProductId = productId,
-                    ImageUrl = relativePath,
+                    ImageUrl = uploadedImageUrl,
                     AltText = dto.AltText,
                     DisplayOrder = imageCount
                 };
@@ -119,6 +121,20 @@ public class ProductImageService : IProductImageService
         }
         catch (Exception ex)
         {
+            if (uploadedImageUrl != null)
+            {
+                try
+                {
+                    await _imageStorageService.DeleteImageAsync(uploadedImageUrl, ct);
+                    _logger.LogInformation("Cleaned up orphaned image {ImageUrl} after transaction failure",
+                        uploadedImageUrl);
+                }
+                catch (Exception cleanupEx)
+                {
+                    _logger.LogError(cleanupEx, "Failed to clean up orphaned image {ImageUrl}", uploadedImageUrl);
+                }
+            }
+            
             _logger.LogError(ex, "Failed to add image to product {ProductId}: {Message}", productId, ex.Message);
             return Result<ProductImageDto>.Failure(ErrorMessages.Image.AddFailed);
         }

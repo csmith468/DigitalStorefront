@@ -41,7 +41,8 @@ var app = builder.Build();
 
 await app.Services.EnsureRolesSeededAsync();
 
-// Exception Handling
+// Middleware
+app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseMiddleware<ExceptionMiddleware>();
 
 // Configure HTTP Request Pipeline

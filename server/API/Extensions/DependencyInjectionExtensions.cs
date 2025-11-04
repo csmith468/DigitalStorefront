@@ -36,6 +36,7 @@ public static class DependencyInjectionExtensions
         services.AddScoped<ITransactionManager>(sp => sp.GetRequiredService<DataContextDapper>());
         
         services.AddScoped<IAuditContext, HttpAuditContext>();
+        services.AddScoped<ICorrelationIdAccessor, CorrelationIdAccessor>();
         services.AddScoped<TokenGenerator>();
         services.AddScoped<PasswordHasher>();
         return services;

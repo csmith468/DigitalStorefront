@@ -26,6 +26,7 @@ public class ProductMappingService : IProductMappingService
         _queryExecutor = queryExecutor;
     }
     
+    // NOTE: This should only be called when getting a single product so there's no need for a version that gets detail DTOs for multiple products
     public async Task<ProductDetailDto> ToProductDetailDtoAsync(Product product, CancellationToken ct = default)
     {
         var detailDto = _mapper.Map<Product, ProductDetailDto>(product);

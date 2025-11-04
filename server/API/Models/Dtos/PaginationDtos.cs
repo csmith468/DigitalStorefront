@@ -2,7 +2,7 @@ namespace API.Models.Dtos;
 
 public class PaginationParams
 {
-    private const int MaxPageSize = 50;
+    private const int MaxPageSize = 100;
     private int _pageSize = 10;
 
     public int Page { get; set; } = 1;

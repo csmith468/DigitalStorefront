@@ -12,7 +12,7 @@ public class ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddlewa
         }
         catch (Exception ex)
         {
-            var correlationId = Guid.NewGuid().ToString();
+            var correlationId = context.Items["CorrelationId"]?.ToString() ?? Guid.NewGuid().ToString();
             logger.LogError(ex, "Unhandled Exception [{CorrelationId}]: {Message}", correlationId, ex.Message);
             context.Response.ContentType = "application/json";
             context.Response.StatusCode = StatusCodes.Status500InternalServerError;

@@ -23,7 +23,7 @@ public class Product
 
     [DbColumn] public bool IsExclusive { get; set; } = false;
     
-    [DbColumn] public bool IsActive { get; set; } = true;
+    [DbColumn] public bool IsActive { get; set; } = true; // TODO: Add soft deletes (low priority)
     
     [DbColumn] public string Sku { get; set; } = "";
     
