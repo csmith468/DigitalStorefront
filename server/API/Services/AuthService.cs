@@ -2,18 +2,19 @@ using System.Net;
 using API.Database;
 using API.Extensions;
 using API.Models;
+using API.Models.Constants;
+using Api.Models.DsfTables;
 using API.Models.DsfTables;
 using API.Models.Dtos;
 using API.Utils;
-using Api.Models.DsfTables;
 
 namespace API.Services;
 
 public interface IAuthService
 {
-    Task<Result<AuthResponseDto>> RegisterUser(UserRegisterDto userDto);
-    Task<Result<AuthResponseDto>> LoginUser(UserLoginDto userDto);
-    Task<Result<AuthResponseDto>> RefreshToken(string userIdStr);
+    Task<Result<AuthResponseDto>> RegisterUserAsync(UserRegisterDto userDto, CancellationToken ct = default);
+    Task<Result<AuthResponseDto>> LoginUserAsync(UserLoginDto userDto, CancellationToken ct = default);
+    Task<Result<AuthResponseDto>> RefreshTokenAsync(string userIdStr, CancellationToken ct = default);
 }
 
 public class AuthService : IAuthService
@@ -43,9 +44,9 @@ public class AuthService : IAuthService
         _userService = userService;
     }
     
-    public async Task<Result<AuthResponseDto>> RegisterUser(UserRegisterDto userDto)
+    public async Task<Result<AuthResponseDto>> RegisterUserAsync(UserRegisterDto userDto, CancellationToken ct = default)
     {
-        var validateResult = await ValidateRegistrationAsync(userDto);
+        var validateResult = await ValidateRegistrationAsync(userDto, ct);
         if (!validateResult.IsSuccess)
             return validateResult.ToFailure<bool, AuthResponseDto>();
         
@@ -58,24 +59,25 @@ public class AuthService : IAuthService
                 Email = userDto.Email,
                 FirstName = userDto.FirstName,
                 LastName = userDto.LastName,
-            });
-            await CreateAuthAsync(userId, userDto.Password);
+            }, ct);
+            await CreateAuthAsync(userId, userDto.Password, ct);
 
             var roles = (await _queryExecutor.QueryAsync<Role>(
-                "SELECT * FROM dsf.role WHERE roleName in ('ProductWriter', 'ImageManager')")).ToList();
+                "SELECT * FROM dsf.role WHERE roleName IN (@ProductWriter, @ImageManager)",
+                new { RoleNames.ProductWriter, RoleNames.ImageManager }, ct
+            )).ToList();
 
             if (roles.Count != 0)
             {
-                var values = string.Join(",", roles.Select(r => $"({userId}, {r.RoleId})"));
-                var sqlInsertRoles = $"INSERT INTO dsf.UserRole (userId, roleId) VALUES {values}";
-                await _commandExecutor.ExecuteAsync(sqlInsertRoles);
+                var userRoles = roles.Select(r => new UserRole { UserId = userId, RoleId = r.RoleId }).ToList();
+                await _commandExecutor.BulkInsertAsync(userRoles, ct);
             }
             
-        });
+        }, ct);
         if (userId == 0)
             return Result<AuthResponseDto>.Failure(ErrorMessages.Auth.RegistrationFailed);
 
-        var roles = await GetUserRolesAsync(userId);
+        var roles = await GetUserRolesAsync(userId, ct);
         var token = _tokenGen.GenerateToken(userId, roles);
         var response = new AuthResponseDto
         {
@@ -89,15 +91,15 @@ public class AuthService : IAuthService
         return Result<AuthResponseDto>.Success(response, HttpStatusCode.Created);
     }
 
-    public async Task<Result<AuthResponseDto>> LoginUser(UserLoginDto userDto)
+    public async Task<Result<AuthResponseDto>> LoginUserAsync(UserLoginDto userDto, CancellationToken ct = default)
     {
-        var user = await _userService.GetUserByUsernameAsync(userDto.Username);
+        var user = await _userService.GetUserByUsernameAsync(userDto.Username, ct);
         if (user == null)
         {
             _logger.LogWarning("Failed login attempt for username: {Username}", userDto.Username);
             return Result<AuthResponseDto>.Failure(ErrorMessages.Auth.InvalidCredentials);
         }
-        var userAuth = (await _queryExecutor.GetByFieldAsync<Auth>("userId", user.UserId)).FirstOrDefault();
+        var userAuth = (await _queryExecutor.GetByFieldAsync<Auth>("userId", user.UserId, ct)).FirstOrDefault();
         if (userAuth == null || !_passwordHasher.VerifyPassword(userDto.Password, userAuth.PasswordSalt, userAuth.PasswordHash))
         {
             _logger.LogWarning("Failed login attempt for username: {Username}", userDto.Username);
@@ -105,31 +107,31 @@ public class AuthService : IAuthService
         }
         
         _logger.LogInformation("User Logged In: UserId: {UserId} Username: {Username}", user.UserId, user.Username);
-        return Result<AuthResponseDto>.Success(await CreateAuthResponseDtoFromUser(user));
+        return Result<AuthResponseDto>.Success(await CreateAuthResponseDtoFromUserAsync(user, ct));
     }
 
-    public async Task<Result<AuthResponseDto>> RefreshToken(string userIdStr)
+    public async Task<Result<AuthResponseDto>> RefreshTokenAsync(string userIdStr, CancellationToken ct = default)
     {
         if (!int.TryParse(userIdStr, out var userId))
             return Result<AuthResponseDto>.Failure(ErrorMessages.Auth.InvalidCredentials);
         
-        var user = await _userService.GetUserByIdAsync(userId);
+        var user = await _userService.GetUserByIdAsync(userId, ct);
         if (user == null) 
             return Result<AuthResponseDto>.Failure(ErrorMessages.Auth.InvalidCredentials);
 
-        return Result<AuthResponseDto>.Success(await CreateAuthResponseDtoFromUser(user));
+        return Result<AuthResponseDto>.Success(await CreateAuthResponseDtoFromUserAsync(user, ct));
     }
     
-    private async Task<Result<bool>> ValidateRegistrationAsync(UserRegisterDto user)
+    private async Task<Result<bool>> ValidateRegistrationAsync(UserRegisterDto user, CancellationToken ct = default)
     {
-        if (user.Email is not null && await _queryExecutor.ExistsByFieldAsync<User>("email", user.Email))
+        if (user.Email is not null && await _queryExecutor.ExistsByFieldAsync<User>("email", user.Email, ct))
             return Result<bool>.Failure(ErrorMessages.Auth.EmailExists);
-        if (await _queryExecutor.ExistsByFieldAsync<User>("username", user.Username))
+        if (await _queryExecutor.ExistsByFieldAsync<User>("username", user.Username, ct))
             return Result<bool>.Failure(ErrorMessages.Auth.UsernameExists);
         return Result<bool>.Success(true);
     }
     
-    private async Task CreateAuthAsync(int userId, string password)
+    private async Task CreateAuthAsync(int userId, string password, CancellationToken ct = default)
     {
         var (passwordSalt, passwordHash) = _passwordHasher.HashPassword(password);
         await _commandExecutor.InsertAsync(new Auth
@@ -137,12 +139,12 @@ public class AuthService : IAuthService
             UserId = userId,
             PasswordHash = passwordHash,
             PasswordSalt = passwordSalt
-        });
+        }, ct);
     }
 
-    private async Task<AuthResponseDto> CreateAuthResponseDtoFromUser(User user)
+    private async Task<AuthResponseDto> CreateAuthResponseDtoFromUserAsync(User user, CancellationToken ct = default)
     {
-        var roles = await GetUserRolesAsync(user.UserId);
+        var roles = await GetUserRolesAsync(user.UserId, ct);
         
         return new AuthResponseDto
         {
@@ -153,7 +155,7 @@ public class AuthService : IAuthService
         };
     }
 
-    private async Task<List<string>> GetUserRolesAsync(int userId)
+    private async Task<List<string>> GetUserRolesAsync(int userId, CancellationToken ct = default)
     {
         var sql = """
                   SELECT r.roleName
@@ -161,6 +163,6 @@ public class AuthService : IAuthService
                   JOIN dsf.role r ON ur.roleId = r.roleId
                   WHERE ur.userId = @userId
                   """;
-        return (await _queryExecutor.QueryAsync<string>(sql, new { userId })).ToList();
+        return (await _queryExecutor.QueryAsync<string>(sql, new { userId }, ct)).ToList();
     }
 }

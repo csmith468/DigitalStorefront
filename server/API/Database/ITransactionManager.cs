@@ -8,7 +8,7 @@ namespace API.Database;
 /// </summary>
 public interface ITransactionManager
 {
-    Task<T> WithTransactionAsync<T>(Func<Task<T>> func);
-    Task WithTransactionAsync(Func<Task> func);
+    Task<T> WithTransactionAsync<T>(Func<Task<T>> func, CancellationToken ct = default);
+    Task WithTransactionAsync(Func<Task> func, CancellationToken ct = default);
     IDbTransaction? Transaction { get; }
 }

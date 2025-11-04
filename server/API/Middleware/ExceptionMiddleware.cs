@@ -1,4 +1,5 @@
 using System.Text.Json;
+using API.Models.Constants;
 
 namespace API.Middleware;
 
@@ -12,7 +13,7 @@ public class ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddlewa
         }
         catch (Exception ex)
         {
-            var correlationId = Guid.NewGuid().ToString();
+            var correlationId = context.Items[ContextKeys.CorrelationId]?.ToString() ?? Guid.NewGuid().ToString();
             logger.LogError(ex, "Unhandled Exception [{CorrelationId}]: {Message}", correlationId, ex.Message);
             context.Response.ContentType = "application/json";
             context.Response.StatusCode = StatusCodes.Status500InternalServerError;

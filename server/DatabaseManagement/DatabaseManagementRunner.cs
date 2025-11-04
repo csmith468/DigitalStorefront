@@ -1,5 +1,6 @@
 
 using DatabaseManagement.Modes;
+using DatabaseManagement.UserInteraction;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -11,14 +12,16 @@ public class DatabaseManagementRunner
     private readonly ServiceProvider _serviceProvider;
     private readonly string _connectionString;
     private readonly IConfiguration _config;
+    private readonly IUserInteraction _userInteraction;
 
     public DatabaseManagementRunner(string[] args, ServiceProvider serviceProvider, string connectionString,
-        IConfiguration config)
+        IConfiguration config, IUserInteraction userInteraction)
     {
         _args = args;
         _serviceProvider = serviceProvider;
         _connectionString = connectionString;
         _config = config;
+        _userInteraction = userInteraction;
     }
 
     public async Task<int> RunAsync()
@@ -29,8 +32,8 @@ public class DatabaseManagementRunner
 
         return mode switch
         {
-            "--migrate" => await new MigrateMode(_connectionString, _config).ExecuteAsync(),
-            "--reset" => await new ResetMode(_serviceProvider, _connectionString, _config).ExecuteAsync(),
+            "--migrate" => await new MigrateMode(_connectionString, _config, _userInteraction).ExecuteAsync(),
+            "--reset" => await new ResetMode(_serviceProvider, _connectionString, _config, _userInteraction).ExecuteAsync(),
             "--help" or "--h" => ShowHelp(),
             _ => HandleUnknownMode(mode),
         };

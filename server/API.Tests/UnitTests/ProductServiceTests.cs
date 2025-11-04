@@ -3,6 +3,7 @@ using API.Models;
 using API.Models.DboTables;
 using API.Models.Dtos;
 using API.Services;
+using API.Services.Products;
 using API.Services.Images;
 using AutoMapper;
 using FluentAssertions;
@@ -20,9 +21,10 @@ public class ProductServiceTests
     private readonly Mock<ILogger<ProductService>> _mockLogger;
     private readonly Mock<IMapper> _mockMapper;
     private readonly Mock<IUserContext> _mockUserContext;
-    private readonly Mock<IProductImageService> _mockImageService;
     private readonly Mock<IImageStorageService> _mockStorageService;
     private readonly Mock<IProductAuthorizationService> _mockAuthService;
+    private readonly Mock<IProductValidationService> _mockProductValidationService;
+    private readonly Mock<IProductMappingService> _mockProductMappingService;
     private readonly ProductService _service;
     private readonly Mock<ITagService> _mockTagService;
 
@@ -34,7 +36,8 @@ public class ProductServiceTests
         _mockLogger = new Mock<ILogger<ProductService>>();
         _mockMapper = new Mock<IMapper>();
         _mockUserContext = new Mock<IUserContext>();
-        _mockImageService = new Mock<IProductImageService>();
+        _mockProductValidationService = new Mock<IProductValidationService>();
+        _mockProductMappingService = new Mock<IProductMappingService>();
         _mockStorageService = new Mock<IImageStorageService>();
         _mockAuthService = new Mock<IProductAuthorizationService>();
         _mockTagService = new Mock<ITagService>();
@@ -54,11 +57,11 @@ public class ProductServiceTests
             _mockTransactionManager.Object,
             _mockLogger.Object,
             _mockMapper.Object,
-            config,
             _mockUserContext.Object,
-            _mockImageService.Object,
             _mockStorageService.Object,
             _mockAuthService.Object,
+            _mockProductValidationService.Object,
+            _mockProductMappingService.Object,
             _mockTagService.Object
         );
     }
@@ -71,13 +74,12 @@ public class ProductServiceTests
         var product = new Product { ProductId = productId, Name = "Test Product" };
         var productDto = new ProductDetailDto { ProductId = productId, Name = "Test Product" };
 
-        _mockQueryExecutor.Setup(d => d.GetByIdAsync<Product>(productId)).ReturnsAsync(product);
+        _mockQueryExecutor.Setup(d => d.GetByIdAsync<Product>(productId, It.IsAny<CancellationToken>())).ReturnsAsync(product);
         _mockMapper.Setup(m => m.Map<Product, ProductDetailDto>(product)).Returns(productDto);
-        _mockImageService.Setup(i => i.GetAllProductImagesAsync(productId))
-            .ReturnsAsync(Result<List<ProductImageDto>>.Success([]));
-        _mockQueryExecutor.Setup(d => d.GetByFieldAsync<ProductSubcategory>("productId", productId))
+        _mockProductMappingService.Setup(m => m.ToProductDetailDtoAsync(product, It.IsAny<CancellationToken>())).ReturnsAsync(productDto);
+        _mockQueryExecutor.Setup(d => d.GetByFieldAsync<ProductSubcategory>("productId", productId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<ProductSubcategory>());
-        _mockQueryExecutor.Setup(d => d.GetWhereInAsync<Subcategory>("subcategoryId", It.IsAny<List<int>>()))
+        _mockQueryExecutor.Setup(d => d.GetWhereInAsync<Subcategory>("subcategoryId", It.IsAny<List<int>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<Subcategory>());
 
         // Act
@@ -95,7 +97,7 @@ public class ProductServiceTests
     {
         // Arrange
         const int productId = 999;
-        _mockQueryExecutor.Setup(d => d.GetByIdAsync<Product>(productId)).ReturnsAsync((Product?)null);
+        _mockQueryExecutor.Setup(d => d.GetByIdAsync<Product>(productId, It.IsAny<CancellationToken>())).ReturnsAsync((Product?)null);
 
         // Act
         var result = await _service.GetProductByIdAsync(productId);
@@ -114,8 +116,11 @@ public class ProductServiceTests
         var dto = new ProductFormDto { Name = "Existing Product", Slug = "existing-product" };
         const int userId = 1;
 
-        _mockQueryExecutor.Setup(d => d.ExistsByFieldAsync<Product>("name", dto.Name)).ReturnsAsync(true);
-
+        _mockProductValidationService.Setup(v => v.ValidateProductAsync(dto, null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<bool>.Failure(ErrorMessages.Product.NameExists(dto.Name)));
+        _mockAuthService.Setup(a => a.CanUserCreateProductAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        
         // Act
         var result = await _service.CreateProductAsync(dto, userId);
 
@@ -133,9 +138,11 @@ public class ProductServiceTests
         var dto = new ProductFormDto { Name = "New Product", Slug = "existing-slug" };
         const int userId = 1;
 
-        _mockQueryExecutor.Setup(d => d.ExistsByFieldAsync<Product>("name", dto.Name)).ReturnsAsync(false);
-        _mockQueryExecutor.Setup(d => d.ExistsByFieldAsync<Product>("slug", dto.Slug)).ReturnsAsync(true);
-
+        _mockProductValidationService.Setup(v => v.ValidateProductAsync(dto, null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<bool>.Failure(ErrorMessages.Product.SlugExists(dto.Slug)));
+        _mockAuthService.Setup(a => a.CanUserCreateProductAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        
         // Act
         var result = await _service.CreateProductAsync(dto, userId);
 
@@ -143,31 +150,6 @@ public class ProductServiceTests
         result.Should().NotBeNull();
         result.IsSuccess.Should().BeFalse();
         result.Error.Should().Contain("already exists");
-    }
-
-    [Fact]
-    public async Task CreateProductAsync_WhenPremiumPriceExceedsRegularPrice_ReturnsFailure()
-    {
-        // Arrange
-        var dto = new ProductFormDto
-        {
-            Name = "Test Product",
-            Slug = "test-product",
-            Price = 100,
-            PremiumPrice = 150  // Invalid: premium price > regular price
-        };
-        const int userId = 1;
-
-        _mockQueryExecutor.Setup(d => d.ExistsByFieldAsync<Product>("name", dto.Name)).ReturnsAsync(false);
-        _mockQueryExecutor.Setup(d => d.ExistsByFieldAsync<Product>("slug", dto.Slug)).ReturnsAsync(false);
-
-        // Act
-        var result = await _service.CreateProductAsync(dto, userId);
-
-        // Assert
-        result.Should().NotBeNull();
-        result.IsSuccess.Should().BeFalse();
-        result.Error.Should().Contain("Premium price cannot exceed regular price");
     }
     
     [Fact]
@@ -189,11 +171,11 @@ public class ProductServiceTests
             _mockTransactionManager.Object,
             _mockLogger.Object,
             _mockMapper.Object,
-            demoConfig,
             _mockUserContext.Object,
-            _mockImageService.Object,
             _mockStorageService.Object,
             _mockAuthService.Object,
+            _mockProductValidationService.Object,
+            _mockProductMappingService.Object,
             _mockTagService.Object
         );
 
@@ -205,7 +187,7 @@ public class ProductServiceTests
         };
         const int userId = 1;
 
-        _mockQueryExecutor.Setup(d => d.GetCountByFieldAsync<Product>("createdBy", userId))
+        _mockQueryExecutor.Setup(d => d.GetCountByFieldAsync<Product>("createdBy", userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(4);  // Demo mode allows up to 3 products created
 
         // Act

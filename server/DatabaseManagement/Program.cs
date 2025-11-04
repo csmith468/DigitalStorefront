@@ -4,14 +4,13 @@ using API.Services;
 using API.Services.Contexts;
 using API.Services.Images;
 using DatabaseManagement.Helpers;
+using DatabaseManagement.UserInteraction;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 var apiPath = Path.Combine(Directory.GetCurrentDirectory(), "..", "API");
 var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development";
-Console.WriteLine($"DEBUG: API path: {apiPath}");
-Console.WriteLine($"DEBUG: File exists: {File.Exists(Path.Combine(apiPath, "appsettings.json"))}");
 
 var configuration = new ConfigurationBuilder()
     .SetBasePath(apiPath)
@@ -22,9 +21,6 @@ var configuration = new ConfigurationBuilder()
 var connectionString = args.FirstOrDefault(a => a.Contains("Server="))
                        ?? configuration.GetConnectionString("DefaultConnection")
                        ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found");
-
-Console.WriteLine($"DEBUG: Connection string: {connectionString}");
-Console.WriteLine(); 
 
 var services = new ServiceCollection();
 
@@ -41,8 +37,9 @@ services.AddSingleton<IStoragePathProvider>(new ConsoleStoragePathProvider(apiWw
 services.AddScoped<IImageStorageService, LocalImageStorageService>();
 
 var serviceProvider = services.BuildServiceProvider();
+var userInteraction = new ConsoleUserInteraction();
 
-var runner = new DatabaseManagementRunner(args, serviceProvider, connectionString, configuration);
+var runner = new DatabaseManagementRunner(args, serviceProvider, connectionString, configuration, userInteraction);
 var exitCode = await runner.RunAsync();
 
 await serviceProvider.DisposeAsync();

@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using API.Models.Dtos;
@@ -22,7 +23,17 @@ public static class TestAuthHelpers
         };
 
         var response = await client.PostAsJsonAsync("/api/auth/register", registerDto);
+        if (response.StatusCode != HttpStatusCode.Created)
+        {
+            var errorContent = await response.Content.ReadAsStringAsync();
+            throw new InvalidOperationException(
+                $"Failed to register test user. Status: {response.StatusCode}, Error: {errorContent}");
+        }
+
         var authResponse = await response.Content.ReadFromJsonAsync<AuthResponseDto>();
+
+        if (authResponse == null || string.IsNullOrEmpty(authResponse.Token))
+            throw new InvalidOperationException("Registration succeeded but no token was returned");
 
         client.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", authResponse!.Token);

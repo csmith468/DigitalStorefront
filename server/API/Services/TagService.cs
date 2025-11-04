@@ -1,6 +1,5 @@
 using API.Database;
 using API.Models;
-using API.Models.Constants;
 using API.Models.DboTables;
 using API.Models.Dtos;
 using AutoMapper;
@@ -10,8 +9,8 @@ namespace API.Services;
 
 public interface ITagService
 {
-    Task<Result<List<TagDto>>> GetAllTagsAsync();
-    Task<List<int>> GetOrCreateTagsAsync(List<string> tagNames);
+    Task<Result<List<TagDto>>> GetAllTagsAsync(CancellationToken ct = default);
+    Task<List<int>> GetOrCreateTagsAsync(List<string> tagNames, CancellationToken ct = default);
 }
 
 public class TagService : ITagService
@@ -30,14 +29,14 @@ public class TagService : ITagService
         _outputCacheStore = outputCacheStore;
     }
     
-    public async Task<Result<List<TagDto>>> GetAllTagsAsync()
+    public async Task<Result<List<TagDto>>> GetAllTagsAsync(CancellationToken ct = default)
     {
-        var tags = await _queryExecutor.GetAllAsync<Tag>();
+        var tags = await _queryExecutor.GetAllAsync<Tag>(ct);
         var tagDtos = tags.Select(t => _mapper.Map<TagDto>(t)).ToList();
         return Result<List<TagDto>>.Success(tagDtos);
     }
     
-    public async Task<List<int>> GetOrCreateTagsAsync(List<string> tagNames)
+    public async Task<List<int>> GetOrCreateTagsAsync(List<string> tagNames, CancellationToken ct = default)
     {
         if (tagNames.Count == 0) return [];
         
@@ -52,7 +51,7 @@ public class TagService : ITagService
             normalizedTagNames.AddRange(words);
         }
 
-        var existing = (await _queryExecutor.GetWhereInStrAsync<Tag>("name", normalizedTagNames)).ToList();
+        var existing = (await _queryExecutor.GetWhereInStrAsync<Tag>("name", normalizedTagNames, ct)).ToList();
         tagIds.AddRange(existing.Select(e => e.TagId));
 
         var existingNames = existing.Select(e => e.Name).ToHashSet();
@@ -60,8 +59,9 @@ public class TagService : ITagService
 
         if (tagsToAdd.Count > 0)
         {
-            await _commandExecutor.BulkInsertAsync(tagsToAdd);
-            var newlyAddedTagIds = await _queryExecutor.GetWhereInStrAsync<Tag>("name", tagsToAdd.Select(t => t.Name).ToList());
+            await _commandExecutor.BulkInsertAsync(tagsToAdd, ct);
+            var newlyAddedTagIds =
+                await _queryExecutor.GetWhereInStrAsync<Tag>("name", tagsToAdd.Select(t => t.Name).ToList(), ct);
             tagIds.AddRange(newlyAddedTagIds.Select(t => t.TagId));
 
             await _outputCacheStore.EvictByTagAsync("tags", CancellationToken.None);
