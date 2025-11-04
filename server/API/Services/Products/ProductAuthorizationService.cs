@@ -1,4 +1,3 @@
-using System.Net;
 using API.Database;
 using API.Models;
 using API.Models.DboTables;
@@ -7,8 +6,9 @@ namespace API.Services.Products;
 
 public interface IProductAuthorizationService
 {
-    Task<Result<bool>> CanUserManageProductAsync(int productId);
+    Task<Result<bool>> CanUserManageProductAsync(int productId, CancellationToken ct = default);
     Result<bool> CanUserManageProduct(Product product);
+    Task<bool> CanUserCreateProductAsync(int userId, CancellationToken ct = default);
 }
 
 public class ProductAuthorizationService : IProductAuthorizationService
@@ -29,9 +29,9 @@ public class ProductAuthorizationService : IProductAuthorizationService
         _userContext = userContext;
     }
     
-    public async Task<Result<bool>> CanUserManageProductAsync(int productId)
+    public async Task<Result<bool>> CanUserManageProductAsync(int productId, CancellationToken ct = default)
     {
-        var product = await _queryExecutor.GetByIdAsync<Product>(productId);
+        var product = await _queryExecutor.GetByIdAsync<Product>(productId, ct);
         if (product == null)
             return Result<bool>.Failure(ErrorMessages.Product.NotFound(productId));
         
@@ -47,6 +47,15 @@ public class ProductAuthorizationService : IProductAuthorizationService
             return Result<bool>.Failure(ErrorMessages.Product.DemoProductRestricted);
         }
         return Result<bool>.Success(true);
+    }
+    
+    public async Task<bool> CanUserCreateProductAsync(int userId, CancellationToken ct = default)
+    {
+        if (!_config.GetValue<bool>("DemoMode")) return true;
+        var userProductCount = await _queryExecutor.GetCountByFieldAsync<Product>("createdBy", userId, ct);
+        if (userProductCount <= 3) return true;
 
+        _logger.LogWarning("Product creation limit reached: UserId {UserId}", _userContext.UserId);
+        return false;
     }
 }

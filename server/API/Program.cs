@@ -39,7 +39,7 @@ builder.Services.AddPollyPolicies();
 
 var app = builder.Build();
 
-await app.Services.EnsureRolesSeeded();
+await app.Services.EnsureRolesSeededAsync();
 
 // Exception Handling
 app.UseMiddleware<ExceptionMiddleware>();

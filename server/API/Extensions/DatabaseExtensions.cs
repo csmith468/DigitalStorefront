@@ -6,7 +6,7 @@ namespace API.Extensions;
 
 public static class DatabaseExtensions
 {
-    public static async Task EnsureRolesSeeded(this IServiceProvider services)
+    public static async Task EnsureRolesSeededAsync(this IServiceProvider services)
     {
         using var scope = services.CreateScope();
         var commandExecutor = scope.ServiceProvider.GetRequiredService<ICommandExecutor>();
@@ -24,6 +24,6 @@ public static class DatabaseExtensions
             .ToList();
 
         if (missingRoles.Count != 0)
-            await commandExecutor.BulkInsertAsync(missingRoles);
+            await commandExecutor.BulkInsertAsync(missingRoles, CancellationToken.None);
     }
 }

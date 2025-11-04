@@ -57,7 +57,6 @@ public class ProductServiceTests
             _mockTransactionManager.Object,
             _mockLogger.Object,
             _mockMapper.Object,
-            config,
             _mockUserContext.Object,
             _mockStorageService.Object,
             _mockAuthService.Object,
@@ -75,12 +74,12 @@ public class ProductServiceTests
         var product = new Product { ProductId = productId, Name = "Test Product" };
         var productDto = new ProductDetailDto { ProductId = productId, Name = "Test Product" };
 
-        _mockQueryExecutor.Setup(d => d.GetByIdAsync<Product>(productId)).ReturnsAsync(product);
+        _mockQueryExecutor.Setup(d => d.GetByIdAsync<Product>(productId, It.IsAny<CancellationToken>())).ReturnsAsync(product);
         _mockMapper.Setup(m => m.Map<Product, ProductDetailDto>(product)).Returns(productDto);
-        _mockProductMappingService.Setup(m => m.ToProductDetailDto(product)).ReturnsAsync(productDto);
-        _mockQueryExecutor.Setup(d => d.GetByFieldAsync<ProductSubcategory>("productId", productId))
+        _mockProductMappingService.Setup(m => m.ToProductDetailDtoAsync(product, It.IsAny<CancellationToken>())).ReturnsAsync(productDto);
+        _mockQueryExecutor.Setup(d => d.GetByFieldAsync<ProductSubcategory>("productId", productId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<ProductSubcategory>());
-        _mockQueryExecutor.Setup(d => d.GetWhereInAsync<Subcategory>("subcategoryId", It.IsAny<List<int>>()))
+        _mockQueryExecutor.Setup(d => d.GetWhereInAsync<Subcategory>("subcategoryId", It.IsAny<List<int>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<Subcategory>());
 
         // Act
@@ -98,7 +97,7 @@ public class ProductServiceTests
     {
         // Arrange
         const int productId = 999;
-        _mockQueryExecutor.Setup(d => d.GetByIdAsync<Product>(productId)).ReturnsAsync((Product?)null);
+        _mockQueryExecutor.Setup(d => d.GetByIdAsync<Product>(productId, It.IsAny<CancellationToken>())).ReturnsAsync((Product?)null);
 
         // Act
         var result = await _service.GetProductByIdAsync(productId);
@@ -117,8 +116,10 @@ public class ProductServiceTests
         var dto = new ProductFormDto { Name = "Existing Product", Slug = "existing-product" };
         const int userId = 1;
 
-        _mockProductValidationService.Setup(v => v.ValidateProductAsync(dto, null))
+        _mockProductValidationService.Setup(v => v.ValidateProductAsync(dto, null, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<bool>.Failure(ErrorMessages.Product.NameExists(dto.Name)));
+        _mockAuthService.Setup(a => a.CanUserCreateProductAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
         
         // Act
         var result = await _service.CreateProductAsync(dto, userId);
@@ -137,8 +138,10 @@ public class ProductServiceTests
         var dto = new ProductFormDto { Name = "New Product", Slug = "existing-slug" };
         const int userId = 1;
 
-        _mockProductValidationService.Setup(v => v.ValidateProductAsync(dto, null))
+        _mockProductValidationService.Setup(v => v.ValidateProductAsync(dto, null, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<bool>.Failure(ErrorMessages.Product.SlugExists(dto.Slug)));
+        _mockAuthService.Setup(a => a.CanUserCreateProductAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
         
         // Act
         var result = await _service.CreateProductAsync(dto, userId);
@@ -168,7 +171,6 @@ public class ProductServiceTests
             _mockTransactionManager.Object,
             _mockLogger.Object,
             _mockMapper.Object,
-            demoConfig,
             _mockUserContext.Object,
             _mockStorageService.Object,
             _mockAuthService.Object,
@@ -185,7 +187,7 @@ public class ProductServiceTests
         };
         const int userId = 1;
 
-        _mockQueryExecutor.Setup(d => d.GetCountByFieldAsync<Product>("createdBy", userId))
+        _mockQueryExecutor.Setup(d => d.GetCountByFieldAsync<Product>("createdBy", userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(4);  // Demo mode allows up to 3 products created
 
         // Act

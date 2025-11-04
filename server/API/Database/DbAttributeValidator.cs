@@ -2,7 +2,7 @@ using System.Reflection;
 
 namespace API.Database;
 
-public class DbAttributeValidator
+public static class DbAttributeValidator
 {
     public static void ValidateAllEntities(Assembly assembly)
     {

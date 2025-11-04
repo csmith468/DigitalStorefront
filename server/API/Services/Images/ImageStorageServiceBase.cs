@@ -4,11 +4,11 @@ namespace API.Services.Images;
 
 public abstract class ImageStorageServiceBase(ILogger logger) : IImageStorageService
 {
-    public abstract Task<string> SaveImageAsync(IFormFile file, string subfolder, string? prefix = null);
+    public abstract Task<string> SaveImageAsync(IFormFile file, string subfolder, string? prefix = null, CancellationToken ct = default);
     public abstract string GetImageUrl(string fileName);
-    public abstract Task<bool> DeleteImageAsync(string fileName);
+    public abstract Task<bool> DeleteImageAsync(string fileName, CancellationToken ct = default);
     
-    protected string GenerateUniqueFileName(string fileExtension, string? prefix = null)
+    private static string GenerateUniqueFileName(string fileExtension, string? prefix = null)
     {
         var guid = Guid.NewGuid().ToString();
         return string.IsNullOrEmpty(prefix) 
@@ -16,14 +16,14 @@ public abstract class ImageStorageServiceBase(ILogger logger) : IImageStorageSer
             : $"{prefix}_{guid}{fileExtension}";
     }
 
-    protected string PrepareAndValidateFile(IFormFile file, string? prefix = null)
+    protected static string PrepareAndValidateFile(IFormFile file, string? prefix = null)
     {
         ValidateFile(file);
         var fileExtension = Path.GetExtension(file.FileName);
         return GenerateUniqueFileName(fileExtension, prefix);
     }
 
-    protected void ValidateFile(IFormFile file)
+    private static void ValidateFile(IFormFile file)
     {
         if (file == null || file.Length == 0)
             throw new ArgumentException("File is required");

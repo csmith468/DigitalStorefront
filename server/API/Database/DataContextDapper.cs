@@ -1,6 +1,5 @@
 using System.Data;
 using API.Models.Dtos;
-using API.Services;
 using API.Services.Contexts;
 using Microsoft.Data.SqlClient;
 using Dapper;
@@ -11,14 +10,13 @@ public class DataContextDapper : IQueryExecutor, ICommandExecutor, ITransactionM
 {
       private readonly SqlConnection _db;
       private SqlTransaction? _transaction;
-      private IAuditContext _auditContext;
+      private readonly IAuditContext _auditContext;
       private bool _disposed;
 
-      // NOTE: IAuditContext auto-populates Createdby/UpdatedBy fields on inserts/updates
+      // NOTE: IAuditContext autopopulates CreatedBy/UpdatedBy fields on inserts/updates
       // This abstracts the user source (HTTP vs system user) so the data layer doesn't depend on ASP.NET
       // Keeps audit tracking DRY without pass userId everywhere or relying on people to remember to set fields
       
-      // TODO for production: Add CancellationToken params to allow query cancellation when clients disconnect
       public DataContextDapper(IConfiguration config, IAuditContext auditContext)
       {
           _db = new SqlConnection(config.GetConnectionString("DefaultConnection"));
@@ -26,40 +24,40 @@ public class DataContextDapper : IQueryExecutor, ICommandExecutor, ITransactionM
       }
 
       // IQueryExecutor Implementations
-      public async Task<IEnumerable<T>> QueryAsync<T>(string sql, object? parameters = null)
+      public async Task<IEnumerable<T>> QueryAsync<T>(string sql, object? parameters = null, CancellationToken ct = default)
       {
-          EnsureConnectionOpen();
-          return await _db.QueryAsync<T>(sql, parameters, _transaction);
+          var command = CreateCommand(sql, parameters, ct: ct);
+          return await _db.QueryAsync<T>(command);
       }
 
-      public async Task<T> FirstAsync<T>(string sql, object? parameters = null)
+      public async Task<T> FirstAsync<T>(string sql, object? parameters = null, CancellationToken ct = default)
       {
-          EnsureConnectionOpen();
-          return await _db.QueryFirstAsync<T>(sql, parameters, _transaction);
+          var command = CreateCommand(sql, parameters, ct: ct);
+          return await _db.QueryFirstAsync<T>(command);
       }
       
-      public async Task<T?> FirstOrDefaultAsync<T>(string sql, object? parameters = null)
+      public async Task<T?> FirstOrDefaultAsync<T>(string sql, object? parameters = null, CancellationToken ct = default)
       {
-          EnsureConnectionOpen();
-          return await _db.QueryFirstOrDefaultAsync<T>(sql, parameters, _transaction);
+          var command = CreateCommand(sql, parameters, ct: ct);
+          return await _db.QueryFirstOrDefaultAsync<T>(command);
       }
       
-      public async Task<IEnumerable<T>> GetAllAsync<T>() where T : class
+      public async Task<IEnumerable<T>> GetAllAsync<T>(CancellationToken ct = default) where T : class
       {
           var metadata = DbAttributes.GetTableMetadata<T>();
-          return await QueryAsync<T>($"SELECT * FROM {metadata.TableName}");
+          return await QueryAsync<T>($"SELECT * FROM {metadata.TableName}", null, ct);
       }
 
-      public async Task<T?> GetByIdAsync<T>(int id) where T : class
+      public async Task<T?> GetByIdAsync<T>(int id, CancellationToken ct = default) where T : class
       {
           var metadata = DbAttributes.GetTableMetadata<T>();
           var sql = $"SELECT * FROM {metadata.TableName} WHERE [{metadata.PrimaryKey.Name}] = @id";
-          return await FirstOrDefaultAsync<T>(sql, new { id });
+          return await FirstOrDefaultAsync<T>(sql, new { id }, ct);
       }
 
-      public async Task<IEnumerable<T>> GetWhereAsync<T>(Dictionary<string, object> whereConditions) where T : class
+      public async Task<IEnumerable<T>> GetWhereAsync<T>(Dictionary<string, object> whereConditions, CancellationToken ct = default) where T : class
       {
-          if (whereConditions == null || !whereConditions.Any())
+          if (whereConditions == null || whereConditions.Count == 0)
               throw new ArgumentException("At least one condition is required");
 
           foreach (var key in whereConditions.Keys.Where(key => !DbAttributes.ValidateColumnExists<T>(key)))
@@ -68,16 +66,16 @@ public class DataContextDapper : IQueryExecutor, ICommandExecutor, ITransactionM
           var metadata = DbAttributes.GetTableMetadata<T>();
           var whereClause = string.Join(" AND ", whereConditions.Keys.Select(key => $"[{key}] = @{key}"));
           var sql = $"SELECT * FROM {metadata.TableName} WHERE {whereClause}";
-          return await QueryAsync<T>(sql, whereConditions);
+          return await QueryAsync<T>(sql, whereConditions, ct);
       }
 
-      public async Task<IEnumerable<T>> GetByFieldAsync<T>(string fieldName, object value) where T : class
+      public async Task<IEnumerable<T>> GetByFieldAsync<T>(string fieldName, object value, CancellationToken ct = default) where T : class
       {
           ValidateFieldName<T>(fieldName);
-          return await GetWhereAsync<T>(new Dictionary<string, object>{ { fieldName, value } });
+          return await GetWhereAsync<T>(new Dictionary<string, object>{ { fieldName, value } }, ct);
       }
 
-      public async Task<IEnumerable<T>> GetWhereInAsync<T>(string fieldName, List<int> values) where T : class
+      public async Task<IEnumerable<T>> GetWhereInAsync<T>(string fieldName, List<int> values, CancellationToken ct = default) where T : class
       {
           ValidateFieldName<T>(fieldName);
           if (values.Count == 0) return [];
@@ -85,9 +83,9 @@ public class DataContextDapper : IQueryExecutor, ICommandExecutor, ITransactionM
           var metadata = DbAttributes.GetTableMetadata<T>();
           var sql = $"SELECT * FROM {metadata.TableName} WHERE [{fieldName}] IN @values";
     
-          return await QueryAsync<T>(sql, new { values });
+          return await QueryAsync<T>(sql, new { values }, ct);
       }
-      public async Task<IEnumerable<T>> GetWhereInStrAsync<T>(string fieldName, List<string> values) where T : class
+      public async Task<IEnumerable<T>> GetWhereInStrAsync<T>(string fieldName, List<string> values, CancellationToken ct = default) where T : class
       {
           ValidateFieldName<T>(fieldName);
           if (values.Count == 0) return [];
@@ -95,7 +93,7 @@ public class DataContextDapper : IQueryExecutor, ICommandExecutor, ITransactionM
           var metadata = DbAttributes.GetTableMetadata<T>();
           var sql = $"SELECT * FROM {metadata.TableName} WHERE [{fieldName}] IN @values";
     
-          return await QueryAsync<T>(sql, new { values });
+          return await QueryAsync<T>(sql, new { values }, ct);
       }
 
       public async Task<(IEnumerable<T> items, int totalCount)> GetPaginatedWithSqlAsync<T>(
@@ -104,17 +102,18 @@ public class DataContextDapper : IQueryExecutor, ICommandExecutor, ITransactionM
           object? parameters = null,
           string? orderByColumn = null,
           bool descending = true,
-          TrustedOrderByExpression? customOrderBy = null) where T : class
+          TrustedOrderByExpression? customOrderBy = null,
+          CancellationToken ct = default) where T : class
       {
-          EnsureConnectionOpen();
           var countSql = $"SELECT COUNT(*) FROM ({baseQuery}) AS CountQuery";
-          var totalCount = await _db.ExecuteScalarAsync<int>(countSql, parameters, _transaction);
+          var countCommand = CreateCommand(countSql, parameters, ct: ct);
+          var totalCount = await _db.ExecuteScalarAsync<int>(countCommand);
 
           string orderBy;
 
           if (customOrderBy != null)
           {
-              // Order by must be marked as "Trusted" in function calling GetPaginatedWithSqlAsync
+              // Order by must be marked as "Trusted" in function calling GetPaginatedWithSqlAsync,
               // or it will fail (this is not marked as trusted because calling this function should not
               // automatically trust the 
               orderBy = customOrderBy.ToSql();
@@ -139,45 +138,46 @@ public class DataContextDapper : IQueryExecutor, ICommandExecutor, ITransactionM
           var allParms = new DynamicParameters(parameters);
           allParms.Add("skip", paginationParams.Skip);
           allParms.Add("pageSize", paginationParams.PageSize);
-
-          var items = await _db.QueryAsync<T>(paginatedSql, allParms);
+          
+          var paginatedCommand = CreateCommand(paginatedSql, allParms, ct: ct);
+          var items = await _db.QueryAsync<T>(paginatedCommand);
           return (items, totalCount);
       }
 
-      public async Task<bool> ExistsAsync<T>(int id) where T : class
+      public async Task<bool> ExistsAsync<T>(int id, CancellationToken ct = default) where T : class
       {
-          return await GetByIdAsync<T>(id) != null;
+          return await GetByIdAsync<T>(id, ct) != null;
       }
 
-      public async Task<bool> ExistsByFieldAsync<T>(string fieldName, object value) where T : class
+      public async Task<bool> ExistsByFieldAsync<T>(string fieldName, object value, CancellationToken ct = default) where T : class
       {
           if (!DbAttributes.ValidateColumnExists<T>(fieldName))
               throw new ArgumentException("Field not found", nameof(fieldName));
-          return (await GetWhereAsync<T>(new Dictionary<string, object> { { fieldName, value } })).Any();
+          return (await GetWhereAsync<T>(new Dictionary<string, object> { { fieldName, value } }, ct)).Any();
       }
 
-      public async Task<int> GetCountByFieldAsync<T>(string fieldName, object value) where T : class
+      public async Task<int> GetCountByFieldAsync<T>(string fieldName, object value, CancellationToken ct = default) where T : class
       {
           if (!DbAttributes.ValidateColumnExists<T>(fieldName))
               throw new ArgumentException("Field not found", nameof(fieldName));
-          return (await GetWhereAsync<T>(new Dictionary<string, object> { { fieldName, value } })).Count();
+          return (await GetWhereAsync<T>(new Dictionary<string, object> { { fieldName, value } }, ct)).Count();
       }
       
       
       // ICommandExecutor Implementations
-      public async Task<int> ExecuteAsync(string sql, object? parameters = null)
+      public async Task<int> ExecuteAsync(string sql, object? parameters = null, CancellationToken ct = default)
       {
-          EnsureConnectionOpen();
-          return await _db.ExecuteAsync(sql, parameters, _transaction);
+          var command = CreateCommand(sql, parameters, ct: ct);
+          return await _db.ExecuteAsync(command);
       }
 
-      public async Task<int> ExecuteStoredProcedureAsync(string sql, object? parameters = null)
+      public async Task<int> ExecuteStoredProcedureAsync(string sql, object? parameters = null, CancellationToken ct = default)
       {
-          EnsureConnectionOpen();
-          return await _db.ExecuteAsync(sql, parameters, _transaction, commandType: CommandType.StoredProcedure);
+          var command = CreateCommand(sql, parameters, commandType: CommandType.StoredProcedure, ct: ct);
+          return await _db.ExecuteAsync(command);
       }
 
-      public async Task<int> InsertAsync<T>(T obj) where T : class
+      public async Task<int> InsertAsync<T>(T obj, CancellationToken ct = default) where T : class
       {
           var metadata = DbAttributes.GetTableMetadata<T>();
           
@@ -194,11 +194,11 @@ public class DataContextDapper : IQueryExecutor, ICommandExecutor, ITransactionM
           var parameters = DbAttributes.CreateParameters(obj, metadata.Columns);
           var sql = $"INSERT INTO {metadata.TableName} ({columnNames}) VALUES ({parameterNames}); SELECT CAST(SCOPE_IDENTITY() AS INT);";
           
-          var result = (await QueryAsync<int>(sql, parameters)).FirstOrDefault();
+          var result = (await QueryAsync<int>(sql, parameters, ct)).FirstOrDefault();
           return result == 0 ? throw new InvalidOperationException("Insert failed - no identity returned") : result;
       }
 
-      public async Task UpdateAsync<T>(T obj) where T : class
+      public async Task UpdateAsync<T>(T obj, CancellationToken ct = default) where T : class
       {
           var metadata = DbAttributes.GetTableMetadata<T>();
 
@@ -214,18 +214,18 @@ public class DataContextDapper : IQueryExecutor, ICommandExecutor, ITransactionM
           parameters[metadata.PrimaryKey.Name] = metadata.PrimaryKey.GetValue(obj)!;
           
           var sql = $"UPDATE {metadata.TableName} SET {columnUpdates} WHERE [{metadata.PrimaryKey.Name}] = @{metadata.PrimaryKey.Name}";
-          await ExecuteAsync(sql, parameters);
+          await ExecuteAsync(sql, parameters, ct);
       }
 
-      public async Task UpdateFieldAsync<T>(int id, string fieldName, object value) where T : class
+      public async Task UpdateFieldAsync<T>(int id, string fieldName, object value, CancellationToken ct = default) where T : class
       {
           ValidateFieldName<T>(fieldName);
           var metadata = DbAttributes.GetTableMetadata<T>();
           var sql = $"UPDATE {metadata.TableName} SET [{fieldName}] = @value WHERE [{metadata.PrimaryKey.Name}] = @id";
-          await ExecuteAsync(sql, new { id, value });
+          await ExecuteAsync(sql, new { id, value }, ct);
       }
       
-      public async Task BulkInsertAsync<T>(IEnumerable<T> entities) where T : class
+      public async Task BulkInsertAsync<T>(IEnumerable<T> entities, CancellationToken ct = default) where T : class
       {
           var entityList = entities.ToList();
           if (entityList.Count == 0) return;
@@ -249,25 +249,25 @@ public class DataContextDapper : IQueryExecutor, ICommandExecutor, ITransactionM
 
           var sql = $"INSERT INTO {metadata.TableName} ({columnNames}) VALUES ({parameterNames})";
 
-          await ExecuteAsync(sql, entityList);
+          await ExecuteAsync(sql, entityList, ct);
       }
       
-      public async Task DeleteByIdAsync<T>(int id) where T : class
+      public async Task DeleteByIdAsync<T>(int id, CancellationToken ct = default) where T : class
       {
           var metadata = DbAttributes.GetTableMetadata<T>();
           var sql = $"DELETE FROM {metadata.TableName} WHERE [{metadata.PrimaryKey.Name}] = @id";
-          await ExecuteAsync(sql, new { id });
+          await ExecuteAsync(sql, new { id }, ct);
       }
 
-      public async Task DeleteByFieldAsync<T>(string fieldName, object value) where T : class
+      public async Task DeleteByFieldAsync<T>(string fieldName, object value, CancellationToken ct = default) where T : class
       {
           ValidateFieldName<T>(fieldName);
           var metadata = DbAttributes.GetTableMetadata<T>();
           var sql = $"DELETE FROM {metadata.TableName} WHERE [{fieldName}] = @value";
-          await ExecuteAsync(sql, new { value });
+          await ExecuteAsync(sql, new { value }, ct);
       }
       
-      public async Task DeleteWhereInAsync<T>(string fieldName, List<int> values) where T : class
+      public async Task DeleteWhereInAsync<T>(string fieldName, List<int> values, CancellationToken ct = default) where T : class
       {
           ValidateFieldName<T>(fieldName);
           if (values.Count == 0) return;
@@ -275,12 +275,12 @@ public class DataContextDapper : IQueryExecutor, ICommandExecutor, ITransactionM
           var metadata = DbAttributes.GetTableMetadata<T>();
           var sql = $"DELETE FROM {metadata.TableName} WHERE [{fieldName}] IN @values";
     
-          await ExecuteAsync(sql, new { values });
+          await ExecuteAsync(sql, new { values }, ct);
       }
 
       // ITransactionManager Implementations
       
-      public async Task<T> WithTransactionAsync<T>(Func<Task<T>> func)
+      public async Task<T> WithTransactionAsync<T>(Func<Task<T>> func, CancellationToken ct = default)
       {
           // If a transaction is already active, reuse it to allow nested calls to have
           // the same transaction scope (supports propagation)
@@ -303,13 +303,13 @@ public class DataContextDapper : IQueryExecutor, ICommandExecutor, ITransactionM
           }
       }
 
-      public async Task WithTransactionAsync(Func<Task> func)
+      public async Task WithTransactionAsync(Func<Task> func, CancellationToken ct = default)
       {
           await WithTransactionAsync<object?>(async () =>
           {
               await func();
               return null;
-          });
+          }, ct);
       }
       
       // Other
@@ -330,6 +330,13 @@ public class DataContextDapper : IQueryExecutor, ICommandExecutor, ITransactionM
               throw new ArgumentException("Field name is required", nameof(fieldName));
           if (!DbAttributes.ValidateColumnExists<T>(fieldName))
               throw new ArgumentException("Field not found", nameof(fieldName));
+      }
+
+      private CommandDefinition CreateCommand(string sql, object? parameters = null,
+          CommandType? commandType = null, CancellationToken ct = default)
+      {
+          EnsureConnectionOpen();
+          return new CommandDefinition(sql, parameters, _transaction, commandType: commandType, cancellationToken: ct);
       }
 
       private void EnsureConnectionOpen()

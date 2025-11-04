@@ -1,5 +1,4 @@
 using API.Extensions;
-using API.Models;
 using API.Models.Dtos;
 using API.Services;
 using API.Services.Products;
@@ -31,15 +30,15 @@ public class ProductsController : ControllerBase
     }
     
     [HttpGet]
-    public async Task<ActionResult<PaginatedResponse<ProductDto>>> GetProductsAsync([FromQuery] ProductFilterParams filterParams)
+    public async Task<ActionResult<PaginatedResponse<ProductDto>>> GetProductsAsync([FromQuery] ProductFilterParams filterParams, CancellationToken ct)
     {
-        return (await _productService.GetProductsAsync(filterParams)).ToActionResult();
+        return (await _productService.GetProductsAsync(filterParams, ct)).ToActionResult();
     }
     
     // NOTE: Created dedicated endpoint for a common UI request to get products by category
     [HttpGet("category/{categorySlug}")]
-    public async Task<ActionResult<PaginatedResponse<ProductDto>>> GetProductsByCategory(string categorySlug, 
-        [FromQuery] PaginationParams pagination)
+    public async Task<ActionResult<PaginatedResponse<ProductDto>>> GetProductsByCategoryAsync(string categorySlug,
+        [FromQuery] PaginationParams pagination, CancellationToken ct)
     {
         var filterParams = new ProductFilterParams
         {
@@ -47,13 +46,13 @@ public class ProductsController : ControllerBase
             Page = pagination.Page,
             PageSize = pagination.PageSize
         };
-        return (await _productService.GetProductsAsync(filterParams)).ToActionResult();
+        return (await _productService.GetProductsAsync(filterParams, ct)).ToActionResult();
     }
 
     // NOTE: Created dedicated endpoint for a common UI request to get products by subcategory
     [HttpGet("subcategory/{subcategorySlug}")]
-    public async Task<ActionResult<PaginatedResponse<ProductDto>>> GetProductsBySubcategory(string subcategorySlug, 
-        [FromQuery] PaginationParams pagination)
+    public async Task<ActionResult<PaginatedResponse<ProductDto>>> GetProductsBySubcategoryAsync(string subcategorySlug,
+        [FromQuery] PaginationParams pagination, CancellationToken ct)
     {
         var filterParams = new ProductFilterParams
         {
@@ -61,69 +60,69 @@ public class ProductsController : ControllerBase
             Page = pagination.Page,
             PageSize = pagination.PageSize
         };
-        return (await _productService.GetProductsAsync(filterParams)).ToActionResult();
+        return (await _productService.GetProductsAsync(filterParams, ct)).ToActionResult();
     }
     
     [HttpGet("{productId}")]
-    public async Task<ActionResult<ProductDetailDto>> GetProduct(int productId)
+    public async Task<ActionResult<ProductDetailDto>> GetProductAsync(int productId, CancellationToken ct)
     {
-        return (await _productService.GetProductByIdAsync(productId)).ToActionResult();
+        return (await _productService.GetProductByIdAsync(productId, ct)).ToActionResult();
     }
 
     [HttpGet("slug/{slug}")]
-    public async Task<ActionResult<ProductDetailDto>> GetProductBySlug(string slug)
+    public async Task<ActionResult<ProductDetailDto>> GetProductBySlugAsync(string slug, CancellationToken ct)
     {
-        return (await _productService.GetProductBySlugAsync(slug)).ToActionResult();
+        return (await _productService.GetProductBySlugAsync(slug, ct)).ToActionResult();
     }
 
     [Authorize(Policy = "CanManageProducts")]
     [HttpPost]
-    public async Task<ActionResult<ProductDetailDto>> CreateProduct([FromBody] ProductFormDto dto)
+    public async Task<ActionResult<ProductDetailDto>> CreateProductAsync([FromBody] ProductFormDto dto, CancellationToken ct)
     {
-        return (await _productService.CreateProductAsync(dto, _userContext.UserId!.Value)).ToActionResult();
+        return (await _productService.CreateProductAsync(dto, _userContext.UserId!.Value, ct)).ToActionResult();
     }
 
     [Authorize(Policy = "CanManageProducts")]
     [HttpPut("{productId}")]
-    public async Task<ActionResult<ProductDetailDto>> UpdateProduct(int productId, [FromBody] ProductFormDto dto)
+    public async Task<ActionResult<ProductDetailDto>> UpdateProductAsync(int productId, [FromBody] ProductFormDto dto, CancellationToken ct)
     {
-        return (await _productService.UpdateProductAsync(productId, dto)).ToActionResult();
+        return (await _productService.UpdateProductAsync(productId, dto, ct)).ToActionResult();
     }
-    
+
     // Considered [Authorize(Policy = "RequireAdmin")] but will allow users to delete non-demo products they create
     [Authorize(Policy = "CanManageProducts")]
     [HttpDelete("{productId}")]
-    public async Task<ActionResult<bool>> DeleteProduct(int productId)
+    public async Task<ActionResult<bool>> DeleteProductAsync(int productId, CancellationToken ct)
     {
-        return (await _productService.DeleteProductAsync(productId)).ToActionResult();
+        return (await _productService.DeleteProductAsync(productId, ct)).ToActionResult();
     }
     
     [Authorize(Policy = "CanManageImages")]
     [HttpPost("{productId}/images")]
-    public async Task<ActionResult<ProductImageDto>> UploadProductImage(int productId, [FromForm] AddProductImageDto dto)
+    public async Task<ActionResult<ProductImageDto>> UploadProductImageAsync(int productId, [FromForm] AddProductImageDto dto, CancellationToken ct)
     {
-        return (await _productImageService.AddProductImageAsync(productId, dto)).ToActionResult();
+        return (await _productImageService.AddProductImageAsync(productId, dto, ct)).ToActionResult();
     }
 
     [Authorize(Policy = "CanManageImages")]
     [HttpDelete("{productId}/images/{productImageId}")]
-    public async Task<ActionResult<bool>> DeleteProductImage(int productId, int productImageId)
+    public async Task<ActionResult<bool>> DeleteProductImageAsync(int productId, int productImageId, CancellationToken ct)
     {
-        return (await _productImageService.DeleteProductImageAsync(productId, productImageId)).ToActionResult();
+        return (await _productImageService.DeleteProductImageAsync(productId, productImageId, ct)).ToActionResult();
     }
 
     [Authorize(Policy = "CanManageImages")]
     [HttpPut("{productId}/images/{productImageId}/set-primary")]
-    public async Task<ActionResult<bool>> SetProductImagePrimary(int productId, int productImageId)
+    public async Task<ActionResult<bool>> SetProductImagePrimaryAsync(int productId, int productImageId, CancellationToken ct)
     {
-        return (await _productImageService.SetPrimaryImageAsync(productId, productImageId)).ToActionResult();
+        return (await _productImageService.SetPrimaryImageAsync(productId, productImageId, ct)).ToActionResult();
     }
 
     [Authorize(Policy = "CanManageImages")]
     [HttpPut("{productId}/images/reorder")]
-    public async Task<ActionResult<bool>> ReorderProductImages(int productId, List<int> productImageIds)
+    public async Task<ActionResult<bool>> ReorderProductImagesAsync(int productId, List<int> productImageIds, CancellationToken ct)
     {
-        return (await _productImageService.ReorderProductImagesAsync(productId, productImageIds)).ToActionResult();
+        return (await _productImageService.ReorderProductImagesAsync(productId, productImageIds, ct)).ToActionResult();
     }
 }
 

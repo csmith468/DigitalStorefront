@@ -1,5 +1,3 @@
-using Microsoft.AspNetCore.Hosting;
-
 namespace API.Services.Images;
 
 public class WebStoragePathProvider : IStoragePathProvider

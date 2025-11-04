@@ -20,7 +20,7 @@ public class MockHttpMessageHandler : HttpMessageHandler
     }
 
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,
-        CancellationToken cancellationToken)
+        CancellationToken ct)
     {
         CallCount++;
         
@@ -30,7 +30,7 @@ public class MockHttpMessageHandler : HttpMessageHandler
         var (statusCode, delay) = _responses.Dequeue();
         
         if (delay > TimeSpan.Zero)
-            await Task.Delay(delay, cancellationToken);
+            await Task.Delay(delay, ct);
         
         return new HttpResponseMessage(statusCode);
     }

@@ -68,24 +68,24 @@ public class AuthServiceTests
         const int userId = 123;
         var roles = new List<string> { RoleNames.ProductWriter, RoleNames.ImageManager };
 
-        _mockQueryExecutor.Setup(d => d.ExistsByFieldAsync<User>("email", registerDto.Email)).ReturnsAsync(false);
-        _mockQueryExecutor.Setup(d => d.ExistsByFieldAsync<User>("username", registerDto.Username)).ReturnsAsync(false);
-        _mockTransactionManager.Setup(d => d.WithTransactionAsync(It.IsAny<Func<Task>>()))
-            .Callback<Func<Task>>(action => action())
+        _mockQueryExecutor.Setup(d => d.ExistsByFieldAsync<User>("email", registerDto.Email, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+        _mockQueryExecutor.Setup(d => d.ExistsByFieldAsync<User>("username", registerDto.Username, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+        _mockTransactionManager.Setup(d => d.WithTransactionAsync(It.IsAny<Func<Task>>(), It.IsAny<CancellationToken>()))
+            .Callback<Func<Task>, CancellationToken>((action, _) => action())
             .Returns(Task.CompletedTask);
-        _mockCommandExecutor.Setup(d => d.InsertAsync(It.IsAny<User>())).ReturnsAsync(userId);
-        _mockCommandExecutor.Setup(d => d.InsertAsync(It.IsAny<Auth>())).ReturnsAsync(1);
-        _mockQueryExecutor.Setup(d => d.QueryAsync<Role>(It.IsAny<string>(), It.IsAny<object>()))
+        _mockCommandExecutor.Setup(d => d.InsertAsync(It.IsAny<User>(), It.IsAny<CancellationToken>())).ReturnsAsync(userId);
+        _mockCommandExecutor.Setup(d => d.InsertAsync(It.IsAny<Auth>(), It.IsAny<CancellationToken>())).ReturnsAsync(1);
+        _mockQueryExecutor.Setup(d => d.QueryAsync<Role>(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<Role>
             {
                   new() { RoleId = 1, RoleName = RoleNames.ProductWriter },
                   new() { RoleId = 2, RoleName = RoleNames.ImageManager }
             });
-        _mockCommandExecutor.Setup(d => d.BulkInsertAsync(It.IsAny<IEnumerable<UserRole>>())).Returns(Task.CompletedTask);
-        _mockQueryExecutor.Setup(d => d.QueryAsync<string>(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(roles);
+        _mockCommandExecutor.Setup(d => d.BulkInsertAsync(It.IsAny<IEnumerable<UserRole>>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+        _mockQueryExecutor.Setup(d => d.QueryAsync<string>(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CancellationToken>())).ReturnsAsync(roles);
 
         // Act
-        var result = await _authService.RegisterUser(registerDto);
+        var result = await _authService.RegisterUserAsync(registerDto);
 
         // Assert
         result.Should().NotBeNull();
@@ -111,10 +111,10 @@ public class AuthServiceTests
             ConfirmPassword = "Test123!"
         };
 
-        _mockQueryExecutor.Setup(d => d.ExistsByFieldAsync<User>("email", registerDto.Email)).ReturnsAsync(true);
+        _mockQueryExecutor.Setup(d => d.ExistsByFieldAsync<User>("email", registerDto.Email, It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
         // Act
-        var result = await _authService.RegisterUser(registerDto);
+        var result = await _authService.RegisterUserAsync(registerDto);
 
         // Assert
         result.Should().NotBeNull();
@@ -135,11 +135,11 @@ public class AuthServiceTests
             ConfirmPassword = "Test123!"
         };
 
-        _mockQueryExecutor.Setup(d => d.ExistsByFieldAsync<User>("email", registerDto.Email)).ReturnsAsync(false);
-        _mockQueryExecutor.Setup(d => d.ExistsByFieldAsync<User>("username", registerDto.Username)).ReturnsAsync(true);
+        _mockQueryExecutor.Setup(d => d.ExistsByFieldAsync<User>("email", registerDto.Email, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+        _mockQueryExecutor.Setup(d => d.ExistsByFieldAsync<User>("username", registerDto.Username, It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
         // Act
-        var result = await _authService.RegisterUser(registerDto);
+        var result = await _authService.RegisterUserAsync(registerDto);
 
         // Assert
         result.Should().NotBeNull();
@@ -160,12 +160,12 @@ public class AuthServiceTests
 
         var roles = new List<string> { "ProductWriter" };
 
-        _mockUserService.Setup(u => u.GetUserByUsernameAsync(loginDto.Username)).ReturnsAsync(user);
-        _mockQueryExecutor.Setup(d => d.GetByFieldAsync<Auth>("userId", user.UserId)).ReturnsAsync(new List<Auth> { auth });
-        _mockQueryExecutor.Setup(d => d.QueryAsync<string>(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(roles);
+        _mockUserService.Setup(u => u.GetUserByUsernameAsync(loginDto.Username, It.IsAny<CancellationToken>())).ReturnsAsync(user);
+        _mockQueryExecutor.Setup(d => d.GetByFieldAsync<Auth>("userId", user.UserId, It.IsAny<CancellationToken>())).ReturnsAsync(new List<Auth> { auth });
+        _mockQueryExecutor.Setup(d => d.QueryAsync<string>(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CancellationToken>())).ReturnsAsync(roles);
 
         // Act
-        var result = await _authService.LoginUser(loginDto);
+        var result = await _authService.LoginUserAsync(loginDto);
 
         // Assert
         result.Should().NotBeNull();
@@ -187,11 +187,11 @@ public class AuthServiceTests
         var (salt, hash) = _passwordHasher.HashPassword("CorrectPassword123!");
         var auth = new Auth { UserId = 123, PasswordSalt = salt, PasswordHash = hash };
 
-        _mockUserService.Setup(u => u.GetUserByUsernameAsync(loginDto.Username)).ReturnsAsync(user);
-        _mockQueryExecutor.Setup(d => d.GetByFieldAsync<Auth>("userId", user.UserId)).ReturnsAsync(new List<Auth> { auth });
+        _mockUserService.Setup(u => u.GetUserByUsernameAsync(loginDto.Username, It.IsAny<CancellationToken>())).ReturnsAsync(user);
+        _mockQueryExecutor.Setup(d => d.GetByFieldAsync<Auth>("userId", user.UserId, It.IsAny<CancellationToken>())).ReturnsAsync(new List<Auth> { auth });
 
         // Act
-        var result = await _authService.LoginUser(loginDto);
+        var result = await _authService.LoginUserAsync(loginDto);
 
         // Assert
         result.Should().NotBeNull();
@@ -206,10 +206,10 @@ public class AuthServiceTests
         // Arrange
         var loginDto = new UserLoginDto { Username = "nonExistent", Password = "Test123!" };
 
-        _mockUserService.Setup(u => u.GetUserByUsernameAsync(loginDto.Username)).ReturnsAsync((User?)null);
+        _mockUserService.Setup(u => u.GetUserByUsernameAsync(loginDto.Username, It.IsAny<CancellationToken>())).ReturnsAsync((User?)null);
 
         // Act
-        var result = await _authService.LoginUser(loginDto);
+        var result = await _authService.LoginUserAsync(loginDto);
 
         // Assert
         result.Should().NotBeNull();
@@ -227,11 +227,11 @@ public class AuthServiceTests
 
         var roles = new List<string> { "ProductWriter" };
 
-        _mockUserService.Setup(u => u.GetUserByIdAsync(123)).ReturnsAsync(user);
-        _mockQueryExecutor.Setup(d => d.QueryAsync<string>(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(roles);
+        _mockUserService.Setup(u => u.GetUserByIdAsync(123, It.IsAny<CancellationToken>())).ReturnsAsync(user);
+        _mockQueryExecutor.Setup(d => d.QueryAsync<string>(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CancellationToken>())).ReturnsAsync(roles);
 
         // Act
-        var result = await _authService.RefreshToken(userIdStr);
+        var result = await _authService.RefreshTokenAsync(userIdStr);
 
         // Assert
         result.Should().NotBeNull();
@@ -246,7 +246,7 @@ public class AuthServiceTests
         const string userIdStr = "invalid";
 
         // Act
-        var result = await _authService.RefreshToken(userIdStr);
+        var result = await _authService.RefreshTokenAsync(userIdStr);
 
         // Assert
         result.Should().NotBeNull();
