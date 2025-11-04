@@ -1,38 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
-import { renderWithRouter } from '../../../tests/test-utils';
+import { renderWithProviders } from '../../../tests/test-utils';
 import { ProductForm } from '../ProductForm';
 import * as useProductsHooks from '../../../hooks/queries/useProducts';
 import * as useMetadataHooks from '../../../hooks/queries/useMetadata';
+import { mockCategories, mockPriceTypes, mockProductDetail, mockProductTypes, mockTags } from '../../../tests/fixtures';
 
 vi.mock('../../../hooks/queries/useProducts');
 vi.mock('../../../hooks/queries/useMetadata');
-
-const mockCategories = [
-  {
-    categoryId: 1,
-    name: 'Pets',
-    subcategories: [
-      { subcategoryId: 1, name: 'Dogs', slug: 'dogs', categoryId: 1 },
-      { subcategoryId: 2, name: 'Cats', slug: 'cats', categoryId: 1 },
-    ],
-  },
-];
-
-const mockProductTypes = [
-  { productTypeId: 1, typeName: 'Pet' },
-  { productTypeId: 2, typeName: 'Furniture' },
-];
-
-const mockPriceTypes = [
-  { priceTypeId: 1, priceTypeName: 'Coins', icon: '★' },
-  { priceTypeId: 2, priceTypeName: 'Dollars', icon: '$' },
-];
-
-const mockTags = [
-  { tagId: 1, name: 'red' },
-  { tagId: 2, name: 'blue' },
-];
 
 describe('ProductForm', () => {
   beforeEach(() => {
@@ -68,7 +43,7 @@ describe('ProductForm', () => {
   });
 
   it('renders form in edit mode with submit button visible', () => {
-    renderWithRouter(
+    renderWithProviders(
       <ProductForm
         mode="edit"
         onSuccess={vi.fn()}
@@ -85,7 +60,7 @@ describe('ProductForm', () => {
   });
 
   it('renders form in view mode with submit button hidden and fields disabled', () => {
-    renderWithRouter(
+    renderWithProviders(
       <ProductForm
         mode="view"
         onSuccess={vi.fn()}
@@ -102,7 +77,7 @@ describe('ProductForm', () => {
   });
 
   it('renders form in try mode with fields enabled but submit button hidden', () => {
-    renderWithRouter(
+    renderWithProviders(
       <ProductForm
         mode="try"
         onSuccess={vi.fn()}
@@ -127,7 +102,7 @@ describe('ProductForm', () => {
       isPending: false,
     } as any);
 
-    const { user } = renderWithRouter(
+    const { user } = renderWithProviders(
       <ProductForm
         mode="edit"
         onSuccess={onSuccess}
@@ -176,7 +151,7 @@ describe('ProductForm', () => {
   });
 
   it('calls updateProduct mutation when editing existing product', async () => {
-    const mockUpdateMutation = vi.fn().mockResolvedValue({ productId: 123, name: 'Updated Pet' });
+    const mockUpdateMutation = vi.fn().mockResolvedValue({ productId: 1, name: 'Updated Pet' });
     const onSuccess = vi.fn();
 
     vi.mocked(useProductsHooks.useUpdateProduct).mockReturnValue({
@@ -184,32 +159,10 @@ describe('ProductForm', () => {
       isPending: false,
     } as any);
 
-    const existingProduct = {
-      productId: 123,
-      name: 'Existing Product',
-      slug: 'existing-product',
-      productTypeId: 1,
-      priceTypeId: 1,
-      price: 500,
-      premiumPrice: 400,
-      subcategories: [{ subcategoryId: 1, name: 'Dogs', slug: 'dogs', categoryId: 1 }],
-      tags: [],
-      description: '',
-      isTradeable: false,
-      isNew: true,
-      isPromotional: false,
-      isExclusive: false,
-      images: [], 
-      isDemoProduct: false, 
-      sku: 'ABC123', 
-      priceIcon: '★', 
-      primaryImage: null
-    };
-
-    const { user } = renderWithRouter(
+    const { user } = renderWithProviders(
       <ProductForm
         mode="edit"
-        existingProduct={existingProduct}
+        existingProduct={mockProductDetail}
         onSuccess={onSuccess}
         onCancel={vi.fn()}
       />
@@ -224,7 +177,7 @@ describe('ProductForm', () => {
 
     await waitFor(() => {
       expect(mockUpdateMutation).toHaveBeenCalledWith({
-        productId: 123,
+        productId: 1,
         product: expect.objectContaining({
           name: 'Updated Product',
         }),
@@ -235,7 +188,7 @@ describe('ProductForm', () => {
   });
 
   it('shows custom validation error after HTML5 validation passes', async () => {
-    const { user } = renderWithRouter(
+    const { user } = renderWithProviders(
       <ProductForm
         mode="edit"
         onSuccess={vi.fn()}

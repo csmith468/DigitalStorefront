@@ -1,9 +1,9 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, memo } from 'react';
 import { XMarkIcon } from '@heroicons/react/20/solid';
 import { FormLabel } from './FormLabel';
 import { formStyles } from './primitive-constants';
 
-interface FormChipInputProps {
+export interface FormChipInputProps {
   id: string;
   label: string;
   required?: boolean;
@@ -16,7 +16,7 @@ interface FormChipInputProps {
   helperText?: string;
 }
 
-export function FormChipInput({
+function FormChipInputComponent({
   id,
   label,
   required = false,
@@ -199,4 +199,6 @@ export function FormChipInput({
       )}
     </div>
   );
-}
+};
+
+export const FormChipInput = memo(FormChipInputComponent);

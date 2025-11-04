@@ -4,6 +4,7 @@ using API.Services;
 using API.Services.Products;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace API.Controllers;
 
@@ -29,6 +30,7 @@ public class ProductsController : ControllerBase
         _userContext = userContext;
     }
     
+    [EnableRateLimiting("anonymous")]
     [HttpGet]
     public async Task<ActionResult<PaginatedResponse<ProductDto>>> GetProductsAsync([FromQuery] ProductFilterParams filterParams, CancellationToken ct)
     {
@@ -36,6 +38,7 @@ public class ProductsController : ControllerBase
     }
     
     // NOTE: Created dedicated endpoint for a common UI request to get products by category
+    [EnableRateLimiting("anonymous")]
     [HttpGet("category/{categorySlug}")]
     public async Task<ActionResult<PaginatedResponse<ProductDto>>> GetProductsByCategoryAsync(string categorySlug,
         [FromQuery] PaginationParams pagination, CancellationToken ct)
@@ -50,6 +53,7 @@ public class ProductsController : ControllerBase
     }
 
     // NOTE: Created dedicated endpoint for a common UI request to get products by subcategory
+    [EnableRateLimiting("anonymous")]
     [HttpGet("subcategory/{subcategorySlug}")]
     public async Task<ActionResult<PaginatedResponse<ProductDto>>> GetProductsBySubcategoryAsync(string subcategorySlug,
         [FromQuery] PaginationParams pagination, CancellationToken ct)
@@ -63,12 +67,14 @@ public class ProductsController : ControllerBase
         return (await _productService.GetProductsAsync(filterParams, ct)).ToActionResult();
     }
     
+    [EnableRateLimiting("anonymous")]
     [HttpGet("{productId}")]
     public async Task<ActionResult<ProductDetailDto>> GetProductAsync(int productId, CancellationToken ct)
     {
         return (await _productService.GetProductByIdAsync(productId, ct)).ToActionResult();
     }
 
+    [EnableRateLimiting("anonymous")]
     [HttpGet("slug/{slug}")]
     public async Task<ActionResult<ProductDetailDto>> GetProductBySlugAsync(string slug, CancellationToken ct)
     {
@@ -76,6 +82,7 @@ public class ProductsController : ControllerBase
     }
 
     [Authorize(Policy = "CanManageProducts")]
+    [EnableRateLimiting("authenticated")]
     [HttpPost]
     public async Task<ActionResult<ProductDetailDto>> CreateProductAsync([FromBody] ProductFormDto dto, CancellationToken ct)
     {
@@ -83,6 +90,7 @@ public class ProductsController : ControllerBase
     }
 
     [Authorize(Policy = "CanManageProducts")]
+    [EnableRateLimiting("authenticated")]
     [HttpPut("{productId}")]
     public async Task<ActionResult<ProductDetailDto>> UpdateProductAsync(int productId, [FromBody] ProductFormDto dto, CancellationToken ct)
     {
@@ -91,6 +99,7 @@ public class ProductsController : ControllerBase
 
     // Considered [Authorize(Policy = "RequireAdmin")] but will allow users to delete non-demo products they create
     [Authorize(Policy = "CanManageProducts")]
+    [EnableRateLimiting("authenticated")]
     [HttpDelete("{productId}")]
     public async Task<ActionResult<bool>> DeleteProductAsync(int productId, CancellationToken ct)
     {
@@ -98,6 +107,7 @@ public class ProductsController : ControllerBase
     }
     
     [Authorize(Policy = "CanManageImages")]
+    [EnableRateLimiting("authenticated")]
     [HttpPost("{productId}/images")]
     public async Task<ActionResult<ProductImageDto>> UploadProductImageAsync(int productId, [FromForm] AddProductImageDto dto, CancellationToken ct)
     {
@@ -105,6 +115,7 @@ public class ProductsController : ControllerBase
     }
 
     [Authorize(Policy = "CanManageImages")]
+    [EnableRateLimiting("authenticated")]
     [HttpDelete("{productId}/images/{productImageId}")]
     public async Task<ActionResult<bool>> DeleteProductImageAsync(int productId, int productImageId, CancellationToken ct)
     {
@@ -112,6 +123,7 @@ public class ProductsController : ControllerBase
     }
 
     [Authorize(Policy = "CanManageImages")]
+    [EnableRateLimiting("authenticated")]
     [HttpPut("{productId}/images/{productImageId}/set-primary")]
     public async Task<ActionResult<bool>> SetProductImagePrimaryAsync(int productId, int productImageId, CancellationToken ct)
     {
@@ -119,6 +131,7 @@ public class ProductsController : ControllerBase
     }
 
     [Authorize(Policy = "CanManageImages")]
+    [EnableRateLimiting("authenticated")]
     [HttpPut("{productId}/images/reorder")]
     public async Task<ActionResult<bool>> ReorderProductImagesAsync(int productId, List<int> productImageIds, CancellationToken ct)
     {

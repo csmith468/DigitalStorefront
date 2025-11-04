@@ -2,6 +2,8 @@ import { Link } from "react-router-dom";
 import type { Product } from "../../types/product";
 import { logger } from "../../utils/logger";
 import toast from "react-hot-toast";
+import { memo } from "react";
+import { SuccessMessages } from "../../constants/messages";
 
 function ProductCard({ product }: { product: Product }) {
   const formatPrice = (price: number, priceType: string) => {
@@ -10,7 +12,7 @@ function ProductCard({ product }: { product: Product }) {
 
   const handleAddToCart = (productId: number) => {
     logger.info(`Add product ${productId} to cart`);
-    toast.success('Product added to cart!');
+    toast.success(SuccessMessages.Product.addedToCart);
   };
 
   const baseBadge = "px-2 py-0.5 rounded-full text-xs font-semibold";
@@ -30,6 +32,7 @@ function ProductCard({ product }: { product: Product }) {
               src={product.primaryImage.imageUrl}
               alt={product.primaryImage.altText || product.name}
               className="w-full h-full object-cover"
+              loading="lazy"
             />
           ) : (
             <div className="w-full h-full bg-border flex items-center justify-center text-text-secondary">
@@ -103,4 +106,4 @@ function ProductCard({ product }: { product: Product }) {
   );
 }
 
-export default ProductCard;
+export default memo(ProductCard);

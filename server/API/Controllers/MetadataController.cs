@@ -4,6 +4,7 @@ using API.Models.Dtos;
 using API.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace API.Controllers;
 
@@ -21,6 +22,7 @@ public class MetadataController : ControllerBase
     }
     
     [HttpGet("categories")]
+    [EnableRateLimiting("anonymous")]
     [OutputCache(PolicyName = "StaticData")]
     public async Task<ActionResult<List<CategoryDto>>> GetCategoriesAndSubcategoriesAsync(CancellationToken ct)
     {
@@ -28,6 +30,7 @@ public class MetadataController : ControllerBase
     }
 
     [HttpGet("tags")]
+    [EnableRateLimiting("anonymous")]
     [OutputCache(Tags = ["tags"], Duration = 300)]
     public async Task<ActionResult<List<TagDto>>> GetTagsAsync(CancellationToken ct)
     {
@@ -35,6 +38,7 @@ public class MetadataController : ControllerBase
     }
 
     [HttpGet("product-types")]
+    [EnableRateLimiting("anonymous")]
     [OutputCache(PolicyName = "StaticData")]
     public async Task<ActionResult<List<ProductTypeDto>>> GetProductTypesAsync(CancellationToken ct)
     {
@@ -42,6 +46,7 @@ public class MetadataController : ControllerBase
     }
 
     [HttpGet("price-types")]
+    [EnableRateLimiting("anonymous")]
     [OutputCache(PolicyName = "StaticData")]
     public ActionResult<List<PriceType>> GetPriceTypes()
     {

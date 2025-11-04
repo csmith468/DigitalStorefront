@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { isEqual } from "lodash-es";
-import { UseUnsavedChanges } from "../../hooks/utilities/useUnsavedChanges";
+import { useUnsavedChanges } from "../../hooks/utilities/useUnsavedChanges";
 import { ConfirmModal } from "./ConfirmModal";
 
 type ValidateFn<T> = (data: T) => string | null;
@@ -43,16 +43,18 @@ export function FormShell<T>({
 }: FormShellProps<T>) {
   const [data, setData] = useState<T>(initial);
   const [validationError, setValidationError] = useState<string | null>(null);
-  const [hasSumbitted, setHasSubmitted] = useState(false);
+  const [hasSubmitted, setHasSubmitted] = useState(false);
 
   const isDirty = useMemo(() => !isEqual(data, initial), [data, initial]);
 
-  const { showPrompt, proceed, reset } = UseUnsavedChanges({
-    isDirty: enableUnsavedChangesWarning && isDirty && !hasSumbitted,
+  const { showPrompt, proceed, reset } = useUnsavedChanges({
+    isDirty: enableUnsavedChangesWarning && isDirty && !hasSubmitted,
   });
 
+  // NOTE: any type is neded because components pass different types for value
+  // so work-around is to cast it inside the function for type safety
   const updateField = (field: string, value: any) => {
-    setData((prev) => ({ ...prev, [field]: value }));
+    setData((prev) => ({ ...prev, [field as keyof T]: value }));
   };
 
   // Removing error handling - FormShell will just show validation errors, useMutationWithToast will handle server errors

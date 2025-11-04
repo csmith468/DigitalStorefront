@@ -1,4 +1,4 @@
-import apiClient from "../api";
+import { fetchers } from "../fetchers";
 import type { AddProductImageRequest } from "../../types/product";
 import type { ProductImage } from "../../types/product";
 
@@ -9,20 +9,16 @@ export const uploadProductImage = async (productId: number, imageData: AddProduc
     formData.append('altText', imageData.altText);
   formData.append('setAsPrimary', String(imageData.setAsPrimary));
 
-  const response = await apiClient.post<ProductImage>(`/products/${productId}/images`, formData,
+  return fetchers.post<ProductImage>(`/products/${productId}/images`, formData,
     { headers: { 'Content-Type': 'multipart/form-data' } }
   );
-  return response.data;
 };
 
-export const deleteProductImage = async (productId: number, productImageId: number): Promise<void> => {
-  await apiClient.delete(`/products/${productId}/images/${productImageId}`);
-};
+export const deleteProductImage = (productId: number, productImageId: number) => 
+  fetchers.delete(`/products/${productId}/images/${productImageId}`);
 
-export const setImageAsPrimary = async (productId: number, productImageId: number): Promise<void> => {
-  await apiClient.put(`/products/${productId}/images/${productImageId}/set-primary`);
-};
+export const setImageAsPrimary = (productId: number, productImageId: number) => 
+  fetchers.put(`/products/${productId}/images/${productImageId}/set-primary`);
 
-export const reorderProductImages = async (productId: number, orderedImageIds: number[]): Promise<void> => {
-  await apiClient.put(`/products/${productId}/images/reorder`, orderedImageIds);
-};
+export const reorderProductImages = (productId: number, orderedImageIds: number[]) => 
+  fetchers.put(`/products/${productId}/images/reorder`, orderedImageIds);

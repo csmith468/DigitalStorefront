@@ -8,10 +8,21 @@ namespace API.Database;
 
 public class DataContextDapper : IQueryExecutor, ICommandExecutor, ITransactionManager, IDisposable, IAsyncDisposable
 {
-      private readonly SqlConnection _db;
+      private readonly string _connectionString;
+      private SqlConnection? _db;
       private SqlTransaction? _transaction;
       private readonly IAuditContext _auditContext;
       private bool _disposed;
+
+      // Create connections on demand
+      private SqlConnection Db
+      {
+          get
+          {
+              EnsureConnectionOpen();
+              return _db!;
+          }
+      }
 
       // NOTE: IAuditContext autopopulates CreatedBy/UpdatedBy fields on inserts/updates
       // This abstracts the user source (HTTP vs system user) so the data layer doesn't depend on ASP.NET
@@ -19,7 +30,8 @@ public class DataContextDapper : IQueryExecutor, ICommandExecutor, ITransactionM
       
       public DataContextDapper(IConfiguration config, IAuditContext auditContext)
       {
-          _db = new SqlConnection(config.GetConnectionString("DefaultConnection"));
+          _connectionString = config.GetConnectionString("DefaultConnection")
+                              ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found");
           _auditContext = auditContext;
       }
 
@@ -27,19 +39,19 @@ public class DataContextDapper : IQueryExecutor, ICommandExecutor, ITransactionM
       public async Task<IEnumerable<T>> QueryAsync<T>(string sql, object? parameters = null, CancellationToken ct = default)
       {
           var command = CreateCommand(sql, parameters, ct: ct);
-          return await _db.QueryAsync<T>(command);
+          return await Db.QueryAsync<T>(command);
       }
 
       public async Task<T> FirstAsync<T>(string sql, object? parameters = null, CancellationToken ct = default)
       {
           var command = CreateCommand(sql, parameters, ct: ct);
-          return await _db.QueryFirstAsync<T>(command);
+          return await Db.QueryFirstAsync<T>(command);
       }
       
       public async Task<T?> FirstOrDefaultAsync<T>(string sql, object? parameters = null, CancellationToken ct = default)
       {
           var command = CreateCommand(sql, parameters, ct: ct);
-          return await _db.QueryFirstOrDefaultAsync<T>(command);
+          return await Db.QueryFirstOrDefaultAsync<T>(command);
       }
       
       public async Task<IEnumerable<T>> GetAllAsync<T>(CancellationToken ct = default) where T : class
@@ -107,7 +119,7 @@ public class DataContextDapper : IQueryExecutor, ICommandExecutor, ITransactionM
       {
           var countSql = $"SELECT COUNT(*) FROM ({baseQuery}) AS CountQuery";
           var countCommand = CreateCommand(countSql, parameters, ct: ct);
-          var totalCount = await _db.ExecuteScalarAsync<int>(countCommand);
+          var totalCount = await Db.ExecuteScalarAsync<int>(countCommand);
 
           string orderBy;
 
@@ -140,7 +152,7 @@ public class DataContextDapper : IQueryExecutor, ICommandExecutor, ITransactionM
           allParms.Add("pageSize", paginationParams.PageSize);
           
           var paginatedCommand = CreateCommand(paginatedSql, allParms, ct: ct);
-          var items = await _db.QueryAsync<T>(paginatedCommand);
+          var items = await Db.QueryAsync<T>(paginatedCommand);
           return (items, totalCount);
       }
 
@@ -168,13 +180,13 @@ public class DataContextDapper : IQueryExecutor, ICommandExecutor, ITransactionM
       public async Task<int> ExecuteAsync(string sql, object? parameters = null, CancellationToken ct = default)
       {
           var command = CreateCommand(sql, parameters, ct: ct);
-          return await _db.ExecuteAsync(command);
+          return await Db.ExecuteAsync(command);
       }
 
       public async Task<int> ExecuteStoredProcedureAsync(string sql, object? parameters = null, CancellationToken ct = default)
       {
           var command = CreateCommand(sql, parameters, commandType: CommandType.StoredProcedure, ct: ct);
-          return await _db.ExecuteAsync(command);
+          return await Db.ExecuteAsync(command);
       }
 
       public async Task<int> InsertAsync<T>(T obj, CancellationToken ct = default) where T : class
@@ -289,7 +301,7 @@ public class DataContextDapper : IQueryExecutor, ICommandExecutor, ITransactionM
           
           try
           {
-              _transaction = _db.BeginTransaction();
+              _transaction = Db.BeginTransaction();
               var result = await func();
               _transaction.Commit();
               _transaction = null;
@@ -335,21 +347,24 @@ public class DataContextDapper : IQueryExecutor, ICommandExecutor, ITransactionM
       private CommandDefinition CreateCommand(string sql, object? parameters = null,
           CommandType? commandType = null, CancellationToken ct = default)
       {
-          EnsureConnectionOpen();
           return new CommandDefinition(sql, parameters, _transaction, commandType: commandType, cancellationToken: ct);
       }
-
-      private void EnsureConnectionOpen()
-      {
-          if (_db.State != ConnectionState.Open)
-              _db.Open();
-      }
-
-
+      
       public IDbTransaction? Transaction => _transaction;
       
-      public string Database => _db.Database;
-
+      public string Database => Db.Database;
+      
+      private void EnsureConnectionOpen()
+      {
+          if (_db is { State: ConnectionState.Open }) 
+              return;
+          
+          _db?.Dispose();
+          _db = new SqlConnection(_connectionString);
+          _db.Open();
+      }
+      
+      // NOTE: Async cleanup of resources for "await using" calls or explicitly calling await DisposeAsync
       public async ValueTask DisposeAsync()
       {
           if (_disposed) return;
@@ -357,22 +372,33 @@ public class DataContextDapper : IQueryExecutor, ICommandExecutor, ITransactionM
           if (_transaction != null)
               await _transaction.DisposeAsync();
 
-          if (_db.State == ConnectionState.Open)
-              await _db.CloseAsync();
-
-          await _db.DisposeAsync();
+          if (_db != null)
+          {
+              if (_db.State == ConnectionState.Open)
+                  await _db.CloseAsync();
+              
+              await _db.DisposeAsync();
+          }
+          
           _disposed = true;
+          GC.SuppressFinalize(this); // already done manually, don't need to do it again through garbage collector
       }
 
+      // NOTE: For synchronous cleanup without await (needed for backwards compatibility)
       public void Dispose()
       {
           if (_disposed) return;
 
           _transaction?.Dispose();
-          if (_db.State == ConnectionState.Open)
-              _db.Close();
-          
-          _db.Dispose();
+
+          if (_db != null)
+          {
+              if (_db.State == ConnectionState.Open)
+                  _db.Close();
+              
+              _db.Dispose();
+          }
           _disposed = true;
+          GC.SuppressFinalize(this); // already done manually, don't need to do it again through garbage collector
       }
 }

@@ -7,7 +7,8 @@ import { FormCheckbox } from "../primitives/FormCheckbox";
 import { formStyles } from "../primitives/primitive-constants";
 import { closestCenter, DndContext, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import { arrayMove, rectSortingStrategy, SortableContext, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
-import { SortableImageItem } from "./SortableImageItem";
+import { SortableImageItemMemo } from "./SortableImageItem";
+import { ErrorMessages } from "../../constants/messages";
 
 
 interface ProductImageManagerProps {
@@ -46,6 +47,14 @@ export function ProductImageManager({
   useEffect(() => {
     setLocalImages(images);
   }, [images]);
+
+  // Cleanup preview URL to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (previewUrl)
+        URL.revokeObjectURL(previewUrl);
+    }
+  }, [previewUrl]);
 
   // Drag and drop sensors
   const sensors = useSensors(
@@ -91,8 +100,8 @@ export function ProductImageManager({
     }
 
     const message = !isValidType
-      ? 'Please select a valid image file (JPG, PNG, GIF, or WebP)'
-      : `File size must be less than ${MAX_FILE_SIZE / 1024 / 1024} MB`;
+      ? ErrorMessages.Image.invalidType
+      : ErrorMessages.Image.tooLarge(MAX_FILE_SIZE / 1024 / 1024)
 
     setFileError(message);
     setSelectedFile(null);
@@ -177,7 +186,7 @@ export function ProductImageManager({
             >
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {localImages.map((image) => (
-                  <SortableImageItem
+                  <SortableImageItemMemo
                     key={image.productImageId}
                     image={image}
                     onSetPrimary={handleSetPrimary}

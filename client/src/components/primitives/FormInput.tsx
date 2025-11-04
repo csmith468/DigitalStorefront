@@ -1,5 +1,6 @@
 import { formStyles } from "./primitive-constants";
 import { FormLabel } from "./FormLabel";
+import { memo } from "react";
 
 interface FormInputProps {
   id: string;
@@ -14,7 +15,7 @@ interface FormInputProps {
   min?: string; // number type only
 }
 
-export function FormInput ({
+function FormInputComponent ({
   id,
   label,
   type = "text",
@@ -55,3 +56,5 @@ export function FormInput ({
     </div>
   );
 };
+
+export const FormInput = memo(FormInputComponent);

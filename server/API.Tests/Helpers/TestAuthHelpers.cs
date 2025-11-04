@@ -11,6 +11,7 @@ public static class TestAuthHelpers
         CustomWebApplicationFactory factory)
     {
         var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("Test-Partition-Key", Guid.NewGuid().ToString());
 
         var registerDto = new UserRegisterDto
         {

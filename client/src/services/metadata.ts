@@ -1,22 +1,14 @@
-import apiClient from "./api";
+import { fetchers } from "./fetchers";
 import type { Category, PriceType, ProductType, Tag } from "../types/metadata";
 
-export const getCategories = async (): Promise<Category[]> => {
-  const response = await apiClient.get<Category[]>('/metadata/categories');
-  return response.data;
-};
+export const getCategories = (signal?: AbortSignal): Promise<Category[]> => 
+  fetchers.get<Category[]>('/metadata/categories', { signal});
 
-export const getTags = async (): Promise<Tag[]> => {
-  const response = await apiClient.get<Tag[]>('/metadata/tags');
-  return response.data;
-};
+export const getTags = (signal?: AbortSignal): Promise<Tag[]> => 
+  fetchers.get<Tag[]>('/metadata/tags', { signal});
 
-export const getProductTypes = async (): Promise<ProductType[]> => {
-  const response = await apiClient.get<ProductType[]>('/metadata/product-types');
-  return response.data;
-}
+export const getProductTypes = (signal?: AbortSignal): Promise<ProductType[]> => 
+  fetchers.get<ProductType[]>('/metadata/product-types', { signal});
 
-export const getPriceTypes = async (): Promise<PriceType[]> => {
-  const response = await apiClient.get<PriceType[]>('/metadata/price-types');
-  return response.data;
-}
+export const getPriceTypes = (signal?: AbortSignal): Promise<PriceType[]> => 
+  fetchers.get<PriceType[]>('/metadata/price-types', { signal});

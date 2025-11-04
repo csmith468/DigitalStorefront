@@ -1,21 +1,35 @@
 import { createBrowserRouter, Navigate, Outlet } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { lazy, Suspense } from "react";
 import { Toaster } from "react-hot-toast";
 import { toasterConfig } from "../config/toastConfig";
 import { AppLayout } from "./AppLayout";
 import { HomePage } from "../pages/HomePage";
-import { AdminProductList } from "../components/admin/AdminProductList";
-import { CreateProductFormPage } from "../pages/admin/CreateProductFormPage";
-import { EditProductFormPage } from "../pages/admin/EditProductFormPage";
-import { ViewProductFormPage } from "../pages/admin/ViewProductFormPage";
 import { ProductDetailPage } from "../pages/ProductDetailPage";
 import { ProductsView } from "../pages/ProductsView";
 import { ProtectedRoute } from "../components/auth/ProtectedRoute";
 import { RouteErrorPage } from "./RouteErrorPage";
 import { SearchResults } from "../pages/SearchResults";
 import { UserProvider } from "../contexts/UserContext";
-import { TryProductFormPage } from "../pages/admin/TryProductFormPage";
+
+// Lazy load admin pages
+const AdminProductList = lazy(() => import("../components/admin/AdminProductList").then(m => ({ default: m.AdminProductList })));
+const CreateProductFormPage = lazy(() => import("../pages/admin/CreateProductFormPage").then(m => ({ default: m.CreateProductFormPage })));
+const EditProductFormPage = lazy(() => import("../pages/admin/EditProductFormPage").then(m => ({ default: m.EditProductFormPage })));
+const ViewProductFormPage = lazy(() => import("../pages/admin/ViewProductFormPage").then(m => ({ default: m.ViewProductFormPage })));
+const TryProductFormPage = lazy(() => import("../pages/admin/TryProductFormPage").then(m => ({ default: m.TryProductFormPage })));
+
+function LoadingFallback() {
+  return (
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="text-center">
+        <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
+        <p className="mt-2 text-gray-600">Loading...</p>
+      </div>
+    </div>
+  );
+}
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -31,7 +45,9 @@ function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <UserProvider>
-        <Outlet />
+        <Suspense fallback={<LoadingFallback />}>
+          <Outlet />
+        </Suspense>
         <Toaster {...toasterConfig} />
         <ReactQueryDevtools initialIsOpen={false} />
       </UserProvider>

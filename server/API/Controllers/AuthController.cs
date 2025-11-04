@@ -3,6 +3,7 @@ using API.Models.Dtos;
 using API.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace API.Controllers;
 
@@ -19,6 +20,7 @@ public class AuthController : ControllerBase
     }
     
     [AllowAnonymous]
+    [EnableRateLimiting("auth")]
     [HttpPost("register")]
     public async Task<ActionResult<AuthResponseDto>> RegisterAsync(UserRegisterDto userDto, CancellationToken ct)
     {
@@ -26,12 +28,14 @@ public class AuthController : ControllerBase
     }
 
     [AllowAnonymous]
+    [EnableRateLimiting("auth")]
     [HttpPost("login")]
     public async Task<ActionResult<AuthResponseDto>> LoginAsync(UserLoginDto userDto, CancellationToken ct)
     {
         return (await _authService.LoginUserAsync(userDto, ct)).ToActionResult();
     }
 
+    [EnableRateLimiting("authenticated")]
     [HttpPost("refresh-token")]
     public async Task<ActionResult<AuthResponseDto>> RefreshTokenAsync(CancellationToken ct)
     {

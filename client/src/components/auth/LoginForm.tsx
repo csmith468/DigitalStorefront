@@ -72,7 +72,7 @@ export function LoginForm ({
               type="button"
               onClick={onSwitchToRegister}
               className="text-blue-600 hover:text-blue-500 font-medium">
-              Register
+              Register Here
             </button>
           </div>
           

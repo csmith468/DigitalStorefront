@@ -1,3 +1,4 @@
+import { ErrorMessages, SuccessMessages } from "../../constants/messages";
 import { deleteProductImage, reorderProductImages, setImageAsPrimary, uploadProductImage } from "../../services/products/images";
 import type { AddProductImageRequest } from "../../types/product";
 import { useMutationWithToast } from "../utilities/useMutationWithToast";
@@ -14,8 +15,8 @@ export const useUploadProductImage = () => {
       });
       queryClient.invalidateQueries({ queryKey: ['products'] });
     },
-    successMessage: 'Image uploaded!',
-    errorMessage: 'Failed to upload image. Please try again.',
+    successMessage: SuccessMessages.Image.uploaded,
+    errorMessage: ErrorMessages.Image.uploadFailed,
   });
 };
 
@@ -31,8 +32,8 @@ export const useDeleteProductImage = () => {
       });
       queryClient.invalidateQueries({ queryKey: ['products'] });
     },
-    successMessage: 'Image deleted!',
-    errorMessage: 'Failed to deleted image. Please try again.',
+    successMessage: SuccessMessages.Image.deleted,
+    errorMessage: ErrorMessages.Image.deleteFailed,
   });
 };
 
@@ -48,8 +49,8 @@ export const useSetImageAsPrimary = () => {
       });
       queryClient.invalidateQueries({ queryKey: ['products'] });
     },
-    successMessage: 'Image set as primary!',
-    errorMessage: 'Failed to set image as primary. Please try again.',
+    successMessage: SuccessMessages.Image.setPrimary,
+    errorMessage: ErrorMessages.Image.setPrimaryFailed,
   });
 };
 
@@ -65,7 +66,7 @@ export const useReorderProductImages = () => {
       });
       queryClient.invalidateQueries({ queryKey: ['products'] });
     },
-    successMessage: 'Images re-ordered!',
-    errorMessage: 'Failed to re-order images. Please try again.',
+    successMessage: SuccessMessages.Image.reordered,
+    errorMessage: ErrorMessages.Image.reorderFailed,
   });
 };

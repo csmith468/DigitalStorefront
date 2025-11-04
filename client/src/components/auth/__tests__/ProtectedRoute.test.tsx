@@ -4,26 +4,12 @@ import { render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ProtectedRoute } from '../ProtectedRoute';
 import { UserContext, type UserContextType } from '../../../contexts/UserContext';
+import { createMockUserContext } from '../../../tests/fixtures';
 
 const PROTECTED_CONTENT = 'Protected Content';
 
-function createMockContext(overrides: Partial<UserContextType> = {}): UserContextType {
-  return {
-    user: null,
-    isAuthenticated: false,
-    roles: [],
-    isLoading: false,
-    login: vi.fn(),
-    register: vi.fn(),
-    logout: vi.fn(),
-    openAuthModal: vi.fn(),
-    closeAuthModal: vi.fn(),
-    ...overrides,
-  };
-}
-
 function renderProtectedRoute(contextOverrides: Partial<UserContextType> = {}) {
-  const context = createMockContext(contextOverrides);
+  const context = createMockUserContext(contextOverrides);
   return {
     ...render(
       <UserContext.Provider value={context}>
@@ -90,7 +76,7 @@ describe('ProtectedRoute', () => {
     expect(screen.getByText(/loading/i)).toBeInTheDocument();
 
     rerender(
-      <UserContext.Provider value={createMockContext({
+      <UserContext.Provider value={createMockUserContext({
         isAuthenticated: true,
         user: { userId: 1, username: 'testuser' },
       })}>

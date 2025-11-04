@@ -11,13 +11,14 @@ import { createProduct,
 import type { ProductDetail, ProductFormRequest } from "../../types/product";
 import type { ProductFilterParams } from "../../types/pagination";
 import { useMutationWithToast } from "../utilities/useMutationWithToast";
+import { ErrorMessages, SuccessMessages } from "../../constants/messages";
 
 
 // Getters
 export const useProduct = (productId: number) => {
   return useQuery({
     queryKey: ["product", productId],
-    queryFn: () => getProductById(productId),
+    queryFn: ({ signal }) => getProductById(productId, signal),
     enabled: !!productId,
   });
 };
@@ -25,7 +26,7 @@ export const useProduct = (productId: number) => {
 export const useProductBySlug = (slug: string) => {
   return useQuery({
     queryKey: ["product", slug],
-    queryFn: () => getProductBySlug(slug),
+    queryFn: ({ signal }) => getProductBySlug(slug, signal),
     enabled: !!slug,
   });
 
@@ -34,7 +35,7 @@ export const useProductBySlug = (slug: string) => {
 export const useProducts = (filters: ProductFilterParams) => {
   return useQuery({
     queryKey: ['products', filters],
-    queryFn: () => getProducts(filters)
+    queryFn: ({ signal }) => getProducts(filters, signal)
   });
 };
 
@@ -45,7 +46,7 @@ export const useProductsByCategory = (
 ) => {
   return useQuery({
     queryKey: ['categoryProducts', categorySlug, page, pageSize],
-    queryFn: () => getProductsByCategory(categorySlug, page, pageSize),
+    queryFn: ({ signal }) => getProductsByCategory(categorySlug, page, pageSize, signal),
     enabled: !!categorySlug
   });
 };
@@ -57,7 +58,7 @@ export const useProductsBySubcategory = (
 ) => {
   return useQuery({
     queryKey: ['subcategoryProducts', subcategorySlug, page, pageSize],
-    queryFn: () => getProductsBySubcategory(subcategorySlug, page, pageSize),
+    queryFn: ({ signal }) => getProductsBySubcategory(subcategorySlug, page, pageSize, signal),
     enabled: !!subcategorySlug
   });
 };
@@ -71,8 +72,8 @@ export const useCreateProduct = () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
       queryClient.invalidateQueries({ queryKey: ['metadata', 'tags'] });
     },
-    successMessage: 'Product created!',
-    errorMessage: 'Failed to create product. Please try again.',
+    successMessage: SuccessMessages.Product.created,
+    errorMessage: ErrorMessages.Product.createFailed,
   })
 }
 
@@ -87,8 +88,8 @@ export const useUpdateProduct = () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
       queryClient.invalidateQueries({ queryKey: ['metadata', 'tags'] });
     },
-    successMessage: 'Product updated!',
-    errorMessage: 'Failed to update product. Please try again.',
+    successMessage: SuccessMessages.Product.updated,
+    errorMessage: ErrorMessages.Product.updateFailed,
   });
 };
 
@@ -100,7 +101,7 @@ export const useDeleteProduct = () => {
     onSuccess: (_d, _v, queryClient) => {
       queryClient.invalidateQueries({ queryKey: ['products']});
     },
-    successMessage: 'Product deleted!',
-    errorMessage: 'Failed to delete product. Please try again.',
+    successMessage: SuccessMessages.Product.deleted,
+    errorMessage: ErrorMessages.Product.deleteFailed,
   });
 }

@@ -6,6 +6,7 @@ import { PageHeader } from '../primitives/PageHeader';
 import type { ProductDetail } from '../../types/product';
 import type { ProductFormMode } from './ProductForm';
 import { useUser } from '../../contexts/useUser';
+import { SectionErrorBoundary } from '../common/SectionErrorBoundary';
 
 type TabType = 'details' | 'images';
 
@@ -104,14 +105,24 @@ export function ProductFormPageShared({
 
       <div className="bg-white rounded-lg shadow p-6">
         {activeTab === 'details' ? (
-          <ProductForm existingProduct={product} mode={mode} onSuccess={onSuccess} onCancel={onCancel} />
+          <SectionErrorBoundary
+            sectionName="Product Form"
+            fallbackMessage="Failed to load the product form. Please try refreshing the page."
+          >
+            <ProductForm existingProduct={product} mode={mode} onSuccess={onSuccess} onCancel={onCancel} />
+          </SectionErrorBoundary>
         ) : (
-          <ProductImageManager
-            productId={product.productId}
-            images={product.images || []}
-            onImagesChange={onImagesChange}
-            isViewOnly={mode !== 'edit'}
-          />
+          <SectionErrorBoundary
+            sectionName="Product Images"
+            fallbackMessage="Failed to load the image manager. You can switch to the Details tab to edit product information."
+          >
+            <ProductImageManager
+              productId={product.productId}
+              images={product.images || []}
+              onImagesChange={onImagesChange}
+              isViewOnly={mode !== 'edit'}
+            />
+          </SectionErrorBoundary>
         )}
       </div>
     </div>

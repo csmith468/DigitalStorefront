@@ -1,13 +1,14 @@
 // State: user, isAuthenticated, isLoading
 // Actions: login(dto), register(dto), logout()
 
-import React, { createContext, useState, useEffect, useMemo } from "react";
+import React, { createContext, useState, useEffect, useMemo, useCallback } from "react";
 import type { ReactNode } from "react";
 import type { User, Auth, LoginRequest, RegisterRequest } from "../types/auth";
 import { authService } from "../services/auth";
 import { AuthModal } from "../components/auth/AuthModal";
 import toast from "react-hot-toast";
 import { useSearchParams } from "react-router-dom";
+import { ErrorMessages } from "../constants/messages";
 
 export interface UserContextType {
   user: User | null;
@@ -57,38 +58,38 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({
     if (authParam === 'login' || authParam === 'register') {
       openAuthModal(authParam);
       if (reasonParam === 'session-expired')
-        toast.error('Your session has expired. Please log in again.');
+        toast.error(ErrorMessages.Auth.sessionExpired);
 
       setSearchParams({});
     }
   }, [searchParams, setSearchParams]);
 
-  const setUserAndTokenFromAuthResponse = (response: Auth) => {
+  const setUserAndTokenFromAuthResponse = useCallback((response: Auth) => {
     authService.setStoredToken(response.token);
     setUser({ userId: response.userId, username: response.username });
     setRoles(response.roles);
-  };
+  }, []);
 
-  const login = async (dto: LoginRequest) => {
+  const login = useCallback(async (dto: LoginRequest) => {
     const response = await authService.login(dto);
     setUserAndTokenFromAuthResponse(response);
-  };
+  }, [setUserAndTokenFromAuthResponse]);
 
-  const register = async (dto: RegisterRequest) => {
+  const register = useCallback(async (dto: RegisterRequest) => {
     const response = await authService.register(dto);
     setUserAndTokenFromAuthResponse(response);
-  };
+  }, [setUserAndTokenFromAuthResponse]);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     authService.logout();
     setUser(null);
     window.location.href = '/';
-  };
+  }, []);
 
-  const openAuthModal = (mode: 'login' | 'register') => {
+  const openAuthModal = useCallback((mode: 'login' | 'register') => {
     setAuthMode(mode);
     setAuthModalOpen(true);
-  };
+  }, []);
 
   const value = useMemo<UserContextType>(() => ({
     user,
