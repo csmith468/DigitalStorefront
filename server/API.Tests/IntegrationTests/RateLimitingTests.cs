@@ -1,39 +1,33 @@
 using System.Net;
-  using API.Tests.Helpers;
-  using FluentAssertions;
-  using Xunit;
+using API.Tests.Helpers;
+using FluentAssertions;
 
-  namespace API.Tests.IntegrationTests;
+namespace API.Tests.IntegrationTests;
 
-  public class RateLimitingTests : IClassFixture<CustomWebApplicationFactory>
-  {
-      private readonly HttpClient _client;
+[Collection("Database")]
+[Trait("Category", "Integration")]
+public class RateLimitingTests(DatabaseFixture fixture) : IntegrationTestBase(fixture) 
+{
+    [Fact]
+    public async Task RateLimiter_WhenExceeding100Requests_Returns429()
+    {
+        // Arrange
+        const string url = "/common/product-types";
+        var rateLimitExceeded = false;
 
-      public RateLimitingTests(CustomWebApplicationFactory factory)
-      {
-          _client = factory.CreateClient();
-      }
+        // Act 
+        for (var i = 0; i < 105; i++)
+        {
+            var response = await Client.GetAsync(url);
 
-      [Fact]
-      public async Task RateLimiter_WhenExceeding100Requests_Returns429()
-      {
-          // Arrange
-          const string url = "/common/product-types";
-          var rateLimitExceeded = false;
+            if (response.StatusCode == HttpStatusCode.TooManyRequests)
+            {
+                rateLimitExceeded = true;
+                break;
+            }
+        }
 
-          // Act 
-          for (var i = 0; i < 105; i++)
-          {
-              var response = await _client.GetAsync(url);
-
-              if (response.StatusCode == HttpStatusCode.TooManyRequests)
-              {
-                  rateLimitExceeded = true;
-                  break;
-              }
-          }
-
-          // Assert
-          rateLimitExceeded.Should().BeTrue("Rate limiter should block requests after 100");
-      }
-  }
+        // Assert
+        rateLimitExceeded.Should().BeTrue("Rate limiter should block requests after 100");
+    }
+}

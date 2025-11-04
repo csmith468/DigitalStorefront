@@ -1,6 +1,7 @@
 using API.Configuration;
 using API.Utils;
 using Dapper;
+using DatabaseManagement.UserInteraction;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
@@ -11,22 +12,28 @@ public class FirstTimeSetup
 {
     private readonly string _connectionString;
     private readonly IConfiguration _config;
+    private readonly IUserInteraction _userInteraction;
 
-    public FirstTimeSetup(string connectionString, IConfiguration config)
+    public FirstTimeSetup(string connectionString, IConfiguration config, IUserInteraction userInteraction)
     {
         _connectionString = connectionString;
         _config = config;
+        _userInteraction = userInteraction;
     }
 
     public async Task<bool> ExecuteAsync()
     {
         Console.WriteLine($"First time setup detected!\n");
-        Console.WriteLine("Let's create your admin account...");
 
-        var (username, password) = PromptForAdminCredentials();
+        var credentials = await _userInteraction.PromptForAdminCredentialsAsync();
 
-        if (username == null || password == null)
+        if (credentials == null)
+        {
+            _userInteraction.WriteLine("Setup cancelled.");
             return false;
+        }
+
+        var (username, password) = credentials.Value;
         
         Console.WriteLine("Creating your admin account...");
         var userId = await CreateAdminUserAsync(username, password);
@@ -34,7 +41,7 @@ public class FirstTimeSetup
         Console.WriteLine("Assigning seeded products to your account...");
         await AssignSeededProductsToUserAsync(userId);
 
-        Common.WriteGreenInConsole([
+        _userInteraction.WriteSuccess([
             $"Admin account created!",
             $"   Username: {username}",
             $"   You can now log in with these credentials."
@@ -53,57 +60,6 @@ public class FirstTimeSetup
         );
 
         return tableExists == 0;
-    }
-    
-    private (string?, string?) PromptForAdminCredentials()
-    {
-        Console.Write("Admin Username: ");
-        var username = Console.ReadLine();
-
-        string? password = null;
-        while (password == null)
-        {
-            Console.Write("Admin Password: ");
-            var passwordAttempt = ReadPassword();
-
-            Console.Write("\nConfirm Password: ");
-            var confirmPassword = ReadPassword();
-
-            if (passwordAttempt != confirmPassword)
-            {
-                Console.WriteLine("\nPasswords don't match! Please try again.\n");
-                continue;
-            }
-
-            password = passwordAttempt;
-        }
-
-        Console.WriteLine("\n");
-        return (username, password);
-    }
-
-    private static string ReadPassword()
-    {
-        var password = "";
-        ConsoleKeyInfo key;
-
-        do
-        {
-            key = Console.ReadKey(intercept: true); // Don't display the character
-
-            if (key.Key == ConsoleKey.Backspace && password.Length > 0)
-            {
-                password = password[0..^1];     // Remove last character
-                Console.Write("\b \b");         // Erase the asterisk
-            }
-            else if (key.Key != ConsoleKey.Enter && key.Key != ConsoleKey.Backspace)
-            {
-                password += key.KeyChar;
-                Console.Write("*");
-            }
-        } while (key.Key != ConsoleKey.Enter);
-
-        return password;
     }
 
     private async Task<int> CreateAdminUserAsync(string username, string password)

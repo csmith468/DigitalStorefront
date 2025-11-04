@@ -9,8 +9,8 @@ namespace API.Services;
 
 public interface IMetadataService
 {
-    Task<Result<List<CategoryDto>>> GetCategoriesAndSubcategoriesAsync();
-    Task<Result<List<ProductTypeDto>>> GetProductTypesAsync();
+    Task<Result<List<CategoryDto>>> GetCategoriesAndSubcategoriesAsync(CancellationToken ct = default);
+    Task<Result<List<ProductTypeDto>>> GetProductTypesAsync(CancellationToken ct = default);
     List<PriceType> GetPriceTypes();
 }
 
@@ -25,10 +25,10 @@ public class MetadataService : IMetadataService
         _mapper = mapper;
     }
     
-    public async Task<Result<List<CategoryDto>>> GetCategoriesAndSubcategoriesAsync()
+    public async Task<Result<List<CategoryDto>>> GetCategoriesAndSubcategoriesAsync(CancellationToken ct = default)
     {
         var categories = (await _queryExecutor.QueryAsync<CategoryDto>(
-            "SELECT categoryId, [name], slug, displayOrder FROM dbo.category WHERE isActive = 1"
+            "SELECT categoryId, [name], slug, displayOrder FROM dbo.category WHERE isActive = 1", null, ct
         )).OrderBy(c => c.DisplayOrder).ToList();
 
         // Looping because there are only 5 categories and this data is cached both in API and UI
@@ -40,15 +40,15 @@ public class MetadataService : IMetadataService
                  FROM dbo.subcategory 
                  WHERE isActive = 1 
                    AND categoryId = @categoryId
-                 """, new { categoryId = category.CategoryId })
+                 """, new { categoryId = category.CategoryId }, ct)
                 ).OrderBy(s => s.DisplayOrder).ToList();
         }
         return Result<List<CategoryDto>>.Success(categories);
     }
     
-    public async Task<Result<List<ProductTypeDto>>> GetProductTypesAsync()
+    public async Task<Result<List<ProductTypeDto>>> GetProductTypesAsync(CancellationToken ct = default)
     {
-        var productTypes = await _queryExecutor.GetAllAsync<ProductType>();
+        var productTypes = await _queryExecutor.GetAllAsync<ProductType>(ct);
         var productTypeDtos = productTypes.Select(pt => _mapper.Map<ProductTypeDto>(pt)).ToList();
         return Result<List<ProductTypeDto>>.Success(productTypeDtos);
     }

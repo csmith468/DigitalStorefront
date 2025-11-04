@@ -33,6 +33,8 @@ publish/
 *.csproj.nuget.*
 project.lock.json
 project.fragment.lock.json
+logs/
+*.log
 
 # Environment files
 .env

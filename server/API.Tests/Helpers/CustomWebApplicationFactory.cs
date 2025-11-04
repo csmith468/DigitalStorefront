@@ -7,18 +7,29 @@ namespace API.Tests.Helpers;
 
 public class CustomWebApplicationFactory : WebApplicationFactory<Program>
 {
+    private readonly TestDatabaseManager _databaseManager;
+
+    public CustomWebApplicationFactory(TestDatabaseManager databaseManager)
+    {
+        _databaseManager = databaseManager;
+    }
+    
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Development");
 
-        // Override security keys for test environment (CI doesn't have appsettings.Development.json)
         builder.ConfigureAppConfiguration((context, config) =>
         {
+            // Override connection string to point to test container
             config.AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["AppSettings:TokenKey"] = "ThisIsATestTokenKeyThatIsSufficientlyLongForValidation12345",
-                ["AppSettings:PasswordKey"] = "ThisIsATestPasswordKeyThatIsSufficientlyLongForValidation12345"
+                ["ConnectionStrings:DefaultConnection"] = _databaseManager.ConnectionString
             });
         });
+    }
+
+    public async Task ResetDatabaseAsync()
+    {
+        await _databaseManager.ResetDatabaseAsync();
     }
 }

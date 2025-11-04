@@ -16,7 +16,7 @@ public class LocalImageStorageService : ImageStorageServiceBase
     
     private const string LocalFolder = "images";
 
-    public override async Task<string> SaveImageAsync(IFormFile file, string subfolder, string? prefix = null)
+    public override async Task<string> SaveImageAsync(IFormFile file, string subfolder, string? prefix = null, CancellationToken ct = default)
     {
         var fileName = PrepareAndValidateFile(file, prefix);
         
@@ -27,7 +27,7 @@ public class LocalImageStorageService : ImageStorageServiceBase
         ValidateFilePath(filePath, directory);
         
         await using var fileStream = new FileStream(filePath, FileMode.Create);
-        await file.CopyToAsync(fileStream);
+        await file.CopyToAsync(fileStream, ct);
         
         return $"{subfolder}/{fileName}";
     }
@@ -38,7 +38,7 @@ public class LocalImageStorageService : ImageStorageServiceBase
         return $"/{LocalFolder}/{fileName}";
     }
 
-    public override Task<bool> DeleteImageAsync(string fileName)
+    public override Task<bool> DeleteImageAsync(string fileName, CancellationToken ct = default)
     {
         ValidateFileNameStructure(fileName);
         

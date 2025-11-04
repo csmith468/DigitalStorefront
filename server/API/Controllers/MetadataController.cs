@@ -22,23 +22,23 @@ public class MetadataController : ControllerBase
     
     [HttpGet("categories")]
     [OutputCache(PolicyName = "StaticData")]
-    public async Task<ActionResult<List<CategoryDto>>> GetCategoriesAndSubcategories()
+    public async Task<ActionResult<List<CategoryDto>>> GetCategoriesAndSubcategoriesAsync(CancellationToken ct)
     {
-        return (await _metadataService.GetCategoriesAndSubcategoriesAsync()).ToActionResult();
+        return (await _metadataService.GetCategoriesAndSubcategoriesAsync(ct)).ToActionResult();
     }
 
     [HttpGet("tags")]
     [OutputCache(Tags = ["tags"], Duration = 300)]
-    public async Task<ActionResult<List<TagDto>>> GetTags()
+    public async Task<ActionResult<List<TagDto>>> GetTagsAsync(CancellationToken ct)
     {
-        return (await _tagService.GetAllTagsAsync()).ToActionResult();
+        return (await _tagService.GetAllTagsAsync(ct)).ToActionResult();
     }
-    
+
     [HttpGet("product-types")]
     [OutputCache(PolicyName = "StaticData")]
-    public async Task<ActionResult<List<ProductTypeDto>>> GetProductTypesAsync()
+    public async Task<ActionResult<List<ProductTypeDto>>> GetProductTypesAsync(CancellationToken ct)
     {
-        return (await _metadataService.GetProductTypesAsync()).ToActionResult();
+        return (await _metadataService.GetProductTypesAsync(ct)).ToActionResult();
     }
 
     [HttpGet("price-types")]

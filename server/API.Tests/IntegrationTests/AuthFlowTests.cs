@@ -6,9 +6,10 @@ using FluentAssertions;
 
 namespace API.Tests.IntegrationTests;
 
-public class AuthFlowTests(CustomWebApplicationFactory factory) : IClassFixture<CustomWebApplicationFactory>
+[Collection("Database")]
+[Trait("Category", "Integration")]
+public class AuthFlowTests(DatabaseFixture fixture) : IntegrationTestBase(fixture) 
 {
-    private readonly HttpClient _client = factory.CreateClient();
 
     [Fact]
     public async Task RegisterUser_WithValidData_ReturnsCreatedWithToken()
@@ -16,7 +17,7 @@ public class AuthFlowTests(CustomWebApplicationFactory factory) : IClassFixture<
         // Arrange
         var registerDto = new UserRegisterDto
         {
-            Username = $"testuser_{Guid.NewGuid():N}",
+            Username = $"testUser_{Guid.NewGuid():N}",
             Email = $"test_{Guid.NewGuid():N}@example.com",
             Password = "Test123!",
             ConfirmPassword = "Test123!",  // ✅ ADDED
@@ -25,7 +26,7 @@ public class AuthFlowTests(CustomWebApplicationFactory factory) : IClassFixture<
         };
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/auth/register", registerDto);
+        var response = await Client.PostAsJsonAsync("/api/auth/register", registerDto);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Created);
@@ -64,8 +65,8 @@ public class AuthFlowTests(CustomWebApplicationFactory factory) : IClassFixture<
         };
 
         // Act
-        await _client.PostAsJsonAsync("/api/auth/register", registerDto1);
-        var response = await _client.PostAsJsonAsync("/api/auth/register", registerDto2);
+        await Client.PostAsJsonAsync("/api/auth/register", registerDto1);
+        var response = await Client.PostAsJsonAsync("/api/auth/register", registerDto2);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -77,7 +78,7 @@ public class AuthFlowTests(CustomWebApplicationFactory factory) : IClassFixture<
     public async Task LoginUser_WithValidCredentials_ReturnsToken()
     {
         // Arrange - Register user first
-        var username = $"logintest_{Guid.NewGuid():N}";
+        var username = $"loginTest_{Guid.NewGuid():N}";
         const string password = "CorrectPassword123!";
 
         var registerDto = new UserRegisterDto
@@ -89,7 +90,7 @@ public class AuthFlowTests(CustomWebApplicationFactory factory) : IClassFixture<
             FirstName = "Test",
             LastName = "User"
         };
-        await _client.PostAsJsonAsync("/api/auth/register", registerDto);
+        await Client.PostAsJsonAsync("/api/auth/register", registerDto);
 
         var loginDto = new UserLoginDto
         {
@@ -98,7 +99,7 @@ public class AuthFlowTests(CustomWebApplicationFactory factory) : IClassFixture<
         };
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/auth/login", loginDto);
+        var response = await Client.PostAsJsonAsync("/api/auth/login", loginDto);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -126,7 +127,7 @@ public class AuthFlowTests(CustomWebApplicationFactory factory) : IClassFixture<
             FirstName = "Test",
             LastName = "User"
         };
-        await _client.PostAsJsonAsync("/api/auth/register", registerDto);
+        await Client.PostAsJsonAsync("/api/auth/register", registerDto);
 
         var loginDto = new UserLoginDto
         {
@@ -135,7 +136,7 @@ public class AuthFlowTests(CustomWebApplicationFactory factory) : IClassFixture<
         };
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/auth/login", loginDto);
+        var response = await Client.PostAsJsonAsync("/api/auth/login", loginDto);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);

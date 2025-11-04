@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using API.Configuration;
+using API.Models.Constants;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 
@@ -84,9 +85,9 @@ public static class SecurityExtensions
         
         services.AddAuthorization(options =>
         {
-            options.AddPolicy("RequireAdmin", policy => policy.RequireRole("Admin"));
-            options.AddPolicy("CanManageProducts", policy => policy.RequireRole("Admin", "ProductWriter"));
-            options.AddPolicy("CanManageImages", policy => policy.RequireRole("Admin", "ImageManager"));
+            options.AddPolicy("RequireAdmin", policy => policy.RequireRole(RoleNames.Admin));
+            options.AddPolicy("CanManageProducts", policy => policy.RequireRole(RoleNames.Admin, RoleNames.ProductWriter));
+            options.AddPolicy("CanManageImages", policy => policy.RequireRole(RoleNames.Admin, RoleNames.ImageManager));
         });
         
         return services;

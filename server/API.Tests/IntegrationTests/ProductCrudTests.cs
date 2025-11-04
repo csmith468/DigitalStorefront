@@ -8,20 +8,15 @@ using Xunit;
 
 namespace API.Tests.IntegrationTests;
 
-public class ProductCrudTests : IClassFixture<CustomWebApplicationFactory>
+[Collection("Database")]
+[Trait("Category", "Integration")]
+public class ProductCrudTests(DatabaseFixture fixture) : IntegrationTestBase(fixture) 
 {
-    private readonly CustomWebApplicationFactory _factory;
-
-    public ProductCrudTests(CustomWebApplicationFactory factory)
-    {
-        _factory = factory;
-    }
-
     [Fact]
     public async Task CreateProduct_UpdateProduct_DeleteProduct_FullFlow()
     {
         // Arrange
-        var (client, auth) = await TestAuthHelpers.CreateAuthenticatedClientAsync(_factory);
+        var (client, auth) = await TestAuthHelpers.CreateAuthenticatedClientAsync(Factory);
 
         var createDto = new ProductFormDto
         {
@@ -66,7 +61,7 @@ public class ProductCrudTests : IClassFixture<CustomWebApplicationFactory>
     public async Task CreateProduct_WithoutAuthentication_ReturnsUnauthorized()
     {
         // Arrange
-        var client = _factory.CreateClient();  // No authentication
+        var client = Factory.CreateClient();  // No authentication
         var createDto = new ProductFormDto
         {
             Name = "Test Product",
@@ -89,7 +84,7 @@ public class ProductCrudTests : IClassFixture<CustomWebApplicationFactory>
     public async Task CreateProduct_WithInvalidSubcategory_RollsBackTransaction()
     {
         // Arrange
-        var (client, auth) = await TestAuthHelpers.CreateAuthenticatedClientAsync(_factory);
+        var (client, auth) = await TestAuthHelpers.CreateAuthenticatedClientAsync(Factory);
         var uniqueName = $"Test Product {Guid.NewGuid():N}";
         var uniqueSlug = $"test-product-{Guid.NewGuid():N}";
 

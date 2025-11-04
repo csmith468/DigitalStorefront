@@ -19,7 +19,7 @@ public class AzureBlobStorageService : ImageStorageServiceBase
         _blobContainerClient = blobServiceClient.GetBlobContainerClient(config.ContainerName);
     } 
     
-    public override async Task<string> SaveImageAsync(IFormFile file, string subfolder, string? prefix = null)
+    public override async Task<string> SaveImageAsync(IFormFile file, string subfolder, string? prefix = null, CancellationToken ct = default)
     {
         var fileName = PrepareAndValidateFile(file, prefix);
         
@@ -36,7 +36,7 @@ public class AzureBlobStorageService : ImageStorageServiceBase
         await blobClient.UploadAsync(stream, new BlobUploadOptions
         {
             HttpHeaders = blobHttpHeaders
-        });
+        }, ct);
         
         _logger.LogInformation("Uploaded image to Azure Blob Storage: {BlobPath}", blobPath);
         return blobPath;
@@ -49,14 +49,14 @@ public class AzureBlobStorageService : ImageStorageServiceBase
         return blobClient.Uri.ToString();
     }
 
-    public override async Task<bool> DeleteImageAsync(string fileName)
+    public override async Task<bool> DeleteImageAsync(string fileName, CancellationToken ct = default)
     {
         ValidateFileNameStructure(fileName);
 
         try
         {
             var blobClient = _blobContainerClient.GetBlobClient(fileName);
-            var response = await blobClient.DeleteIfExistsAsync();
+            var response = await blobClient.DeleteIfExistsAsync(cancellationToken: ct);
             
             if (response.Value)
                 _logger.LogInformation("Deleted image from Azure Blob Storage: {BlobPath}", fileName);

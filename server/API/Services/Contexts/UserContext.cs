@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using API.Models.Constants;
 
 namespace API.Services;
 
@@ -25,7 +26,7 @@ public class UserContext(IHttpContextAccessor httpContextAccessor) : IUserContex
         }
     }
 
-    public bool IsAdmin() => HasRole("Admin");
+    public bool IsAdmin() => HasRole(RoleNames.Admin);
     
     public bool HasRole(string roleName) => GetRoles().Contains(roleName);
 

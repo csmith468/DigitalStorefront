@@ -1,71 +1,96 @@
 using API.Database;
 using API.Extensions;
 using API.Middleware;
+using Serilog;
 
-var builder = WebApplication.CreateBuilder(args);
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .CreateBootstrapLogger();
 
-// Validate Custom Attributes
-DbAttributeValidator.ValidateAllEntities(typeof(Program).Assembly);
-
-// Framework Services
-builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddHttpContextAccessor();
-
-// Security
-builder.Services.AddCorsConfiguration(builder.Configuration);
-builder.Services.AddJwtAuthentication(builder.Configuration);
-builder.Services.AddAuthorizationPolicies();
-builder.Services.AddSecurityOptions();
-
-// Validation & Documentation
-builder.Services.AddValidation();
-builder.Services.AddSwaggerAuth();
-
-// Infrastructure
-builder.Services.AddHealthChecksConfiguration(builder.Configuration);
-builder.Services.AddRateLimiting(builder.Configuration);
-builder.Services.AddResponseCachingConfiguration(builder.Configuration);
-builder.Services.AddDirectoryBrowser();
-
-// Dependency Injection
-builder.Services.AddAutoRegistration(typeof(Program).Assembly);
-builder.Services.AddManualRegistrations();
-builder.Services.AddImageStorage(builder.Configuration);
-builder.Services.AddMappings();
-
-// Resilience
-builder.Services.AddPollyPolicies();
-
-var app = builder.Build();
-
-// Exception Handling
-app.UseMiddleware<ExceptionMiddleware>();
-
-// Configure HTTP Request Pipeline
-if (app.Environment.IsDevelopment())
+try
 {
-    app.UseCors("DevCors");
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    var builder = WebApplication.CreateBuilder(args);
+
+    builder.Services.AddApplicationInsightsTelemetry();
+    builder.ConfigureSerilog();
+
+    // Validate Custom Attributes
+    DbAttributeValidator.ValidateAllEntities(typeof(Program).Assembly);
+
+    // Framework Services
+    builder.Services.AddControllers();
+    builder.Services.AddEndpointsApiExplorer();
+    builder.Services.AddHttpContextAccessor();
+
+    // Security
+    builder.Services.AddCorsConfiguration(builder.Configuration);
+    builder.Services.AddJwtAuthentication(builder.Configuration);
+    builder.Services.AddAuthorizationPolicies(); 
+    builder.Services.AddSecurityOptions();
+
+    // Validation & Documentation
+    builder.Services.AddValidation();
+    builder.Services.AddSwaggerAuth();
+
+    // Infrastructure
+    builder.Services.AddHealthChecksConfiguration(builder.Configuration);
+    builder.Services.AddRateLimiting(builder.Configuration);
+    builder.Services.AddResponseCachingConfiguration(builder.Configuration);
+    builder.Services.AddDirectoryBrowser();
+
+    // Dependency Injection
+    builder.Services.AddAutoRegistration(typeof(Program).Assembly);
+    builder.Services.AddManualRegistrations();
+    builder.Services.AddImageStorage(builder.Configuration);
+    builder.Services.AddMappings();
+
+    // Resilience
+    builder.Services.AddPollyPolicies();
+
+    var app = builder.Build();
+
+    await app.Services.EnsureRolesSeededAsync();
+
+    // Middleware
+    app.UseMiddleware<CorrelationIdMiddleware>();       // generate/preserve
+    app.UseMiddleware<SerilogEnrichmentMiddleware>();   // add to log context
+    app.UseSerilogRequestLoggingWithEnrichment();       // log HTTP requests
+    app.UseMiddleware<ExceptionMiddleware>();           // catch exceptions (logs include correlation ID)
+
+    // Configure HTTP Request Pipeline
+    if (app.Environment.IsDevelopment())
+    {
+        app.UseCors("DevCors");
+        app.UseSwagger();
+        app.UseSwaggerUI();
+    }
+    else
+    {
+        app.UseCors("ProdCors");
+        app.UseHttpsRedirection();
+    }
+
+    app.UseStaticFiles();
+
+    app.UseRateLimiter();
+    app.UseOutputCache();
+
+    app.UseAuthentication();
+    app.UseAuthorization();
+
+    app.MapHealthCheckEndpoints();
+    app.MapControllers();
+
+    app.Run();
 }
-else
+catch (Exception ex)
 {
-    app.UseCors("ProdCors");
-    app.UseHttpsRedirection();
+    Log.Fatal(ex, "Application terminated unexpectedly");
+}
+finally
+{
+    Log.CloseAndFlush();
 }
 
-app.UseStaticFiles();
-
-app.UseRateLimiter();
-app.UseOutputCache();
-
-app.UseAuthentication();
-app.UseAuthorization();
-
-app.MapHealthCheckEndpoints();
-app.MapControllers();
-
-app.Run();
 
 public partial class Program { }

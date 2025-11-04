@@ -5,8 +5,8 @@ namespace API.Services;
 
 public interface IUserService
 {
-    Task<User?> GetUserByIdAsync(int id);
-    Task<User?> GetUserByUsernameAsync(string username);
+    Task<User?> GetUserByIdAsync(int id, CancellationToken ct = default);
+    Task<User?> GetUserByUsernameAsync(string username, CancellationToken ct = default);
 }
 
 public class UserService : IUserService
@@ -18,13 +18,13 @@ public class UserService : IUserService
         _queryExecutor = queryExecutor;
     }
     
-    public async Task<User?> GetUserByIdAsync(int id)
+    public async Task<User?> GetUserByIdAsync(int id, CancellationToken ct = default)
     {
-        return await _queryExecutor.GetByIdAsync<User>(id);
+        return await _queryExecutor.GetByIdAsync<User>(id, ct);
     }
     
-    public async Task<User?> GetUserByUsernameAsync(string username)
+    public async Task<User?> GetUserByUsernameAsync(string username, CancellationToken ct = default)
     {
-        return (await _queryExecutor.GetByFieldAsync<User>("username", username)).FirstOrDefault();
+        return (await _queryExecutor.GetByFieldAsync<User>("username", username, ct)).FirstOrDefault();
     }
 }
