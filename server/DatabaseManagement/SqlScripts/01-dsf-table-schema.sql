@@ -37,7 +37,7 @@ GO
 IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'role' AND schema_id = SCHEMA_ID('dsf'))
     BEGIN
         CREATE TABLE dsf.role (
-            roleId INT PRIMARY KEY IDENTITY(1,1),
+            roleId INT PRIMARY KEY,
             roleName VARCHAR(50) NOT NULL UNIQUE,
             description VARCHAR(255) NULL,
             createdAt DATETIME2 DEFAULT GETUTCDATE()

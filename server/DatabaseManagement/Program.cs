@@ -11,8 +11,6 @@ using Microsoft.Extensions.Logging;
 
 var apiPath = Path.Combine(Directory.GetCurrentDirectory(), "..", "API");
 var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development";
-Console.WriteLine($"DEBUG: API path: {apiPath}");
-Console.WriteLine($"DEBUG: File exists: {File.Exists(Path.Combine(apiPath, "appsettings.json"))}");
 
 var configuration = new ConfigurationBuilder()
     .SetBasePath(apiPath)
@@ -23,9 +21,6 @@ var configuration = new ConfigurationBuilder()
 var connectionString = args.FirstOrDefault(a => a.Contains("Server="))
                        ?? configuration.GetConnectionString("DefaultConnection")
                        ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found");
-
-Console.WriteLine($"DEBUG: Connection string: {connectionString}");
-Console.WriteLine(); 
 
 var services = new ServiceCollection();
 

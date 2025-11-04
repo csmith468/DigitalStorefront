@@ -1,6 +1,7 @@
 using System.Net;
 using API.Configuration;
 using API.Database;
+using API.Models.Constants;
 using API.Models.DsfTables;
 using API.Models.Dtos;
 using API.Services;
@@ -10,7 +11,6 @@ using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Xunit;
 
 namespace API.Tests.UnitTests;
 
@@ -19,8 +19,6 @@ public class AuthServiceTests
     private readonly Mock<IQueryExecutor> _mockQueryExecutor;
     private readonly Mock<ICommandExecutor> _mockCommandExecutor;
     private readonly Mock<ITransactionManager> _mockTransactionManager;
-    private readonly Mock<ILogger<AuthService>> _mockLogger;
-    private readonly TokenGenerator _tokenGen;
     private readonly PasswordHasher _passwordHasher;
     private readonly Mock<IUserService> _mockUserService;
     private readonly AuthService _authService;
@@ -30,7 +28,7 @@ public class AuthServiceTests
         _mockQueryExecutor = new Mock<IQueryExecutor>();
         _mockCommandExecutor = new Mock<ICommandExecutor>();
         _mockTransactionManager = new Mock<ITransactionManager>();
-        _mockLogger = new Mock<ILogger<AuthService>>();
+        var mockLogger = new Mock<ILogger<AuthService>>();
         _mockUserService = new Mock<IUserService>();
 
         var securityOptions = Microsoft.Extensions.Options.Options.Create(new SecurityOptions
@@ -40,14 +38,14 @@ public class AuthServiceTests
         });
 
         _passwordHasher = new PasswordHasher(securityOptions);
-        _tokenGen = new TokenGenerator(securityOptions);
+        var tokenGen = new TokenGenerator(securityOptions);
 
         _authService = new AuthService(
-            _mockLogger.Object,
+            mockLogger.Object,
             _mockQueryExecutor.Object,
             _mockCommandExecutor.Object,
             _mockTransactionManager.Object,
-            _tokenGen,
+            tokenGen,
             _passwordHasher,
             _mockUserService.Object
         );
@@ -67,23 +65,23 @@ public class AuthServiceTests
             LastName = "User"
         };
 
-        var userId = 123;
-        var roles = new List<string> { "ProductWriter", "ImageManager" };
+        const int userId = 123;
+        var roles = new List<string> { RoleNames.ProductWriter, RoleNames.ImageManager };
 
         _mockQueryExecutor.Setup(d => d.ExistsByFieldAsync<User>("email", registerDto.Email)).ReturnsAsync(false);
         _mockQueryExecutor.Setup(d => d.ExistsByFieldAsync<User>("username", registerDto.Username)).ReturnsAsync(false);
         _mockTransactionManager.Setup(d => d.WithTransactionAsync(It.IsAny<Func<Task>>()))
-            .Callback<Func<Task>>(async action => await action())
+            .Callback<Func<Task>>(action => action())
             .Returns(Task.CompletedTask);
         _mockCommandExecutor.Setup(d => d.InsertAsync(It.IsAny<User>())).ReturnsAsync(userId);
         _mockCommandExecutor.Setup(d => d.InsertAsync(It.IsAny<Auth>())).ReturnsAsync(1);
         _mockQueryExecutor.Setup(d => d.QueryAsync<Role>(It.IsAny<string>(), It.IsAny<object>()))
             .ReturnsAsync(new List<Role>
             {
-                  new() { RoleId = 1, RoleName = "ProductWriter" },
-                  new() { RoleId = 2, RoleName = "ImageManager" }
+                  new() { RoleId = 1, RoleName = RoleNames.ProductWriter },
+                  new() { RoleId = 2, RoleName = RoleNames.ImageManager }
             });
-        _mockCommandExecutor.Setup(d => d.ExecuteAsync(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(1);
+        _mockCommandExecutor.Setup(d => d.BulkInsertAsync(It.IsAny<IEnumerable<UserRole>>())).Returns(Task.CompletedTask);
         _mockQueryExecutor.Setup(d => d.QueryAsync<string>(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(roles);
 
         // Act
@@ -258,17 +256,10 @@ public class AuthServiceTests
     }
 }
 
-internal class TestServiceProvider : IServiceProvider
+internal class TestServiceProvider(IConfiguration configuration) : IServiceProvider
 {
-    private readonly IConfiguration _configuration;
-
-    public TestServiceProvider(IConfiguration configuration)
-    {
-        _configuration = configuration;
-    }
-
     public object? GetService(Type serviceType)
     {
-        return serviceType == typeof(IConfiguration) ? _configuration : null;
+        return serviceType == typeof(IConfiguration) ? configuration : null;
     }
 }

@@ -2,10 +2,11 @@ using System.Net;
 using API.Database;
 using API.Extensions;
 using API.Models;
+using API.Models.Constants;
+using Api.Models.DsfTables;
 using API.Models.DsfTables;
 using API.Models.Dtos;
 using API.Utils;
-using Api.Models.DsfTables;
 
 namespace API.Services;
 
@@ -62,13 +63,14 @@ public class AuthService : IAuthService
             await CreateAuthAsync(userId, userDto.Password);
 
             var roles = (await _queryExecutor.QueryAsync<Role>(
-                "SELECT * FROM dsf.role WHERE roleName in ('ProductWriter', 'ImageManager')")).ToList();
+                "SELECT * FROM dsf.role WHERE roleName IN (@ProductWriter, @ImageManager)",
+                new { RoleNames.ProductWriter, RoleNames.ImageManager }
+            )).ToList();
 
             if (roles.Count != 0)
             {
-                var values = string.Join(",", roles.Select(r => $"({userId}, {r.RoleId})"));
-                var sqlInsertRoles = $"INSERT INTO dsf.UserRole (userId, roleId) VALUES {values}";
-                await _commandExecutor.ExecuteAsync(sqlInsertRoles);
+                var userRoles = roles.Select(r => new UserRole { UserId = userId, RoleId = r.RoleId }).ToList();
+                await _commandExecutor.BulkInsertAsync(userRoles);
             }
             
         });
