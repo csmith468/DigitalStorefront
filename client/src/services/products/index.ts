@@ -1,46 +1,33 @@
-import apiClient from '../api';
+import { fetchers } from '../fetchers';
 import type { Product, ProductDetail, ProductFormRequest } from '../../types/product';
 import type { PaginatedResponse, ProductFilterParams } from '../../types/pagination';
 
-export const getProductById = async (productId: number): Promise<ProductDetail> => {
-  const response = await apiClient.get<ProductDetail>(`/products/${productId}`);
-  return response.data;
-};
+export const getProductById = (productId: number, signal?: AbortSignal): Promise<ProductDetail> =>
+  fetchers.get<ProductDetail>(`/products/${productId}`, { signal });
 
-export const getProductBySlug = async (slug: string): Promise<ProductDetail> => {
-  const response = await apiClient.get<ProductDetail>(`/products/slug/${slug}`);
-  return response.data;
-}
+export const getProductBySlug = (slug: string, signal?: AbortSignal): Promise<ProductDetail> =>
+  fetchers.get<ProductDetail>(`/products/slug/${slug}`, { signal });
 
-export const getProducts = async (params: ProductFilterParams): Promise<PaginatedResponse<Product>> => {
-  const response = await apiClient.get<PaginatedResponse<Product>>('/products', { params });
-  return response.data;
-};
+export const getProducts = (params: ProductFilterParams, signal?: AbortSignal): Promise<PaginatedResponse<Product>> =>
+  fetchers.get<PaginatedResponse<Product>>('/products', { params, signal });
 
-export const getProductsByCategory = async (categorySlug: string, page: number, pageSize: number): Promise<PaginatedResponse<Product>> => {
-  const response = await apiClient.get<PaginatedResponse<Product>>(`/products/category/${categorySlug}`, {
-    params: { page, pageSize }
+export const getProductsByCategory = (categorySlug: string, page: number, pageSize: number, signal?: AbortSignal): Promise<PaginatedResponse<Product>> =>
+  fetchers.get<PaginatedResponse<Product>>(`/products/category/${categorySlug}`, {
+    params: { page, pageSize },
+    signal
   });
-  return response.data;
-};
 
-export const getProductsBySubcategory = async (subcategorySlug: string, page: number, pageSize: number): Promise<PaginatedResponse<Product>> => {
-  const response = await apiClient.get<PaginatedResponse<Product>>(`/products/subcategory/${subcategorySlug}`, {
-    params: { page, pageSize }
+export const getProductsBySubcategory = (subcategorySlug: string, page: number, pageSize: number, signal?: AbortSignal): Promise<PaginatedResponse<Product>> =>
+  fetchers.get<PaginatedResponse<Product>>(`/products/subcategory/${subcategorySlug}`, {
+    params: { page, pageSize },
+    signal
   });
-  return response.data;
-};
 
-export const createProduct = async (product: ProductFormRequest): Promise<ProductDetail> => {
-    const response = await apiClient.post<ProductDetail>('/products', product);
-    return response.data;
-  };
+export const createProduct = (product: ProductFormRequest): Promise<ProductDetail> =>
+  fetchers.post<ProductDetail>('/products', product);
 
-export const updateProduct = async (productId: number, product: ProductFormRequest): Promise<ProductDetail> => {
-  const response = await apiClient.put<ProductDetail>(`/products/${productId}`, product);
-  return response.data;
-};
+export const updateProduct = (productId: number, product: ProductFormRequest): Promise<ProductDetail> =>
+  fetchers.put<ProductDetail>(`/products/${productId}`, product);
 
-export const deleteProduct = async (productId: number): Promise<void> => {
-  await apiClient.delete(`/products/${productId}`);
-};
+export const deleteProduct = (productId: number): Promise<void> =>
+  fetchers.delete(`/products/${productId}`);

@@ -2,12 +2,23 @@ import { describe, it, expect, vi } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import { FormShell } from '../FormShell';
 import { renderWithRouter } from '../../../tests/test-utils';
+interface TestFormData {
+  name: string;
+  email: string;
+  age: number;
+}
 
 describe('FormShell', () => {
+  const initialData: TestFormData = {
+    name: 'Test',
+    email: 'test@test.com',
+    age: 30,
+  };
+
   it('renders form with submit & cancel buttons', () => {
     renderWithRouter(
       <FormShell
-        initial={{ name: '' }}
+        initial={initialData}
         onSubmit={vi.fn()}
         onCancel={vi.fn()}
       >
@@ -26,12 +37,13 @@ describe('FormShell', () => {
   });
 
   it('shows validation error when validation fails on submit', async () => {
+    const onSubmit = vi.fn();
     const validate = (data: { name: string }) => !data.name ? 'Name is required' : null;
 
     const { user } = renderWithRouter(
       <FormShell
         initial={{ name: '' }}
-        onSubmit={vi.fn()}
+        onSubmit={onSubmit}
         onCancel={vi.fn()}
         validate={validate}
       >
@@ -49,6 +61,7 @@ describe('FormShell', () => {
     await user.click(submitButton);
 
     expect(await screen.findByText('Name is required')).toBeInTheDocument();
+    expect(onSubmit).not.toHaveBeenCalled();
   });
 
   it('calls onSubmit when validation passes', async () => {
@@ -56,7 +69,7 @@ describe('FormShell', () => {
 
     const { user } = renderWithRouter(
       <FormShell
-        initial={{ name: 'Test Product' }}
+        initial={initialData}
         validate={(data) => (data.name ? null : 'Required')}
         onSubmit={onSubmit}
         onCancel={vi.fn()}
@@ -69,7 +82,7 @@ describe('FormShell', () => {
     await user.click(submitButton);
 
     await waitFor(() => {
-      expect(onSubmit).toHaveBeenCalledWith({ name: 'Test Product' });
+      expect(onSubmit).toHaveBeenCalledWith(initialData);
     });
   });
 
@@ -78,7 +91,7 @@ describe('FormShell', () => {
 
     const { user } = renderWithRouter(
       <FormShell
-        initial={{ name: '' }}
+        initial={initialData}
         onSubmit={vi.fn()}
         onCancel={onCancel}
       >
@@ -95,7 +108,7 @@ describe('FormShell', () => {
   it('updates field values when updateField is called', async () => {
     const { user } = renderWithRouter(
       <FormShell
-        initial={{ name: '', email: '' }}
+        initial={initialData}
         onSubmit={vi.fn()}
         onCancel={vi.fn()}
       >
@@ -117,4 +130,20 @@ describe('FormShell', () => {
 
     expect(screen.getByTestId('name-display')).toHaveTextContent('New Name');
   });
+
+  it('hides submit button when hideSubmit is true', () => {
+      renderWithRouter(
+        <FormShell
+          initial={initialData}
+          onSubmit={vi.fn()}
+          onCancel={vi.fn()}
+          hideSubmit={true}
+        >
+          {() => <div>Form content</div>}
+        </FormShell>
+      );
+
+      expect(screen.queryByRole('button', { name: /save/i })).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /cancel/i })).toBeInTheDocument();
+    });
 });

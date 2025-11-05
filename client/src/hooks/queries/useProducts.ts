@@ -17,7 +17,7 @@ import { useMutationWithToast } from "../utilities/useMutationWithToast";
 export const useProduct = (productId: number) => {
   return useQuery({
     queryKey: ["product", productId],
-    queryFn: () => getProductById(productId),
+    queryFn: ({ signal }) => getProductById(productId, signal),
     enabled: !!productId,
   });
 };
@@ -25,7 +25,7 @@ export const useProduct = (productId: number) => {
 export const useProductBySlug = (slug: string) => {
   return useQuery({
     queryKey: ["product", slug],
-    queryFn: () => getProductBySlug(slug),
+    queryFn: ({ signal }) => getProductBySlug(slug, signal),
     enabled: !!slug,
   });
 
@@ -34,7 +34,7 @@ export const useProductBySlug = (slug: string) => {
 export const useProducts = (filters: ProductFilterParams) => {
   return useQuery({
     queryKey: ['products', filters],
-    queryFn: () => getProducts(filters)
+    queryFn: ({ signal }) => getProducts(filters, signal)
   });
 };
 
@@ -45,7 +45,7 @@ export const useProductsByCategory = (
 ) => {
   return useQuery({
     queryKey: ['categoryProducts', categorySlug, page, pageSize],
-    queryFn: () => getProductsByCategory(categorySlug, page, pageSize),
+    queryFn: ({ signal }) => getProductsByCategory(categorySlug, page, pageSize, signal),
     enabled: !!categorySlug
   });
 };
@@ -57,7 +57,7 @@ export const useProductsBySubcategory = (
 ) => {
   return useQuery({
     queryKey: ['subcategoryProducts', subcategorySlug, page, pageSize],
-    queryFn: () => getProductsBySubcategory(subcategorySlug, page, pageSize),
+    queryFn: ({ signal }) => getProductsBySubcategory(subcategorySlug, page, pageSize, signal),
     enabled: !!subcategorySlug
   });
 };

@@ -3,7 +3,7 @@ import { XMarkIcon } from '@heroicons/react/20/solid';
 import { FormLabel } from './FormLabel';
 import { formStyles } from './primitive-constants';
 
-interface FormChipInputProps {
+export interface FormChipInputProps {
   id: string;
   label: string;
   required?: boolean;
