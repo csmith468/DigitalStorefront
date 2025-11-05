@@ -1,4 +1,4 @@
-import React from "react";
+import React, { memo } from "react";
 import { formStyles } from "./primitive-constants";
 import { FormLabel } from "./FormLabel";
 
@@ -18,7 +18,7 @@ interface FormSelectProps<T = any> {
   overrideClass?: string;
 }
 
-export function FormSelect<T>({
+function FormSelectComponent<T>({
   id,
   label,
   required = false,
@@ -67,4 +67,6 @@ export function FormSelect<T>({
       </select>
     </div>
   );
-}
+};
+
+export const FormSelect = memo(FormSelectComponent);

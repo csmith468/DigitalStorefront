@@ -3,6 +3,7 @@ import { StarIcon as StarSolid, TrashIcon } from "@heroicons/react/24/outline";
 import { StarIcon as StarOutline } from "@heroicons/react/16/solid";
 import { useSortable} from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { memo } from "react";
 
 interface SortableImageItemProps {
   image: ProductImage;
@@ -108,4 +109,15 @@ export function SortableImageItem({
       )}
     </div>
   );
-}
+};
+
+export const SortableImageItemMemo = memo(SortableImageItem, (prevProps, nextProps) => {
+  return (
+    prevProps.image.productImageId === nextProps.image.productImageId &&
+      prevProps.image.isPrimary === nextProps.image.isPrimary &&
+      prevProps.image.imageUrl === nextProps.image.imageUrl &&
+      prevProps.image.altText === nextProps.image.altText &&
+      prevProps.isLoading === nextProps.isLoading &&
+      prevProps.disabled === nextProps.disabled
+  );
+});

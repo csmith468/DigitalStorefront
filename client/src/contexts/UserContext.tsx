@@ -8,6 +8,7 @@ import { authService } from "../services/auth";
 import { AuthModal } from "../components/auth/AuthModal";
 import toast from "react-hot-toast";
 import { useSearchParams } from "react-router-dom";
+import { ErrorMessages } from "../constants/messages";
 
 export interface UserContextType {
   user: User | null;
@@ -57,7 +58,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({
     if (authParam === 'login' || authParam === 'register') {
       openAuthModal(authParam);
       if (reasonParam === 'session-expired')
-        toast.error('Your session has expired. Please log in again.');
+        toast.error(ErrorMessages.Auth.sessionExpired);
 
       setSearchParams({});
     }

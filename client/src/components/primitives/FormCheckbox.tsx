@@ -1,4 +1,4 @@
-import React from "react";
+import React, { memo } from "react";
 
 interface FormCheckboxProps {
   id: string;
@@ -8,7 +8,7 @@ interface FormCheckboxProps {
   disabled?: boolean;
 }
 
-export function FormCheckbox({
+function FormCheckboxComponent({
   id,
   label,
   checked,
@@ -33,3 +33,5 @@ export function FormCheckbox({
     </label>
   );
 };
+
+export const FormCheckbox = memo(FormCheckboxComponent);

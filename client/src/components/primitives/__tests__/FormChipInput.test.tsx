@@ -168,7 +168,9 @@ describe('FormChipInput', () => {
       const { user, input, onChange } = setup({ value: ['dog', 'cat'] });
 
       input.focus();
-      await user.keyboard('{Backspace}');
+      await waitFor(() => {
+        user.keyboard('{Backspace}');
+      });
 
       expect(onChange).toHaveBeenCalledWith('test-tags', ['dog']);
     });

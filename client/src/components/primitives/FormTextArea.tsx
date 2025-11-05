@@ -1,5 +1,6 @@
 import { formStyles } from './primitive-constants';
 import { FormLabel } from './FormLabel';
+import { memo } from 'react';
 
 interface FormTextAreaProps {
   id: string;
@@ -11,7 +12,7 @@ interface FormTextAreaProps {
   disabled?: boolean;
 }
 
-export function FormTextArea ({ 
+function FormTextAreaComponent ({ 
   id,
   label,
   required = false,
@@ -35,3 +36,5 @@ export function FormTextArea ({
     </div>
   );
 };
+
+export const FormTextArea = memo(FormTextAreaComponent);

@@ -11,6 +11,7 @@ import { createProduct,
 import type { ProductDetail, ProductFormRequest } from "../../types/product";
 import type { ProductFilterParams } from "../../types/pagination";
 import { useMutationWithToast } from "../utilities/useMutationWithToast";
+import { ErrorMessages, SuccessMessages } from "../../constants/messages";
 
 
 // Getters
@@ -71,8 +72,8 @@ export const useCreateProduct = () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
       queryClient.invalidateQueries({ queryKey: ['metadata', 'tags'] });
     },
-    successMessage: 'Product created!',
-    errorMessage: 'Failed to create product. Please try again.',
+    successMessage: SuccessMessages.Product.created,
+    errorMessage: ErrorMessages.Product.createFailed,
   })
 }
 
@@ -87,8 +88,8 @@ export const useUpdateProduct = () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
       queryClient.invalidateQueries({ queryKey: ['metadata', 'tags'] });
     },
-    successMessage: 'Product updated!',
-    errorMessage: 'Failed to update product. Please try again.',
+    successMessage: SuccessMessages.Product.updated,
+    errorMessage: ErrorMessages.Product.updateFailed,
   });
 };
 
@@ -100,7 +101,7 @@ export const useDeleteProduct = () => {
     onSuccess: (_d, _v, queryClient) => {
       queryClient.invalidateQueries({ queryKey: ['products']});
     },
-    successMessage: 'Product deleted!',
-    errorMessage: 'Failed to delete product. Please try again.',
+    successMessage: SuccessMessages.Product.deleted,
+    errorMessage: ErrorMessages.Product.deleteFailed,
   });
 }

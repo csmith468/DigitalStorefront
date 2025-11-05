@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import type { Product } from "../../types/product";
 import { logger } from "../../utils/logger";
 import toast from "react-hot-toast";
+import { memo } from "react";
 
 function ProductCard({ product }: { product: Product }) {
   const formatPrice = (price: number, priceType: string) => {
@@ -103,4 +104,4 @@ function ProductCard({ product }: { product: Product }) {
   );
 }
 
-export default ProductCard;
+export default memo(ProductCard);

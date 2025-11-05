@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { logger } from '../utils/logger';
+import axiosRetry from 'axios-retry';
 
 const API_BASE_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api`;
 
@@ -9,6 +10,23 @@ const apiClient = axios.create({
     'Content-Type': 'application/json'
   },
   timeout: 10000,
+});
+
+axiosRetry(apiClient, {
+  retries: 3,
+  retryDelay: axiosRetry.exponentialDelay,
+  retryCondition: (error) => {
+    const isNetworkError = axiosRetry.isNetworkOrIdempotentRequestError(error);
+    const isServerError = error.response?.status !== undefined && error.response.status >= 500;
+    return isNetworkError || isServerError;
+  },
+  onRetry: (retryCount, error, requestConfig) => {
+    logger.warn(`Retrying request (${retryCount}/3): `, {
+      url: requestConfig.url,
+      method: requestConfig.method,
+      error: error.message
+    });
+  },
 });
 
 apiClient.interceptors.request.use(
