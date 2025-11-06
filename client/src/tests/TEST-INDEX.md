@@ -4,7 +4,7 @@
 ### Hooks
 - useMutationWithToast: success/error toast notifications, callbacks with queryClient, error logging
 - usePagination: page changes, page size changes with reset, custom initialization, resetToFirstPage
-- useUnsavedChanges: 
+- useUnsavedChanges: React Router navigation blocking (useBlocker), browser beforeunload event, proceed/reset functions, edge cases
 ### Components
 - FormShell: render props pattern, validation logic, form submission, field updates
 - ProductForm: form modes (edit/view/try), create/update mutations, business validation rules
@@ -15,8 +15,8 @@
 ## Test Overview
 ### Hooks
 - useMutationWithToast: `src/hooks/utilities/__tests__/useMutationWithToast.test.ts` (5 tests)
-- usePagination: `src/hooks/utilities/__tests__/usePagination.test.ts` (_ tests)
-- useUnsavedChagnes: `src/hooks/utilities/__tests__/useUnsavedChanges.test.ts` (_ tests)
+- usePagination: `src/hooks/utilities/__tests__/usePagination.test.ts` (5 tests)
+- useUnsavedChanges: `src/hooks/utilities/__tests__/useUnsavedChanges.test.ts` (14 tests)
 ### Components
 - FormShell: `src/components/primitives/__tests__/FormShell.test.tsx` (6 tests)
 - ProductForm: `src/components/admin/__tests__/ProductForm.test.tsx` (6 tests)

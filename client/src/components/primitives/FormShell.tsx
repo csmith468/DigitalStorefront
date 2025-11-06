@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { isEqual } from "lodash-es";
-import { UseUnsavedChanges } from "../../hooks/utilities/useUnsavedChanges";
+import { useUnsavedChanges } from "../../hooks/utilities/useUnsavedChanges";
 import { ConfirmModal } from "./ConfirmModal";
 
 type ValidateFn<T> = (data: T) => string | null;
@@ -47,7 +47,7 @@ export function FormShell<T>({
 
   const isDirty = useMemo(() => !isEqual(data, initial), [data, initial]);
 
-  const { showPrompt, proceed, reset } = UseUnsavedChanges({
+  const { showPrompt, proceed, reset } = useUnsavedChanges({
     isDirty: enableUnsavedChangesWarning && isDirty && !hasSubmitted,
   });
 

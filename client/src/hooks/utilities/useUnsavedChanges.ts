@@ -5,7 +5,7 @@ interface UseUnsavedChangesOptions {
   isDirty: boolean;
 }
 
-export function UseUnsavedChanges({ isDirty }: UseUnsavedChangesOptions) {
+export function useUnsavedChanges({ isDirty }: UseUnsavedChangesOptions) {
   // Block browser close/refresh/back button (React Router navigation)
   const blocker = useBlocker(
     ({ currentLocation, nextLocation }) =>
