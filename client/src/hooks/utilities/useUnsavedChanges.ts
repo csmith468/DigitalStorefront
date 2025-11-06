@@ -16,7 +16,7 @@ export function UseUnsavedChanges({ isDirty }: UseUnsavedChangesOptions) {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (isDirty) {
         e.preventDefault();
-        // @ts-ignore - returnValue deprecated but required for beforeunload
+        // returnValue is deprecated but required for beforeunload to work cross-browser
         e.returnValue = '';
       }
     };

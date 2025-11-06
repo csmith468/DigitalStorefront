@@ -31,6 +31,7 @@ function ProductCard({ product }: { product: Product }) {
               src={product.primaryImage.imageUrl}
               alt={product.primaryImage.altText || product.name}
               className="w-full h-full object-cover"
+              loading="lazy"
             />
           ) : (
             <div className="w-full h-full bg-border flex items-center justify-center text-text-secondary">

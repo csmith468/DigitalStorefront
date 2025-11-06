@@ -185,6 +185,7 @@ export function AdminProductList() {
                               src={product.primaryImage.imageUrl}
                               alt={product.name}
                               className="h-12 w-12 object-cover rounded"
+                              loading="lazy"
                             />
                           ) : (
                             <div className="h-12 w-12 bg-gray-200 rounded flex items-center justify-center text-gray-400 text-xs">

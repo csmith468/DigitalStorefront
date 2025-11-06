@@ -16,6 +16,9 @@ axiosRetry(apiClient, {
   retries: 3,
   retryDelay: axiosRetry.exponentialDelay,
   retryCondition: (error) => {
+    if (axios.isCancel(error) || error.code === 'ERR_CANCELED') 
+      return false;
+
     const isNetworkError = axiosRetry.isNetworkOrIdempotentRequestError(error);
     const isServerError = error.response?.status !== undefined && error.response.status >= 500;
     return isNetworkError || isServerError;
@@ -31,7 +34,7 @@ axiosRetry(apiClient, {
 
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     if (token)
       config.headers.Authorization = `Bearer ${token}`;
     return config;
@@ -47,8 +50,13 @@ apiClient.interceptors.response.use(
   (error) => {
     const isAuthEndpoint = error.config?.url?.includes('/auth/');
 
+    if (axios.isCancel(error) || error.code === 'ERR_CANCELED') {
+      logger.debug('Request canceled:', error.config?.url);
+      return Promise.reject(error);
+    }
+
     if (error.response?.status === 401 && !isAuthEndpoint) {
-      localStorage.removeItem('token');
+      sessionStorage.removeItem('token');
       window.location.href = '/?auth=login&reason=session-expired';
     }
     logger.error('Response Error: ', error);

@@ -167,8 +167,8 @@ describe('FormChipInput', () => {
     it('removes last chip on backspace when input is empty', async () => {
       const { user, input, onChange } = setup({ value: ['dog', 'cat'] });
 
-      input.focus();
       await waitFor(() => {
+        input.focus();
         user.keyboard('{Backspace}');
       });
 

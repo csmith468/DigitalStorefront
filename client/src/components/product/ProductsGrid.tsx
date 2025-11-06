@@ -1,5 +1,6 @@
 import type { PaginatedResponse } from "../../types/pagination";
 import type { Product } from "../../types/product";
+import { SectionErrorBoundary } from "../common/SectionErrorBoundary";
 import { LoadingScreen } from "../primitives/LoadingScreen";
 import { PageHeader } from "../primitives/PageHeader";
 import { PaginationWrapper } from "../primitives/PaginationWrapper";
@@ -74,11 +75,16 @@ export function ProductsGrid({
             </p>
           </div>
         ) : (
-          <ul className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-            {products.map((product) => (
-              <ProductCard key={product.productId} product={product} />
-            ))}
-          </ul>
+          <SectionErrorBoundary 
+            sectionName="Product List"
+            fallbackMessage="Failed to display products. Please try again."
+          >
+            <ul className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+              {products.map((product) => (
+                <ProductCard key={product.productId} product={product} />
+              ))}
+            </ul>
+          </SectionErrorBoundary>
         )}
       </PaginationWrapper>
     </div>

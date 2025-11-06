@@ -22,7 +22,7 @@ export interface FormShellProps<T> {
   children: (ctx: {
     data: T;
     setData: React.Dispatch<React.SetStateAction<T>>;
-    updateField: (field: string, value: any) => void;
+    updateField: (field: keyof T, value: T[keyof T]) => void;
   }) => React.ReactNode;
 }
 
@@ -43,15 +43,15 @@ export function FormShell<T>({
 }: FormShellProps<T>) {
   const [data, setData] = useState<T>(initial);
   const [validationError, setValidationError] = useState<string | null>(null);
-  const [hasSumbitted, setHasSubmitted] = useState(false);
+  const [hasSubmitted, setHasSubmitted] = useState(false);
 
   const isDirty = useMemo(() => !isEqual(data, initial), [data, initial]);
 
   const { showPrompt, proceed, reset } = UseUnsavedChanges({
-    isDirty: enableUnsavedChangesWarning && isDirty && !hasSumbitted,
+    isDirty: enableUnsavedChangesWarning && isDirty && !hasSubmitted,
   });
 
-  const updateField = (field: string, value: any) => {
+  const updateField = (field: keyof T, value: T[keyof T]) => {
     setData((prev) => ({ ...prev, [field]: value }));
   };
 
