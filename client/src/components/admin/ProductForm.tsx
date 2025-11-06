@@ -10,6 +10,7 @@ import { FormShell } from "../primitives/FormShell";
 import { OverlappingLabelBox } from "../primitives/OverlappingLabelBox";
 import { FormChipInput } from "../primitives/FormChipInput";
 import { useCallback } from "react";
+import type { PriceType, ProductType } from "../../types/metadata";
 
 export type ProductFormMode = 'edit' | 'view' | 'try';
 
@@ -147,7 +148,7 @@ export function ProductForm ({
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <FormSelect
+                <FormSelect<ProductType>
                   id="productTypeId"
                   label="Product Type"
                   required
@@ -162,7 +163,7 @@ export function ProductForm ({
                 />
               </div>
               <div>
-                <FormSelect
+                <FormSelect<PriceType>
                   id="priceTypeId"
                   label="Price Type"
                   required

@@ -69,4 +69,4 @@ function FormSelectComponent<T>({
   );
 };
 
-export const FormSelect = memo(FormSelectComponent);
+export const FormSelect = memo(FormSelectComponent) as typeof FormSelectComponent;

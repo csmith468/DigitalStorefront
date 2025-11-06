@@ -22,7 +22,7 @@ export interface FormShellProps<T> {
   children: (ctx: {
     data: T;
     setData: React.Dispatch<React.SetStateAction<T>>;
-    updateField: (field: keyof T, value: T[keyof T]) => void;
+    updateField: (field: string, value: any) => void;
   }) => React.ReactNode;
 }
 
@@ -51,8 +51,10 @@ export function FormShell<T>({
     isDirty: enableUnsavedChangesWarning && isDirty && !hasSubmitted,
   });
 
-  const updateField = (field: keyof T, value: T[keyof T]) => {
-    setData((prev) => ({ ...prev, [field]: value }));
+  // NOTE: any type is neded because components pass different types for value
+  // so work-around is to cast it inside the function for type safety
+  const updateField = (field: string, value: any) => {
+    setData((prev) => ({ ...prev, [field as keyof T]: value }));
   };
 
   // Removing error handling - FormShell will just show validation errors, useMutationWithToast will handle server errors

@@ -6,7 +6,6 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "build:analyze": "npm run build && open dist/stats.html",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest",
