@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useUnsavedChanges } from '../useUnsavedChanges';
 import type { Blocker } from 'react-router-dom';
+import { useBlocker } from 'react-router-dom';
 
 type BlockerState = Blocker['state']; // 'unblocked' | 'blocked' | 'proceeding'
 
@@ -9,21 +10,18 @@ const mockProceed = vi.fn();
 const mockReset = vi.fn();
 let mockBlockerState: BlockerState = 'unblocked';
 
-vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual('react-router-dom');
-  return {
-    ...actual,
-    useBlocker: vi.fn(() => ({
-      state: mockBlockerState,
-      proceed: mockProceed,
-      reset: mockReset
-    })),
-  };
-});
+function setBlockerState(state: BlockerState) {
+  mockBlockerState = state;
+  vi.mocked(useBlocker).mockReturnValue({
+    state: mockBlockerState,
+    proceed: mockProceed,
+    reset: mockReset,
+  } as any);
+};
 
 describe('useUnsavedChanges', () => {
   beforeEach(() => {
-    mockBlockerState = 'unblocked';
+    setBlockerState('unblocked');
     mockProceed.mockClear();
     mockReset.mockClear();
 
@@ -37,19 +35,19 @@ describe('useUnsavedChanges', () => {
 
   describe('Router Navigation Blocking', () => {
     it('returns showPrompt as false when blocker is not blocked', () => {
-      mockBlockerState = 'unblocked';
+      setBlockerState('unblocked');
       const { result } = renderHook(() => useUnsavedChanges({ isDirty: true }));
       expect(result.current.showPrompt).toBe(false);
     });
 
     it('returns showPrompt as true when blocker is blocked', () => {
-      mockBlockerState = 'blocked';
+      setBlockerState('blocked');
       const { result } = renderHook(() => useUnsavedChanges({ isDirty: true }));
       expect(result.current.showPrompt).toBe(true);
     });
 
     it('calls blocker.proceed when proceed is called', () => {
-      mockBlockerState = 'blocked';
+      setBlockerState('blocked');
       const { result } = renderHook(() => useUnsavedChanges({ isDirty: true }));
 
       result.current.proceed();
@@ -58,7 +56,7 @@ describe('useUnsavedChanges', () => {
     });
 
     it('calls blocker.reset when reset is called', () => {
-      mockBlockerState = 'blocked';
+      setBlockerState('blocked');
       const { result } = renderHook(() => useUnsavedChanges({ isDirty: true }));
 
       result.current.reset();
@@ -67,7 +65,7 @@ describe('useUnsavedChanges', () => {
     });
 
     it('handles proceed when blocker.proceed is undefined', () => {
-      mockBlockerState = 'blocked';
+      setBlockerState('blocked');
       const { result } = renderHook(() => useUnsavedChanges({ isDirty: true }));
 
       mockProceed.mockReturnValue(undefined);
@@ -76,7 +74,7 @@ describe('useUnsavedChanges', () => {
     });
 
     it('handles reset when blocker.reset is undefined', () => {
-      mockBlockerState = 'blocked';
+      setBlockerState('blocked');
       const { result } = renderHook(() => useUnsavedChanges({ isDirty: true }));
 
       mockReset.mockReturnValue(undefined);

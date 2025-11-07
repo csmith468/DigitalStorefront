@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import { FormShell } from '../FormShell';
-import { renderWithRouter } from '../../../tests/test-utils';
+import { renderWithProviders } from '../../../tests/test-utils';
 interface TestFormData {
   name: string;
   email: string;
@@ -16,7 +16,7 @@ describe('FormShell', () => {
   };
 
   it('renders form with submit & cancel buttons', () => {
-    renderWithRouter(
+    renderWithProviders(
       <FormShell
         initial={initialData}
         onSubmit={vi.fn()}
@@ -40,7 +40,7 @@ describe('FormShell', () => {
     const onSubmit = vi.fn();
     const validate = (data: { name: string }) => !data.name ? 'Name is required' : null;
 
-    const { user } = renderWithRouter(
+    const { user } = renderWithProviders(
       <FormShell
         initial={{ name: '' }}
         onSubmit={onSubmit}
@@ -67,7 +67,7 @@ describe('FormShell', () => {
   it('calls onSubmit when validation passes', async () => {
     const onSubmit = vi.fn();
 
-    const { user } = renderWithRouter(
+    const { user } = renderWithProviders(
       <FormShell
         initial={initialData}
         validate={(data) => (data.name ? null : 'Required')}
@@ -89,7 +89,7 @@ describe('FormShell', () => {
   it('calls onCancel when cancel button is clicked', async () => {
     const onCancel = vi.fn();
 
-    const { user } = renderWithRouter(
+    const { user } = renderWithProviders(
       <FormShell
         initial={initialData}
         onSubmit={vi.fn()}
@@ -106,7 +106,7 @@ describe('FormShell', () => {
   });
 
   it('updates field values when updateField is called', async () => {
-    const { user } = renderWithRouter(
+    const { user } = renderWithProviders(
       <FormShell
         initial={initialData}
         onSubmit={vi.fn()}
@@ -132,14 +132,14 @@ describe('FormShell', () => {
   });
 
   it('hides submit button when hideSubmit is true', () => {
-      renderWithRouter(
+      renderWithProviders(
         <FormShell
           initial={initialData}
           onSubmit={vi.fn()}
           onCancel={vi.fn()}
           hideSubmit={true}
         >
-          {() => <div>Form content</div>}
+          {() => <div>Form Content</div>}
         </FormShell>
       );
 
