@@ -103,6 +103,7 @@ export function AdminProductList() {
           <button
             type="submit"
             aria-label="Search"
+            data-testid="admin-search-button"
             className="px-4 py-2 bg-[var(--color-primary)] text-white rounded-md hover:opacity-90 h-[42px] flex items-center justify-center">
             <MagnifyingGlassIcon className="h-5 w-5" />
           </button>

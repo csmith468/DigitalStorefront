@@ -50,6 +50,7 @@ export const SuccessMessages = {
     created: MessageBuilder.success.action('created', 'Product'),
     updated: MessageBuilder.success.action('updated', 'Product'),
     deleted: MessageBuilder.success.action('deleted', 'Product'),
+    addedToCart: 'Shopping cart functionality coming soon!',
   },
 
   Image: {

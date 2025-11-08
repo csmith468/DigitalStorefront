@@ -99,6 +99,7 @@ export function ProductForm ({
       submitText={submitText}
       disableSubmit={hideSubmit}
       hideSubmit={hideSubmit}
+      enableUnsavedChangesWarning={mode !== 'try'}
       children={({ data: formData, updateField }) => {
 
         const handleSubcategoryToggle = useCallback((subcategoryId: number, checked: boolean) => {

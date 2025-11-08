@@ -1,5 +1,5 @@
 import type { Auth, LoginRequest, RegisterRequest, User } from '../../types/auth';
-import type { UserContextType } from '../../contexts/UserContext';
+import type { UserContextType } from '../../contexts/UserContext.tsx';
 import { vi } from 'vitest';
 
 const userId = 1;

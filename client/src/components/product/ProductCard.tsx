@@ -3,6 +3,7 @@ import type { Product } from "../../types/product";
 import { logger } from "../../utils/logger";
 import toast from "react-hot-toast";
 import { memo } from "react";
+import { SuccessMessages } from "../../constants/messages";
 
 function ProductCard({ product }: { product: Product }) {
   const formatPrice = (price: number, priceType: string) => {
@@ -11,7 +12,7 @@ function ProductCard({ product }: { product: Product }) {
 
   const handleAddToCart = (productId: number) => {
     logger.info(`Add product ${productId} to cart`);
-    toast.success('Product added to cart!');
+    toast.success(SuccessMessages.Product.addedToCart);
   };
 
   const baseBadge = "px-2 py-0.5 rounded-full text-xs font-semibold";

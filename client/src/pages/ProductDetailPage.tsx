@@ -4,6 +4,7 @@ import { useProductBySlug } from '../hooks/queries/useProducts';
 import { LoadingScreen } from '../components/primitives/LoadingScreen';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
+import { SuccessMessages } from '../constants/messages';
 
 export function ProductDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -12,7 +13,7 @@ export function ProductDetailPage() {
   const { data: product, isLoading, error } = useProductBySlug(slug as string);
 
   const handleAddToCart = () => {
-    toast.success('Shopping cart functionality coming soon!');
+    toast.success(SuccessMessages.Product.addedToCart);
   };
 
   const handlePromotional = () => {

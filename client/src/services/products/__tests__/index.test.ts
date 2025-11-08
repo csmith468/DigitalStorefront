@@ -10,9 +10,8 @@ import {
   updateProduct,
   deleteProduct,
 } from '../index';
-import type { ProductDetail, ProductFormRequest, Product } from '../../../types/product';
-import type { PaginatedResponse, ProductFilterParams } from '../../../types/pagination';
-import { mockPaginatedResponse, mockProduct, mockProductDetail, mockProductFormRequest } from '../../../tests/fixtures/product-fixtures';
+import type { ProductFilterParams } from '../../../types/pagination';
+import { mockPaginatedResponse, mockProductDetail, mockProductFormRequest } from '../../../tests/fixtures/product-fixtures';
 
 vi.mock('../../fetchers', () => ({
   fetchers: {
