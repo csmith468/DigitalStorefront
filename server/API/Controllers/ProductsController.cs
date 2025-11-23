@@ -107,7 +107,7 @@ public class ProductsController : ControllerBase
     }
     
     [Authorize(Policy = "CanManageImages")]
-    [EnableRateLimiting("authenticated")]
+    [EnableRateLimiting("expensive")]
     [HttpPost("{productId}/images")]
     public async Task<ActionResult<ProductImageDto>> UploadProductImageAsync(int productId, [FromForm] AddProductImageDto dto, CancellationToken ct)
     {
@@ -115,7 +115,7 @@ public class ProductsController : ControllerBase
     }
 
     [Authorize(Policy = "CanManageImages")]
-    [EnableRateLimiting("authenticated")]
+    [EnableRateLimiting("expensive")]
     [HttpDelete("{productId}/images/{productImageId}")]
     public async Task<ActionResult<bool>> DeleteProductImageAsync(int productId, int productImageId, CancellationToken ct)
     {

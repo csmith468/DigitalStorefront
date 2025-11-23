@@ -26,4 +26,10 @@ public abstract class IntegrationTestBase : IClassFixture<DatabaseFixture>, IAsy
     {
         return Task.CompletedTask;
     }
+
+    // Prevents rate limit state from being shared across tests running in parallel
+    protected void IsolateRateLimitingPerTest()
+    {
+        Client.DefaultRequestHeaders.Add("Test-Partition-Key", Guid.NewGuid().ToString());
+    }
 }

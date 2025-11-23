@@ -11,33 +11,33 @@ namespace API.Tests.IntegrationTests;
 public class RateLimitingTests(DatabaseFixture fixture) : IntegrationTestBase(fixture) 
 {
     [Fact]
-    public async Task AnonymousPolicy_WhenExceeding60Requests_Returns429()
+    public async Task AnonymousPolicy_WhenExceeding30Requests_Returns429()
     {
         // Arrange
         const string url = "/api/metadata/product-types";
         var rateLimitExceeded = false;
         IsolateRateLimitingPerTest();
-        
-        // Act (anonymous policy allows 60 requests/minute)
-        for (var i = 0; i < 65; i++)
+
+        // Act (anonymous policy allows 30 requests/minute)
+        for (var i = 0; i < 35; i++)
         {
             var response = await Client.GetAsync(url);
             if (response.StatusCode == HttpStatusCode.TooManyRequests)
             {
                 rateLimitExceeded = true;
-                
+
                 // Assert
-                i.Should().Be(60, "Rate limit should apply on 60th request");
+                i.Should().Be(30, "Rate limit should apply on 30th request");
                 response.Headers.Should().ContainKey("Retry-After");
                 break;
             }
         }
-        
-        rateLimitExceeded.Should().BeTrue("Anonymous rate limit should block requests after 60");
+
+        rateLimitExceeded.Should().BeTrue("Anonymous rate limit should block requests after 30");
     }
 
     [Fact]
-    public async Task AuthPolicy_WhenExceeding10LoginAttempts_Returns429()
+    public async Task AuthPolicy_WhenExceeding5LoginAttempts_Returns429()
     {
         // Arrange
         const string url = "/api/auth/login";
@@ -45,9 +45,9 @@ public class RateLimitingTests(DatabaseFixture fixture) : IntegrationTestBase(fi
         var rateLimitExceeded = false;
         var successfulAttempts = 0;
         IsolateRateLimitingPerTest();
-        
-        // Act (auth policy allows 10 requests/minute)
-        for (var i = 0; i < 15; i++)
+
+        // Act (auth policy allows 5 requests/minute)
+        for (var i = 0; i < 10; i++)
         {
             var response = await Client.PostAsJsonAsync(url, loginDto);
             if (response.StatusCode == HttpStatusCode.TooManyRequests)
@@ -56,12 +56,12 @@ public class RateLimitingTests(DatabaseFixture fixture) : IntegrationTestBase(fi
                 response.Headers.Should().ContainKey("Retry-After");
                 break;
             }
-            
+
             successfulAttempts++;
         }
-        
-        successfulAttempts.Should().Be(10, "Rate limit should apply on 10th request");
-        rateLimitExceeded.Should().BeTrue("Anonymous rate limit should block requests after 10");
+
+        successfulAttempts.Should().Be(5, "Rate limit should apply on 5th request");
+        rateLimitExceeded.Should().BeTrue("Auth rate limit should block requests after 5");
     }
 
     [Fact]
@@ -70,7 +70,7 @@ public class RateLimitingTests(DatabaseFixture fixture) : IntegrationTestBase(fi
         // Arrange
         IsolateRateLimitingPerTest();
         var (client, _) = await TestAuthHelpers.CreateAuthenticatedClientAsync(Factory);
-        
+
         // Act (token bucket allows burst of 100 requests)
         var successfulRequests = 0;
         var rateLimitExceeded = false;
@@ -84,19 +84,41 @@ public class RateLimitingTests(DatabaseFixture fixture) : IntegrationTestBase(fi
                 rateLimitExceeded = true;
                 break;
             }
-            
+
             if (response.IsSuccessStatusCode || response.StatusCode == HttpStatusCode.Unauthorized)
                 successfulRequests++;
         }
-        
+
         // Assert
         successfulRequests.Should().BeGreaterThanOrEqualTo(100,
             $"Token bucket should allow burst of 100 request, got {successfulRequests}");
         rateLimitExceeded.Should().BeTrue("Should eventually hit rate limit after token bucket is exhausted");
     }
 
-    private void IsolateRateLimitingPerTest()
+    [Fact]
+    public async Task GlobalLimiter_WhenExceeding150Requests_Returns429()
     {
-        Client.DefaultRequestHeaders.Add("Test-Partition-Key", Guid.NewGuid().ToString());
+        // Arrange
+        const string url = "/api/metadata/product-types";
+        var rateLimitExceeded = false;
+        IsolateRateLimitingPerTest();
+
+        // Act (global limiter allows 150 requests/minute across ALL endpoints)
+        for (var i = 0; i < 155; i++)
+        {
+            var response = await Client.GetAsync(url);
+            if (response.StatusCode == HttpStatusCode.TooManyRequests)
+            {
+                rateLimitExceeded = true;
+
+                // Assert - should hit global limit (150) before we reach 155
+                i.Should().BeGreaterThanOrEqualTo(30, "Should allow at least 30 requests (anonymous policy)");
+                i.Should().BeLessThanOrEqualTo(150, "Global limit should block at or before 150 requests");
+                response.Headers.Should().ContainKey("Retry-After");
+                break;
+            }
+        }
+
+        rateLimitExceeded.Should().BeTrue("Global rate limit should eventually block requests");
     }
 }

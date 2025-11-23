@@ -180,7 +180,7 @@ export function Header({ mobileMenuOpen, setMobileMenuOpen }: HeaderProps) {
           </div>
 
         {mobileSearchOpen && (
-          <div className="md:hidden mt-4 pl-16">
+          <div className="lg:hidden mt-4 pl-16">
             <form onSubmit={handleSearch} className="flex gap-2">
               <input
                 type="text"

@@ -76,8 +76,8 @@ public class FirstTimeSetup
         var (passwordHash, passwordSalt) = hasher.HashPassword(password);
 
         var userId = await connection.ExecuteScalarAsync<int>(
-            @"INSERT INTO dsf.[user] (username, firstName, lastName, email, isActive, isAdmin, createdAt)
-            VALUES (@username, 'Admin', 'User', @username, 1, 1, GETUTCDATE());
+            @"INSERT INTO dsf.[user] (username, firstName, lastName, isActive, createdAt)
+            VALUES (@username, 'Admin', 'User', 1, GETUTCDATE());
             SELECT CAST(SCOPE_IDENTITY() AS INT);",
             new { username }
         );

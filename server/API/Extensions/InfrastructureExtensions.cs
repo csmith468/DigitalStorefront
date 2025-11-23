@@ -27,15 +27,28 @@ public static class InfrastructureExtensions
             .BindConfiguration(RateLimitingOptions.SectionName)
             .ValidateDataAnnotations()
             .ValidateOnStart();
-        
-        var rateLimitOptions = config.GetSection(RateLimitingOptions.SectionName).Get<RateLimitingOptions>() 
+
+        var rateLimitOptions = config.GetSection(RateLimitingOptions.SectionName).Get<RateLimitingOptions>()
                                ?? throw new InvalidOperationException("RateLimiting configuration is missing.");
-        
+
         services.AddRateLimiter(options =>
         {
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
-            // 5 requests per minute per IP to prevent brute force attacks
+            // Global limit - absolute maximum requests per IP regardless of endpoint
+            // Prevents a single IP from overwhelming the server across all endpoints
+            options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+                RateLimitPartition.GetSlidingWindowLimiter(
+                    partitionKey: GetClientIdentifier(context),
+                    factory: _ => new SlidingWindowRateLimiterOptions
+                    {
+                        Window = TimeSpan.FromMinutes(rateLimitOptions.Global.WindowMinutes),
+                        PermitLimit = rateLimitOptions.Global.PermitLimit,
+                        SegmentsPerWindow = 6,
+                        QueueLimit = 0
+                    }));
+
+            // Auth endpoints - strict limit to prevent brute force attacks
             options.AddPolicy("auth", context =>
                 RateLimitPartition.GetFixedWindowLimiter(
                     partitionKey: GetClientIdentifier(context),
@@ -72,6 +85,17 @@ public static class InfrastructureExtensions
                         Window = TimeSpan.FromMinutes(rateLimitOptions.Anonymous.WindowMinutes),
                         PermitLimit = rateLimitOptions.Anonymous.PermitLimit,
                         SegmentsPerWindow = rateLimitOptions.Anonymous.SegmentsPerWindow,
+                        QueueLimit = 0
+                    }));
+
+            // Expensive operations - stricter limits for resource-intensive endpoints
+            options.AddPolicy("expensive", context =>
+                RateLimitPartition.GetFixedWindowLimiter(
+                    partitionKey: GetClientIdentifier(context),
+                    factory: _ => new FixedWindowRateLimiterOptions
+                    {
+                        Window = TimeSpan.FromMinutes(rateLimitOptions.ExpensiveOperations.WindowMinutes),
+                        PermitLimit = rateLimitOptions.ExpensiveOperations.PermitLimit,
                         QueueLimit = 0
                     }));
         });

@@ -15,6 +15,7 @@ public class AuthFlowTests(DatabaseFixture fixture) : IntegrationTestBase(fixtur
     public async Task RegisterUser_WithValidData_ReturnsCreatedWithToken()
     {
         // Arrange
+        IsolateRateLimitingPerTest();
         var registerDto = new UserRegisterDto
         {
             Username = $"testUser_{Guid.NewGuid():N}",
@@ -43,6 +44,7 @@ public class AuthFlowTests(DatabaseFixture fixture) : IntegrationTestBase(fixtur
     public async Task RegisterUser_WithDuplicateUsername_ReturnsBadRequest()
     {
         // Arrange
+        IsolateRateLimitingPerTest();
         var username = $"duplicate_{Guid.NewGuid():N}";
         const string password = "SecurePass123!";
         var registerDto1 = new UserRegisterDto
@@ -78,6 +80,7 @@ public class AuthFlowTests(DatabaseFixture fixture) : IntegrationTestBase(fixtur
     public async Task LoginUser_WithValidCredentials_ReturnsToken()
     {
         // Arrange - Register user first
+        IsolateRateLimitingPerTest();
         var username = $"loginTest_{Guid.NewGuid():N}";
         const string password = "CorrectPassword123!";
 
@@ -90,7 +93,12 @@ public class AuthFlowTests(DatabaseFixture fixture) : IntegrationTestBase(fixtur
             FirstName = "Test",
             LastName = "User"
         };
-        await Client.PostAsJsonAsync("/api/auth/register", registerDto);
+
+        // Make sure registration completes successfully before attempting to log in
+        var registerResponse = await Client.PostAsJsonAsync("/api/auth/register", registerDto);
+        registerResponse.StatusCode.Should().Be(HttpStatusCode.Created);
+        var registerAuthResponse = await registerResponse.Content.ReadFromJsonAsync<AuthResponseDto>();
+        registerAuthResponse.Should().NotBeNull();
 
         var loginDto = new UserLoginDto
         {
@@ -114,6 +122,7 @@ public class AuthFlowTests(DatabaseFixture fixture) : IntegrationTestBase(fixtur
     public async Task LoginUser_WithInvalidPassword_ReturnsUnauthorized()
     {
         // Arrange - Register user with one password, try to log in with another
+        IsolateRateLimitingPerTest();
         var username = $"pwdtest_{Guid.NewGuid():N}";
         const string correctPassword = "CorrectPassword123!";
         const string wrongPassword = "WrongPassword123!";

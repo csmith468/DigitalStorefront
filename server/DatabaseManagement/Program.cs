@@ -9,7 +9,11 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-var apiPath = Path.Combine(Directory.GetCurrentDirectory(), "..", "API");
+var currentDir = Directory.GetCurrentDirectory();
+var apiPath = currentDir.EndsWith("DatabaseManagement")
+    ? Path.Combine(currentDir, "..", "API") // Local: DatabaseManagement/../API
+    : Path.Combine(currentDir, "API");      // CI: server/API
+
 var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development";
 
 var configuration = new ConfigurationBuilder()
@@ -37,7 +41,12 @@ services.AddSingleton<IStoragePathProvider>(new ConsoleStoragePathProvider(apiWw
 services.AddScoped<IImageStorageService, LocalImageStorageService>();
 
 var serviceProvider = services.BuildServiceProvider();
-var userInteraction = new ConsoleUserInteraction();
+
+var hasAdminEnvVars = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("ADMIN_USERNAME"))
+                      && !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("ADMIN_PASSWORD"));
+IUserInteraction userInteraction = hasAdminEnvVars
+    ? new AutoUserInteraction()
+    : new ConsoleUserInteraction();
 
 var runner = new DatabaseManagementRunner(args, serviceProvider, connectionString, configuration, userInteraction);
 var exitCode = await runner.RunAsync();

@@ -13,7 +13,6 @@ IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'user' AND schema_id = SCHE
             lastName NVARCHAR(50) NULL,
             email NVARCHAR(50) NULL,
             isActive BIT NOT NULL DEFAULT 1,
-            isAdmin BIT NOT NULL DEFAULT 0,
             createdAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
             updatedAt DATETIME2 NULL
         );

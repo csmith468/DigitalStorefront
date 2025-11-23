@@ -1,4 +1,4 @@
-# TESTS
+# NOTABLE TESTS
 
 ## Purpose of Tests
 ### Hooks
@@ -11,6 +11,8 @@
 - ProtectedRoute: loading states, unauthenticated redirects, authenticated access, state transitions
 - AdminProductList: RBAC - button visibility based on user roles and demo products
 - FormChipInput: comprehensive autocomplete chip input testing (rendering, adding chips, removing chips, autocomplete, keyboard navication, ARIA attributes, disabled state, click to focus)
+### Service Layer
+- Product Service and Auth Service
 
 ## Test Overview
 ### Hooks
@@ -23,6 +25,9 @@
 - ProtectedRoute: `src/components/auth/__tests__/ProtectedRoute.test.tsx` (6 tests)
 - AdminProductList: `src/components/admin/__tests__/AdminProductList.test.tsx` (4 tests)
 - FormChipInput: `src/components/primitives/__tests__/FormChipInput.test.tsx` (47 tests)
+### Service Layer
+- Product Service: `src/services/products/index.test.ts` (13 tests)
+- Auth Service: `src/services/auth.test.ts` (9 tests)
 
 ## Run tests
 ```bash
@@ -33,3 +38,9 @@ npm run test:ui       # browser UI
 
 ## Future
 - E2E tests with Playwright (login flow, product creation)
+
+## Testing Patterns & Best Practices
+
+### Fixtures
+- Located in `src/tests/fixtures/`
+- Use `createMock*` helpers for variations

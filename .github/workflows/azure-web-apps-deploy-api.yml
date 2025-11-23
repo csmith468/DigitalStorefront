@@ -5,14 +5,35 @@ on:
     branches: [main]
     paths:
       - 'server/API/**'
+      - 'server/DatabaseManagement/**'
   workflow_dispatch: 
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
 
-    steps: 
+    steps:
       - uses: actions/checkout@v3
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Ensure Azure SQL Firewall Allows Azure Services
+        run: |
+          az sql server firewall-rule create \
+            --resource-group digital-storefront-rg \
+            --server digital-storefront-server \
+            --name AllowAzureServices \
+            --start-ip-address 0.0.0.0 \
+            --end-ip-address 0.0.0.0
+        continue-on-error: true
 
       - name: Setup .NET 
         uses: actions/setup-dotnet@v3
@@ -31,6 +52,13 @@ jobs:
         run: dotnet test --no-build --configuration Release --verbosity normal --filter "Skip!=CI"
         working-directory: ./server
 
+      - name: Run Database Migrations
+        run: dotnet run --project DatabaseManagement --migrate "${{ secrets.AZURE_SQL_CONNECTION_STRING }}"
+        working-directory: ./server
+        env:
+          ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+
       - name: Publish
         run: dotnet publish --no-build --configuration Release --output ./publish
         working-directory: ./server/API
@@ -39,5 +67,4 @@ jobs:
         uses: azure/webapps-deploy@v2
         with:
           app-name: 'digital-storefront-api'
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: ./server/API/publish
