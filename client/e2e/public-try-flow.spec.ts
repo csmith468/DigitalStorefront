@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { clickTryItOut, fillProductForm, generateTestProduct, navigateToAdminProducts } from './helpers/products';
+import { clickTryItOut, fillProductForm, generateTestProduct } from './helpers/products';
 
 test.describe('Public Try-It-Out Flow', () => {
   test('should allow unauthenticated users to try product form without saving', async ({ page }) => {
