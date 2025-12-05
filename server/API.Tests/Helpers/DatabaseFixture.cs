@@ -24,7 +24,8 @@ public class DatabaseFixture : IAsyncLifetime
     // Called after tests complete (stop and remove container)
     public async Task DisposeAsync()
     {
-        await Factory.DisposeAsync();
+        if (Factory != null)
+            await Factory.DisposeAsync();
         await _testDatabaseManager.DisposeAsync();
     }
 }

@@ -58,6 +58,7 @@ jobs:
         env:
           ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME }}
           ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+          AppSettings__PasswordKey: ${{ secrets.APPSETTINGS_PASSWORD_KEY }}
 
       - name: Publish
         run: dotnet publish --no-build --configuration Release --output ./publish

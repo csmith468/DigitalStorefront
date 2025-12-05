@@ -75,12 +75,9 @@ public class TestDatabaseManager : IAsyncDisposable
     
     private static IConfiguration CreateApiConfiguration()
     {
-        var apiPath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "API");
-
         return new ConfigurationBuilder()
-            .SetBasePath(apiPath)
-            .AddJsonFile("appsettings.json", optional: false)
-            .AddJsonFile("appsettings.Development.json", optional: true)
+            .SetBasePath(AppContext.BaseDirectory)
+            .AddJsonFile("appsettings.Test.json", optional: false)
             .Build();
     }
 }

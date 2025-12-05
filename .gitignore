@@ -66,5 +66,4 @@ API/appsettings.Production.json
 server/API/wwwroot/images/*
 client/package-lock.json
 server/API/appsettings.Development.json
-server/API/appsettings.json
 coverage.json

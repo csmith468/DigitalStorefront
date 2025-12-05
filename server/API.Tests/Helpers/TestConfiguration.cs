@@ -19,8 +19,6 @@ public static class TestConfiguration
     
     public static string TestAdminUsername => GetRequiredValue("TestAdmin:Username");
     public static string TestAdminPassword => GetRequiredValue("TestAdmin:Password");
-    
-    public static IConfiguration CreateTestConfiguration() => _configuration;
 
     private static string GetRequiredValue(string key)
     {
