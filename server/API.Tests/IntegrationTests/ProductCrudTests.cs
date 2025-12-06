@@ -32,7 +32,7 @@ public class ProductCrudTests(DatabaseFixture fixture) : IntegrationTestBase(fix
         };
 
         // Act & Assert - Create
-        var createResponse = await client.PostAsJsonAsync("/api/products", createDto);
+        var createResponse = await client.PostWithIdempotencyAsync("/api/products", createDto);
         createResponse.StatusCode.Should().Be(HttpStatusCode.Created);
         var created = await createResponse.Content.ReadFromJsonAsync<ProductDetailDto>();
         created.Should().NotBeNull();
@@ -44,13 +44,14 @@ public class ProductCrudTests(DatabaseFixture fixture) : IntegrationTestBase(fix
 
         // Act & Assert - Update
         createDto.Name = "Updated Product Name";
-        var updateResponse = await client.PutAsJsonAsync($"/api/products/{created.ProductId}", createDto);
+        createDto.UpdatedAt = created!.UpdatedAt;
+        var updateResponse = await client.PutWithIdempotencyAsync($"/api/products/{created.ProductId}", createDto);
         updateResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         var updated = await updateResponse.Content.ReadFromJsonAsync<ProductDetailDto>();
         updated!.Name.Should().Be("Updated Product Name");
 
         // Act & Assert - Delete
-        var deleteResponse = await client.DeleteAsync($"/api/products/{created.ProductId}");
+        var deleteResponse = await client.DeleteWithIdempotencyAsync($"/api/products/{created.ProductId}");
         deleteResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
         // Verify Deleted
@@ -77,7 +78,7 @@ public class ProductCrudTests(DatabaseFixture fixture) : IntegrationTestBase(fix
         };
 
         // Act
-        var response = await client.PutAsJsonAsync($"/api/products/{nonExistentProductId}", updateDto);
+        var response = await client.PutWithIdempotencyAsync($"/api/products/{nonExistentProductId}", updateDto);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
@@ -104,7 +105,7 @@ public class ProductCrudTests(DatabaseFixture fixture) : IntegrationTestBase(fix
         };
 
         // Act
-        var createResponse = await client.PostAsJsonAsync("/api/products", createDto);
+        var createResponse = await client.PostWithIdempotencyAsync("/api/products", createDto);
 
         // Assert - Request should fail
         createResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest);

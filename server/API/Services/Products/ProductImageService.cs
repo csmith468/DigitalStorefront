@@ -228,7 +228,7 @@ public class ProductImageService : IProductImageService
                 {
                     var image = imageDict[orderedImageIds[i]];
                     image.DisplayOrder = i;
-                    await _commandExecutor.UpdateAsync(image, ct);
+                    await _commandExecutor.UpdateAsync(image, null, ct);
                 }
             }, ct);
 
@@ -263,7 +263,7 @@ public class ProductImageService : IProductImageService
         for (var i = 0; i < images.Count; i++)
         {
             images[i].DisplayOrder = i;
-            await _commandExecutor.UpdateAsync(images[i], ct);
+            await _commandExecutor.UpdateAsync(images[i], null, ct);
         }
     }
 

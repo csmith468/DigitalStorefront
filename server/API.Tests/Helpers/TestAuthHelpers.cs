@@ -41,4 +41,21 @@ public static class TestAuthHelpers
 
         return (client, authResponse);
     }
+
+    public static Task<HttpResponseMessage> PostWithIdempotencyAsync<T>(this HttpClient client, string url, T content)
+        => SendWithIdempotencyAsync(client, HttpMethod.Post, url, JsonContent.Create(content));
+
+    public static Task<HttpResponseMessage> PutWithIdempotencyAsync<T>(this HttpClient client, string url, T content)
+        => SendWithIdempotencyAsync(client, HttpMethod.Put, url, JsonContent.Create(content));
+
+    public static Task<HttpResponseMessage> DeleteWithIdempotencyAsync(this HttpClient client, string url)
+        => SendWithIdempotencyAsync(client, HttpMethod.Delete, url);
+
+    private static async Task<HttpResponseMessage> SendWithIdempotencyAsync(
+        HttpClient client, HttpMethod method, string url, HttpContent? content = null)
+    {
+        var request = new HttpRequestMessage(method, url) { Content = content };
+        request.Headers.Add("Idempotency-Key", Guid.NewGuid().ToString());
+        return await client.SendAsync(request);
+    }
 }

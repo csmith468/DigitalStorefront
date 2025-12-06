@@ -31,7 +31,7 @@ public class ProductAuthorizationTests(DatabaseFixture fixture) : IntegrationTes
         };
 
         // Act
-        var response = await client.PutAsJsonAsync($"/api/products/{demoProductId}", updateDto);
+        var response = await client.PutWithIdempotencyAsync($"/api/products/{demoProductId}", updateDto);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
@@ -47,12 +47,12 @@ public class ProductAuthorizationTests(DatabaseFixture fixture) : IntegrationTes
         const int demoProductId = 1;
 
         // Act
-        var response = await client.DeleteAsync($"/api/products/{demoProductId}");
+        var response = await client.DeleteWithIdempotencyAsync($"/api/products/{demoProductId}");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
-    
+
     [Fact]
     public async Task CreateProduct_WhenDemoModeAndExceedsLimit_ReturnsUnauthorized()
     {
@@ -77,14 +77,14 @@ public class ProductAuthorizationTests(DatabaseFixture fixture) : IntegrationTes
             createDto.Name = $"Test Product {Guid.NewGuid():N}";
             createDto.Slug = $"test-product-{Guid.NewGuid():N}";
 
-            var response = await client.PostAsJsonAsync("/api/products", createDto);
+            var response = await client.PostWithIdempotencyAsync("/api/products", createDto);
             response.StatusCode.Should().Be(HttpStatusCode.Created, $"Product {i} should be created successfully");
         }
 
         // Try to create a 5th product
         createDto.Name = $"Test Product {Guid.NewGuid():N}";
         createDto.Slug = $"test-product-{Guid.NewGuid():N}";
-        var fourthResponse = await client.PostAsJsonAsync("/api/products", createDto);
+        var fourthResponse = await client.PostWithIdempotencyAsync("/api/products", createDto);
 
         // Assert - 5th product should be rejected
         fourthResponse.StatusCode.Should().Be(HttpStatusCode.Unauthorized);

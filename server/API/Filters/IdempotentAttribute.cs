@@ -68,7 +68,7 @@ public class IdempotentAttribute : Attribute, IAsyncActionFilter
             {
                 await idempotencyService.StoreAsync(key);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 // Unique constraint violation - not an issue
             }

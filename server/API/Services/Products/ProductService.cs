@@ -176,7 +176,7 @@ public class ProductService : IProductService
             product.ProductId = await _commandExecutor.InsertAsync(product, ct);
 
             product.Sku = GenerateSku(product.ProductId, product.Slug);
-            await _commandExecutor.UpdateFieldAsync<Product>(product.ProductId, "sku", product.Sku, ct);
+            await _commandExecutor.UpdateFieldAsync<Product>(product.ProductId, "sku", product.Sku, dto.UpdatedAt, ct);
 
             await SetProductSubcategoriesAsync(product.ProductId, dto.SubcategoryIds, ct);
 
@@ -206,7 +206,7 @@ public class ProductService : IProductService
         await _transactionManager.WithTransactionAsync(async () =>
         {
             _mapper.Map(dto, product);
-            await _commandExecutor.UpdateAsync(product, ct);
+            await _commandExecutor.UpdateAsync(product, dto.UpdatedAt, ct);
 
             await SetProductSubcategoriesAsync(productId, dto.SubcategoryIds, ct);
 

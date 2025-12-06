@@ -186,6 +186,40 @@ JWT-based authentication with a flexible role-based access control (RBAC) system
 
 This enables the portfolio demo use case: visitors can see the full admin experience, registered users can create their own products, and demo data stays protected.
 
+### Data Integrity
+
+**Optimistic Concurrency** prevents lost updates when two users edit the same record:
+
+```csharp
+// Before any update, verify the record hasn't changed
+public async Task UpdateAsync<T>(T obj, DateTime? expectedUpdatedAt, CancellationToken ct)
+{
+    await VerifyConcurrencyAsync<T>(id, expectedUpdatedAt, ct); // Throws if mismatch
+    // ... proceed with update
+}
+
+// VerifyConcurrencyAsync compares timestamps (truncated to ms for JSON precision)
+if (currentUpdatedAt != expectedUpdatedAt)
+    throw new ConcurrencyException("Record was modified by another user"); // 409 Conflict
+```
+
+The frontend receives `UpdatedAt` with each record and sends it back on update. If it doesn't match, the API returns 409 Conflict and the user is prompted to refresh.
+
+**Idempotency Keys** prevent duplicate processing on retries:
+
+```csharp
+[Authorize(Policy = "CanManageProducts")]
+[Idempotent] // Custom action filter - requires Idempotency-Key header
+[HttpPost]
+public async Task<ActionResult<ProductDetailDto>> CreateProduct(ProductFormDto dto)
+{
+    // If Idempotency-Key header was seen before, returns stored result
+    // Otherwise processes normally and stores result for future duplicates
+}
+```
+
+The frontend axios interceptor auto-generates a UUID for each mutation and sends it via `Idempotency-Key` header. On network retry or accidental double-submit, the server returns the original response instead of creating duplicates. Keys expire after 24 hours and are cleaned up by a background service.
+
 ### Observability
 
 - **Correlation IDs** - Every request gets a unique ID that flows through all logs
