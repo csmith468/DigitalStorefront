@@ -24,6 +24,7 @@ public class PeriodicCleanupService : BackgroundService
             try
             {
                 await CleanupUnusedTagsAsync(stoppingToken);
+                await CleanupExpiredIdempotencyKeysAsync(stoppingToken);
             }
             catch (Exception ex)
             {
@@ -44,5 +45,17 @@ public class PeriodicCleanupService : BackgroundService
             "DELETE FROM dbo.Tag WHERE tagId NOT IN (SELECT DISTINCT tagId FROM dbo.productTag)", null, ct);
         if (deletedCount > 0)
             _logger.LogInformation("Cleaned up {Count} unused tags", deletedCount);
+    }
+
+    private async Task CleanupExpiredIdempotencyKeysAsync(CancellationToken ct)
+    {
+        using var scope = _serviceProvider.CreateScope();
+        var commandExecutor = scope.ServiceProvider.GetRequiredService<ICommandExecutor>();
+
+        var deletedCount = await commandExecutor.ExecuteAsync(
+            "DELETE FROM dbo.idempotencyKey WHERE expiresAt < GETUTCDATE()", null, ct);
+        if (deletedCount > 0)
+            _logger.LogInformation("Cleaned up {Count} expired idempotency keys", deletedCount);
+            
     }
 }

@@ -83,6 +83,7 @@ public class ProductsController : ControllerBase
     }
 
     [Authorize(Policy = "CanManageProducts")]
+    [Idempotent]
     [EnableRateLimiting("authenticated")]
     [HttpPost]
     public async Task<ActionResult<ProductDetailDto>> CreateProductAsync([FromBody] ProductFormDto dto, CancellationToken ct)
@@ -92,6 +93,7 @@ public class ProductsController : ControllerBase
 
     [Authorize(Policy = "CanManageProducts")]
     [RequireProductAccess]
+    [Idempotent]
     [EnableRateLimiting("authenticated")]
     [HttpPut("{productId}")]
     public async Task<ActionResult<ProductDetailDto>> UpdateProductAsync(int productId, [FromBody] ProductFormDto dto, CancellationToken ct)
@@ -102,6 +104,7 @@ public class ProductsController : ControllerBase
     // Considered [Authorize(Policy = "RequireAdmin")] but will allow users to delete non-demo products they create
     [Authorize(Policy = "CanManageProducts")]
     [RequireProductAccess]
+    [Idempotent]
     [EnableRateLimiting("authenticated")]
     [HttpDelete("{productId}")]
     public async Task<ActionResult<bool>> DeleteProductAsync(int productId, CancellationToken ct)
@@ -111,6 +114,7 @@ public class ProductsController : ControllerBase
     
     [Authorize(Policy = "CanManageImages")]
     [RequireProductAccess]
+    [Idempotent]
     [EnableRateLimiting("expensive")]
     [HttpPost("{productId}/images")]
     public async Task<ActionResult<ProductImageDto>> UploadProductImageAsync(int productId, [FromForm] AddProductImageDto dto, CancellationToken ct)
@@ -120,6 +124,7 @@ public class ProductsController : ControllerBase
 
     [Authorize(Policy = "CanManageImages")]
     [RequireProductAccess]
+    [Idempotent]
     [EnableRateLimiting("expensive")]
     [HttpDelete("{productId}/images/{productImageId}")]
     public async Task<ActionResult<bool>> DeleteProductImageAsync(int productId, int productImageId, CancellationToken ct)
@@ -129,6 +134,7 @@ public class ProductsController : ControllerBase
 
     [Authorize(Policy = "CanManageImages")]
     [RequireProductAccess]
+    [Idempotent]
     [EnableRateLimiting("authenticated")]
     [HttpPut("{productId}/images/{productImageId}/set-primary")]
     public async Task<ActionResult<bool>> SetProductImagePrimaryAsync(int productId, int productImageId, CancellationToken ct)
@@ -138,6 +144,7 @@ public class ProductsController : ControllerBase
 
     [Authorize(Policy = "CanManageImages")]
     [RequireProductAccess]
+    [Idempotent]
     [EnableRateLimiting("authenticated")]
     [HttpPut("{productId}/images/reorder")]
     public async Task<ActionResult<bool>> ReorderProductImagesAsync(int productId, List<int> productImageIds, CancellationToken ct)
