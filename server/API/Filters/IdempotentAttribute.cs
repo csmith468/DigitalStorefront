@@ -45,9 +45,8 @@ public class IdempotentAttribute : Attribute, IAsyncActionFilter
             return;
         }
 
-        var resultContext = await next(); // execute
+        var resultContext = await next();
         
-        // Store result for future duplicate requests
         if (resultContext.Result is ObjectResult objectResult)
         {
             var response = JsonSerializer.Serialize(objectResult.Value);
@@ -77,15 +76,15 @@ public class IdempotentAttribute : Attribute, IAsyncActionFilter
 
     private static async Task<string> ComputeRequestHashAsync(HttpRequest request)
     {
-        request.EnableBuffering(); // allow reading request body multiple times
-        request.Body.Position = 0; // in case something already started reading it
+        request.EnableBuffering();
+        request.Body.Position = 0;
 
         using var reader = new StreamReader(request.Body, leaveOpen: true);
         var body = await reader.ReadToEndAsync();
 
-        request.Body.Position = 0; // reset position so model binding can read after this
+        request.Body.Position = 0; // reset for model binding
 
-        var hashBytes = SHA256.HashData(Encoding.UTF8.GetBytes(body)); // unique fingerprint of content
+        var hashBytes = SHA256.HashData(Encoding.UTF8.GetBytes(body));
         return Convert.ToBase64String(hashBytes);
     }
 }

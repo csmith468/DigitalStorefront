@@ -65,18 +65,23 @@ export function ProductImageManager({
   );
 
   const handleDragEnd = useCallback(async (event: DragEndEvent) => {
+    const originalImages = localImages;
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
       const oldIndex = localImages.findIndex(img => img.productImageId === active.id);
       const newIndex = localImages.findIndex(img => img.productImageId === over.id);
 
+      // optimistic update with rollback on failure
       const newOrder = arrayMove(localImages, oldIndex, newIndex);
       setLocalImages(newOrder);
-
-      const orderedIds = newOrder.map(img => img.productImageId);
-      await reorderMutation.mutateAsync({ productId, orderedImageIds: orderedIds });
-      onImagesChange();
+      try { 
+        const orderedIds = newOrder.map(img => img.productImageId);
+        await reorderMutation.mutateAsync({ productId, orderedImageIds: orderedIds });
+        onImagesChange();
+      } catch {
+        setLocalImages(originalImages);
+      }
     }
   }, [localImages, productId, reorderMutation, onImagesChange]);
 
@@ -135,18 +140,24 @@ export function ProductImageManager({
 
   const handleDelete = useCallback(async () => {
     if (imageIdToDelete == null) return;
-    setLoadingImageId(imageIdToDelete);
+
+    const originalImages = localImages;
+
+    // optimistic update with rollback on failure
+    setLocalImages(localImages.filter(img => img.productImageId !== imageIdToDelete));
+    setImageIdToDelete(null);
+    
     try {
       await deleteMutation.mutateAsync({ productId, productImageId: imageIdToDelete });
       onImagesChange();
-    } finally {
-      setImageIdToDelete(null);
-      setLoadingImageId(null);
+    } catch {
+      setLocalImages(originalImages);
     }
   }, [imageIdToDelete, productId, deleteMutation, onImagesChange]);
 
   const handleSetPrimary = useCallback(async (productImageId: number) => {
     setLoadingImageId(productImageId);
+    // example of non-optimistic update (more complex logic to optimistically update since it impacts all images)
     try {
       await setPrimaryMutation.mutateAsync({ productId, productImageId });
       onImagesChange();

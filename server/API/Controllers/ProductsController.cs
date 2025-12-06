@@ -15,6 +15,7 @@ namespace API.Controllers;
 /// Roles:
 /// - Admin: Can manage all products including demo products
 /// - ProductWriter: Can manage non-demo products
+/// - ImageManager: Can manage images for non-demo products
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]

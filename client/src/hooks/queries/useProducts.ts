@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { createProduct,
   getProducts,
   getProductById,
@@ -29,13 +29,13 @@ export const useProductBySlug = (slug: string) => {
     queryFn: ({ signal }) => getProductBySlug(slug, signal),
     enabled: !!slug,
   });
-
 }
 
 export const useProducts = (filters: ProductFilterParams) => {
   return useQuery({
     queryKey: ['products', filters],
-    queryFn: ({ signal }) => getProducts(filters, signal)
+    queryFn: ({ signal }) => getProducts(filters, signal),
+    placeholderData: keepPreviousData,
   });
 };
 

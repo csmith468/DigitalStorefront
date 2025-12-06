@@ -113,6 +113,7 @@ public interface ITransactionManager
     Task<T> WithTransactionAsync<T>(Func<Task<T>> operation);
 }
 ```
+> [View full source](https://github.com/csmith468/DigitalStorefront/tree/main/server/API/Database)
 
 ### Result Pattern for Error Handling
 
@@ -184,7 +185,7 @@ Order matters: Circuit Breaker (outer) → Retry (middle) → Timeout (inner)
 JWT-based authentication with a flexible role-based access control (RBAC) system:
 
 - **Admin role** - Full access to all products (including other users' products)
-- **Standard users** - Can only manage non-demo products
+- **Product Writer / Image Manager** - Can only manage non-demo products
 - **Demo products** - Flagged separately, visible to all but only editable by admins
 - **Public "Try" mode** - Unauthenticated users can explore the admin UI without creating an account
 
@@ -206,6 +207,7 @@ public async Task UpdateAsync<T>(T obj, DateTime? expectedUpdatedAt, Cancellatio
 if (currentUpdatedAt != expectedUpdatedAt)
     throw new ConcurrencyException("Record was modified by another user"); // 409 Conflict
 ```
+> [View full source](https://github.com/csmith468/DigitalStorefront/blob/main/server/API/Database/DataContextDapper.cs)
 
 The frontend receives `UpdatedAt` with each record and sends it back on update. If it doesn't match, the API returns 409 Conflict and the user is prompted to refresh.
 
@@ -221,6 +223,7 @@ public async Task<ActionResult<ProductDetailDto>> CreateProduct(ProductFormDto d
     // Otherwise processes normally and stores result for future duplicates
 }
 ```
+> [View full source](https://github.com/csmith468/DigitalStorefront/blob/main/server/API/Services/IdempotentAttribute.cs)
 
 The frontend axios interceptor auto-generates a UUID for each mutation and sends it via `Idempotency-Key` header. On network retry or accidental double-submit, the server returns the original response instead of creating duplicates. Keys expire after 24 hours and are cleaned up by a background service.
 
@@ -286,6 +289,7 @@ interface FormPrimitiveProps<T> {
   required?: boolean;
 }
 ```
+> [View full source](https://github.com/csmith468/DigitalStorefront/tree/main/client/src/components/primitives)
 
 ### useMutationWithToast
 
@@ -299,6 +303,7 @@ interface MutationWithToastOptions<TData, TVariables> {
   onSuccess?: (data: TData, variables: TVariables, queryClient: QueryClient) => void;
 }
 ```
+> [View full source](https://github.com/csmith468/DigitalStorefront/blob/main/client/src/hooks/utilities/useMutationWithToast.ts)
 
 This pattern eliminated ~100 lines of duplicate toast handling code across the app.
 
@@ -346,6 +351,7 @@ public class DatabaseFixture : IAsyncLifetime
     }
 }
 ```
+> [View full source](https://github.com/csmith468/DigitalStorefront/tree/main/server/API.Tests)
 
 ### DatabaseManagement CLI
 
@@ -361,6 +367,7 @@ dotnet run -- --clean
 # Development/Testing: Drop everything and rebuild from scratch
 dotnet run -- --reset
 ```
+> [View full source](https://github.com/csmith468/DigitalStorefront/tree/main/server/DatabaseManagement)
 
 **IUserInteraction Abstraction:**
 
@@ -459,46 +466,15 @@ digital-storefront/
 
 ## Deployment
 
-Push to `main` triggers GitHub Actions:
+Push to `main` triggers GitHub Actions, which runs tests, builds, and deploys to Azure (App Service for backend, Static Web Apps for frontend).
 
-**Backend Pipeline** (`server/` changes):
-1. Build and run tests
-2. Run DbUp migrations against Azure SQL
-3. Deploy to Azure App Service
-
-**Frontend Pipeline** (`client/` changes):
-1. Build with Vite
-2. Deploy to Azure Static Web Apps
-
----
-
-## Pre-Commit Checklist
-
-Before committing to main, run these checks in order:
+**Before pushing, run locally:**
 
 ```bash
-# 1. Run database migrations
-cd server/DatabaseManagement
-dotnet run --migrate
-
-# 2. Run backend tests
-cd server/API.Tests
-dotnet test
-
-# 3. Build frontend
-cd client
-npm run build
-
-# 4. Run frontend unit tests
-cd client
-npm test
-
-# 5. Run Playwright E2E tests (requires API running)
-cd server/API
-dotnet run &
-
-cd client
-npx playwright test
+cd server/DatabaseManagement && dotnet run --migrate   # Run migrations
+cd server/API.Tests && dotnet test                     # Backend tests
+cd client && npm run build && npm test                 # Frontend build + unit tests
+cd client && npx playwright test                       # E2E tests (requires API running)
 ```
 
 ---

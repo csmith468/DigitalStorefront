@@ -5,17 +5,18 @@ import { usePagination } from "../../hooks/utilities/usePagination";
 import { useState } from "react";
 import { useProductTypes } from "../../hooks/queries/useMetadata";
 import { PaginationWrapper } from "../primitives/PaginationWrapper";
-import { EyeIcon, MagnifyingGlassIcon, PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
+import { EyeIcon, PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { FormInput } from "../primitives/FormInput";
 import { FormSelect } from "../primitives/FormSelect";
 import { PageHeader } from "../primitives/PageHeader";
 import { ConfirmModal } from "../primitives/ConfirmModal";
 import { useUser } from "../../contexts/useUser";
+import { useDebounce } from "../../hooks/utilities/useDebounce";
 
 export function AdminProductList() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeSearch, setActiveSearch] = useState('');
+  const debouncedSearch = useDebounce(searchQuery, 300);
   const [productTypeId, setProductTypeId] = useState<number | undefined>(undefined);
   const [productIdToDelete, setProductIdToDelete] = useState<number | null>(null);
   const pagination = usePagination({
@@ -25,7 +26,7 @@ export function AdminProductList() {
 
   const { data: productTypes } = useProductTypes();
   const { data, isLoading, error } = useProducts({
-    search: activeSearch,
+    search: debouncedSearch,
     productTypeId,
     page: pagination.page,
     pageSize: pagination.pageSize,
@@ -33,12 +34,6 @@ export function AdminProductList() {
   const { isAdmin, canManageProducts } = useUser();
 
   const deleteMutation = useDeleteProduct();
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    setActiveSearch(searchQuery.trim());
-    pagination.resetToFirstPage();
-  };
 
   const handleDelete = async () => {
     if (productIdToDelete === null) return;
@@ -55,7 +50,7 @@ export function AdminProductList() {
     }
   }
 
-  if (isLoading) {
+  if (isLoading && !data) {
     return <LoadingScreen message="Loading Products..." />;
   }
 
@@ -90,24 +85,18 @@ export function AdminProductList() {
       </div>
 
        <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-        <form onSubmit={handleSearch} className="flex gap-2 items-end">
-          <div className="flex-1">
-            <FormInput
-              id="search"
-              label="Search Products"
-              value={searchQuery}
-              placeholder="Search Products..."
-              onChange={(_, value) => setSearchQuery(value as string)}
-            />
-          </div>
-          <button
-            type="submit"
-            aria-label="Search"
-            data-testid="admin-search-button"
-            className="px-4 py-2 bg-[var(--color-primary)] text-white rounded-md hover:opacity-90 h-[42px] flex items-center justify-center">
-            <MagnifyingGlassIcon className="h-5 w-5" />
-          </button>
-        </form>
+        <div className="flex-1">
+          <FormInput
+            id="search"
+            label="Search Products"
+            value={searchQuery}
+            placeholder="Search Products..."
+            onChange={(_, value) => {
+              setSearchQuery(value as string);
+              pagination.resetToFirstPage();
+            }}
+          />
+        </div>
 
         <FormSelect
           id="productTypeId"
