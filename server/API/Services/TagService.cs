@@ -4,6 +4,7 @@ using API.Models.DboTables;
 using API.Models.Dtos;
 using AutoMapper;
 using Microsoft.AspNetCore.OutputCaching;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace API.Services;
 
@@ -17,22 +18,32 @@ public class TagService : ITagService
 {
     private readonly IQueryExecutor _queryExecutor;
     private readonly ICommandExecutor _commandExecutor;
-    private  readonly IMapper _mapper;
+    private readonly IMapper _mapper;
     private readonly IOutputCacheStore _outputCacheStore;
+    private readonly IMemoryCache _cache;
+
+    private const string TagsCacheKey = "tags:all";
+    private readonly TimeSpan _cacheDuration = TimeSpan.FromHours(24);
 
     public TagService(IQueryExecutor queryExecutor, ICommandExecutor commandExecutor, IMapper mapper,
-        IOutputCacheStore outputCacheStore)
+        IOutputCacheStore outputCacheStore, IMemoryCache cache)
     {
         _queryExecutor = queryExecutor;
         _commandExecutor = commandExecutor;
         _mapper = mapper;
         _outputCacheStore = outputCacheStore;
+        _cache = cache;
     }
     
     public async Task<Result<List<TagDto>>> GetAllTagsAsync(CancellationToken ct = default)
     {
+        if (_cache.TryGetValue(TagsCacheKey, out List<TagDto>? cached))
+            return Result<List<TagDto>>.Success(cached!);
+        
         var tags = await _queryExecutor.GetAllAsync<Tag>(ct);
         var tagDtos = tags.Select(t => _mapper.Map<TagDto>(t)).ToList();
+
+        _cache.Set(TagsCacheKey, tagDtos, _cacheDuration);
         return Result<List<TagDto>>.Success(tagDtos);
     }
     
@@ -64,6 +75,7 @@ public class TagService : ITagService
                 await _queryExecutor.GetWhereInStrAsync<Tag>("name", tagsToAdd.Select(t => t.Name).ToList(), ct);
             tagIds.AddRange(newlyAddedTagIds.Select(t => t.TagId));
 
+            _cache.Remove(TagsCacheKey);
             await _outputCacheStore.EvictByTagAsync("tags", CancellationToken.None);
         }
 
