@@ -270,10 +270,9 @@ public class ProductImageService : IProductImageService
     private async Task<Result<bool>> ValidateProductAsync(int productId, CancellationToken ct = default)
     {
         var productExists = await _queryExecutor.ExistsAsync<Product>(productId, ct);
-        if (!productExists)
-            return Result<bool>.Failure(ErrorMessages.Product.NotFound(productId));
-        
-        return await _productAuthService.CanUserManageProductAsync(productId, ct);
+        return !productExists
+            ? Result<bool>.Failure(ErrorMessages.Product.NotFound(productId)) 
+            : Result<bool>.Success(true);
     }
 
     private ProductImageDto MapToDto(ProductImage image)

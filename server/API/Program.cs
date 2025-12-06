@@ -1,5 +1,6 @@
 using API.Database;
 using API.Extensions;
+using API.Filters;
 using API.Middleware;
 using Serilog;
 
@@ -18,7 +19,8 @@ try
     DbAttributeValidator.ValidateAllEntities(typeof(Program).Assembly);
 
     // Framework Services
-    builder.Services.AddControllers();
+    builder.Services.AddScoped<ActionTimingFilter>();
+    builder.Services.AddControllers(options => options.Filters.Add<ActionTimingFilter>());
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddHttpContextAccessor();
 

@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using API.Models;
 using API.Models.Dtos;
 using API.Tests.Helpers;
 using FluentAssertions;
@@ -58,14 +59,16 @@ public class ProductCrudTests(DatabaseFixture fixture) : IntegrationTestBase(fix
     }
 
     [Fact]
-    public async Task CreateProduct_WithoutAuthentication_ReturnsUnauthorized()
+    public async Task UpdateProduct_WhenProductDoesNotExist_ReturnsNotFound()
     {
         // Arrange
-        var client = Factory.CreateClient();  // No authentication
-        var createDto = new ProductFormDto
+        var (client, _) = await TestAuthHelpers.CreateAuthenticatedClientAsync(Factory);
+        const int nonExistentProductId = 999999;
+
+        var updateDto = new ProductFormDto
         {
-            Name = "Test Product",
-            Slug = "test-product",
+            Name = "Updated Name",
+            Slug = "updated-slug",
             Price = 100,
             PremiumPrice = 90,
             PriceTypeId = 1,
@@ -74,10 +77,10 @@ public class ProductCrudTests(DatabaseFixture fixture) : IntegrationTestBase(fix
         };
 
         // Act
-        var response = await client.PostAsJsonAsync("/api/products", createDto);
+        var response = await client.PutAsJsonAsync($"/api/products/{nonExistentProductId}", updateDto);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     [Fact]

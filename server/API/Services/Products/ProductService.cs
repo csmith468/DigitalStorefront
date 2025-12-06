@@ -199,10 +199,6 @@ public class ProductService : IProductService
         if (product == null)
             return Result<ProductDetailDto>.Failure(ErrorMessages.Product.NotFound(productId));
 
-        var manageProductResult = _productAuthService.CanUserManageProduct(product);
-        if (!manageProductResult.IsSuccess)
-            return manageProductResult.ToFailure<bool, ProductDetailDto>();
-
         var validateProductResult = await _productValidationService.ValidateProductAsync(dto, product, ct);
         if (!validateProductResult.IsSuccess)
             return validateProductResult.ToFailure<bool, ProductDetailDto>();
@@ -229,10 +225,6 @@ public class ProductService : IProductService
         var product = await _queryExecutor.GetByIdAsync<Product>(productId, ct);
         if (product == null)
             return Result<bool>.Failure(ErrorMessages.Product.NotFound(productId));
-
-        var manageProductResult = _productAuthService.CanUserManageProduct(product);
-        if (!manageProductResult.IsSuccess)
-            return manageProductResult.ToFailure<bool, bool>();
 
         try
         {
@@ -286,15 +278,10 @@ public class ProductService : IProductService
         }
     }
 
-    
-
     private string GenerateSku(int productId, string slug)
     {
         return slug[..3].ToUpper() + "-" + productId.ToString("D5");
     }
-
-    
-
     
     private async Task SetProductTagsAsync(int productId, List<int> updatedTagIds, CancellationToken ct = default)
     {
