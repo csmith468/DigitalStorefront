@@ -16,6 +16,7 @@ export interface Product {
   premiumPrice: number;
   priceIcon: string;
   primaryImage: ProductImage | null;
+  updatedAt: string | null;
 }
 
 export interface ProductImage {
@@ -33,6 +34,7 @@ export interface ProductDetail extends Product {
   images: ProductImage[];
   subcategories: Subcategory[];
   tags: Tag[];
+  updatedAt: string | null;
 }
 
 export interface ProductFormRequest {
@@ -49,6 +51,7 @@ export interface ProductFormRequest {
   priceTypeId: number;
   subcategoryIds: number[];
   tags: string[];
+  updatedAt: string | null;
 }
 
 export interface AddProductImageRequest {

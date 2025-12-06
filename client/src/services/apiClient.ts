@@ -37,6 +37,16 @@ apiClient.interceptors.request.use(
     const token = sessionStorage.getItem('token');
     if (token)
       config.headers.Authorization = `Bearer ${token}`;
+
+    // Added idempotency key for mutation requests (POST, PUT, DELETE)
+    // The key is stored on config so retries use the same key
+    const mutationMethods = ['post', 'put', 'delete'];
+    if (config.method && mutationMethods.includes(config.method.toLowerCase())) {
+      if (!config.headers['Idempotency-Key']) {
+        config.headers['Idempotency-Key'] = crypto.randomUUID();
+      }
+    }
+
     return config;
   },
   (error) => {

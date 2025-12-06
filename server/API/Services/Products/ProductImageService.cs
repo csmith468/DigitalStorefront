@@ -228,7 +228,7 @@ public class ProductImageService : IProductImageService
                 {
                     var image = imageDict[orderedImageIds[i]];
                     image.DisplayOrder = i;
-                    await _commandExecutor.UpdateAsync(image, ct);
+                    await _commandExecutor.UpdateAsync(image, null, ct);
                 }
             }, ct);
 
@@ -263,17 +263,16 @@ public class ProductImageService : IProductImageService
         for (var i = 0; i < images.Count; i++)
         {
             images[i].DisplayOrder = i;
-            await _commandExecutor.UpdateAsync(images[i], ct);
+            await _commandExecutor.UpdateAsync(images[i], null, ct);
         }
     }
 
     private async Task<Result<bool>> ValidateProductAsync(int productId, CancellationToken ct = default)
     {
         var productExists = await _queryExecutor.ExistsAsync<Product>(productId, ct);
-        if (!productExists)
-            return Result<bool>.Failure(ErrorMessages.Product.NotFound(productId));
-        
-        return await _productAuthService.CanUserManageProductAsync(productId, ct);
+        return !productExists
+            ? Result<bool>.Failure(ErrorMessages.Product.NotFound(productId)) 
+            : Result<bool>.Success(true);
     }
 
     private ProductImageDto MapToDto(ProductImage image)

@@ -210,9 +210,11 @@ public class DataContextDapper : IQueryExecutor, ICommandExecutor, ITransactionM
           return result == 0 ? throw new InvalidOperationException("Insert failed - no identity returned") : result;
       }
 
-      public async Task UpdateAsync<T>(T obj, CancellationToken ct = default) where T : class
+      public async Task UpdateAsync<T>(T obj, DateTime? expectedUpdatedAt, CancellationToken ct = default) where T : class
       {
           var metadata = DbAttributes.GetTableMetadata<T>();
+          
+          await VerifyConcurrencyAsync<T>((int)metadata.PrimaryKey.GetValue(obj)!, expectedUpdatedAt, ct);
 
           if (metadata.Columns.Any(c => c.Name == "UpdatedAt"))
               obj = SetEntityProp(obj, "UpdatedAt", DateTime.UtcNow);
@@ -229,8 +231,9 @@ public class DataContextDapper : IQueryExecutor, ICommandExecutor, ITransactionM
           await ExecuteAsync(sql, parameters, ct);
       }
 
-      public async Task UpdateFieldAsync<T>(int id, string fieldName, object value, CancellationToken ct = default) where T : class
+      public async Task UpdateFieldAsync<T>(int id, string fieldName, object value, DateTime? expectedUpdatedAt, CancellationToken ct = default) where T : class
       {
+          await VerifyConcurrencyAsync<T>(id, expectedUpdatedAt, ct);
           ValidateFieldName<T>(fieldName);
           var metadata = DbAttributes.GetTableMetadata<T>();
           var sql = $"UPDATE {metadata.TableName} SET [{fieldName}] = @value WHERE [{metadata.PrimaryKey.Name}] = @id";
@@ -288,6 +291,30 @@ public class DataContextDapper : IQueryExecutor, ICommandExecutor, ITransactionM
           var sql = $"DELETE FROM {metadata.TableName} WHERE [{fieldName}] IN @values";
     
           await ExecuteAsync(sql, new { values }, ct);
+      }
+
+      public async Task VerifyConcurrencyAsync<T>(int id, DateTime? expectedUpdatedAt, CancellationToken ct = default) where T : class
+      {
+          var metadata = DbAttributes.GetTableMetadata<T>();
+          if (metadata.Columns.All(c => c.Name != "UpdatedAt")) return;
+
+          var sql = $"SELECT [UpdatedAt] FROM {metadata.TableName} WHERE [{metadata.PrimaryKey.Name}] = @id";
+          var currentUpdatedAt = await FirstOrDefaultAsync<DateTime?>(sql, new { id }, ct);
+
+          // Truncate to milliseconds to avoid precision issues from JSON serialization
+          var currentTruncated = TruncateToMilliseconds(currentUpdatedAt);
+          var expectedTruncated = TruncateToMilliseconds(expectedUpdatedAt);
+
+          if (currentTruncated != expectedTruncated)
+              throw new ConcurrencyException("Record was modified by another user. Please reload and try again.");
+      }
+
+      private static DateTime? TruncateToMilliseconds(DateTime? dt)
+      {
+          if (dt == null) return null;
+          return new DateTime(dt.Value.Year, dt.Value.Month, dt.Value.Day,
+              dt.Value.Hour, dt.Value.Minute, dt.Value.Second,
+              dt.Value.Millisecond, dt.Value.Kind);
       }
 
       // ITransactionManager Implementations

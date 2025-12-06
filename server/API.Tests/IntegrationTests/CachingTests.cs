@@ -66,7 +66,7 @@ public class CachingTests(DatabaseFixture fixture) : IntegrationTestBase(fixture
             Tags = [uniqueTag],
             SubcategoryIds = [1]
         };
-        var createProductResponse = await client.PostAsJsonAsync("/api/products", productDto);
+        var createProductResponse = await client.PostWithIdempotencyAsync("/api/products", productDto);
 
         await Task.Delay(1000);
 

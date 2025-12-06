@@ -21,7 +21,8 @@ const SAMPLE_PRODUCT: ProductDetail = {
   priceTypeId: 2,
   images: [],
   subcategories: [],
-  tags: []
+  tags: [],
+  updatedAt: null,
 };
 
 export function TryProductFormPage() {

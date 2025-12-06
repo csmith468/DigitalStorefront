@@ -18,7 +18,8 @@ export const mockProduct: Product = {
   price: 5000,
   premiumPrice: 4000,
   priceIcon: '★',
-  primaryImage: null
+  primaryImage: null,
+  updatedAt: null
 };
 
 export const mockProductDetail: ProductDetail = {
@@ -43,7 +44,8 @@ export const mockProductFormRequest: ProductFormRequest = {
   premiumPrice: 4000,
   priceTypeId: 1,
   subcategoryIds: [1],
-  tags: ['dog']
+  tags: ['dog'],
+  updatedAt: null
 };
 
 export const mockPaginatedResponse: PaginatedResponse<Product> = {

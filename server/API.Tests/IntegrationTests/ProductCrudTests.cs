@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using API.Models;
 using API.Models.Dtos;
 using API.Tests.Helpers;
 using FluentAssertions;
@@ -31,7 +32,7 @@ public class ProductCrudTests(DatabaseFixture fixture) : IntegrationTestBase(fix
         };
 
         // Act & Assert - Create
-        var createResponse = await client.PostAsJsonAsync("/api/products", createDto);
+        var createResponse = await client.PostWithIdempotencyAsync("/api/products", createDto);
         createResponse.StatusCode.Should().Be(HttpStatusCode.Created);
         var created = await createResponse.Content.ReadFromJsonAsync<ProductDetailDto>();
         created.Should().NotBeNull();
@@ -43,13 +44,14 @@ public class ProductCrudTests(DatabaseFixture fixture) : IntegrationTestBase(fix
 
         // Act & Assert - Update
         createDto.Name = "Updated Product Name";
-        var updateResponse = await client.PutAsJsonAsync($"/api/products/{created.ProductId}", createDto);
+        createDto.UpdatedAt = created!.UpdatedAt;
+        var updateResponse = await client.PutWithIdempotencyAsync($"/api/products/{created.ProductId}", createDto);
         updateResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         var updated = await updateResponse.Content.ReadFromJsonAsync<ProductDetailDto>();
         updated!.Name.Should().Be("Updated Product Name");
 
         // Act & Assert - Delete
-        var deleteResponse = await client.DeleteAsync($"/api/products/{created.ProductId}");
+        var deleteResponse = await client.DeleteWithIdempotencyAsync($"/api/products/{created.ProductId}");
         deleteResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
         // Verify Deleted
@@ -58,14 +60,16 @@ public class ProductCrudTests(DatabaseFixture fixture) : IntegrationTestBase(fix
     }
 
     [Fact]
-    public async Task CreateProduct_WithoutAuthentication_ReturnsUnauthorized()
+    public async Task UpdateProduct_WhenProductDoesNotExist_ReturnsNotFound()
     {
         // Arrange
-        var client = Factory.CreateClient();  // No authentication
-        var createDto = new ProductFormDto
+        var (client, _) = await TestAuthHelpers.CreateAuthenticatedClientAsync(Factory);
+        const int nonExistentProductId = 999999;
+
+        var updateDto = new ProductFormDto
         {
-            Name = "Test Product",
-            Slug = "test-product",
+            Name = "Updated Name",
+            Slug = "updated-slug",
             Price = 100,
             PremiumPrice = 90,
             PriceTypeId = 1,
@@ -74,10 +78,10 @@ public class ProductCrudTests(DatabaseFixture fixture) : IntegrationTestBase(fix
         };
 
         // Act
-        var response = await client.PostAsJsonAsync("/api/products", createDto);
+        var response = await client.PutWithIdempotencyAsync($"/api/products/{nonExistentProductId}", updateDto);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     [Fact]
@@ -101,7 +105,7 @@ public class ProductCrudTests(DatabaseFixture fixture) : IntegrationTestBase(fix
         };
 
         // Act
-        var createResponse = await client.PostAsJsonAsync("/api/products", createDto);
+        var createResponse = await client.PostWithIdempotencyAsync("/api/products", createDto);
 
         // Assert - Request should fail
         createResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest);

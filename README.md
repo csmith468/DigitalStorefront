@@ -10,6 +10,10 @@ A production-ready full-stack e-commerce admin console for managing a virtual pe
 
 Digital Storefront is a cloud-native application with a React + TypeScript frontend and .NET 8 API backend, deployed to Azure with a full CI/CD pipeline.
 
+### Why I Built This
+
+I logged back into a childhood online game and found their website horribly dated, which made me want to rebuild it. I started planning a storefront, but realized a shopping cart wouldn't showcase much. So I pivoted to the admin console to build complex form workflows, image management, and the production patterns that don't show up in typical portfolio projects.
+
 **What it does:**
 - Admin console for product CRUD with multi-image management
 - Public "Try" mode for testing the admin form without authentication
@@ -185,6 +189,40 @@ JWT-based authentication with a flexible role-based access control (RBAC) system
 - **Public "Try" mode** - Unauthenticated users can explore the admin UI without creating an account
 
 This enables the portfolio demo use case: visitors can see the full admin experience, registered users can create their own products, and demo data stays protected.
+
+### Data Integrity
+
+**Optimistic Concurrency** prevents lost updates when two users edit the same record:
+
+```csharp
+// Before any update, verify the record hasn't changed
+public async Task UpdateAsync<T>(T obj, DateTime? expectedUpdatedAt, CancellationToken ct)
+{
+    await VerifyConcurrencyAsync<T>(id, expectedUpdatedAt, ct); // Throws if mismatch
+    // ... proceed with update
+}
+
+// VerifyConcurrencyAsync compares timestamps (truncated to ms for JSON precision)
+if (currentUpdatedAt != expectedUpdatedAt)
+    throw new ConcurrencyException("Record was modified by another user"); // 409 Conflict
+```
+
+The frontend receives `UpdatedAt` with each record and sends it back on update. If it doesn't match, the API returns 409 Conflict and the user is prompted to refresh.
+
+**Idempotency Keys** prevent duplicate processing on retries:
+
+```csharp
+[Authorize(Policy = "CanManageProducts")]
+[Idempotent] // Custom action filter - requires Idempotency-Key header
+[HttpPost]
+public async Task<ActionResult<ProductDetailDto>> CreateProduct(ProductFormDto dto)
+{
+    // If Idempotency-Key header was seen before, returns stored result
+    // Otherwise processes normally and stores result for future duplicates
+}
+```
+
+The frontend axios interceptor auto-generates a UUID for each mutation and sends it via `Idempotency-Key` header. On network retry or accidental double-submit, the server returns the original response instead of creating duplicates. Keys expire after 24 hours and are cleaned up by a background service.
 
 ### Observability
 
@@ -431,6 +469,37 @@ Push to `main` triggers GitHub Actions:
 **Frontend Pipeline** (`client/` changes):
 1. Build with Vite
 2. Deploy to Azure Static Web Apps
+
+---
+
+## Pre-Commit Checklist
+
+Before committing to main, run these checks in order:
+
+```bash
+# 1. Run database migrations
+cd server/DatabaseManagement
+dotnet run --migrate
+
+# 2. Run backend tests
+cd server/API.Tests
+dotnet test
+
+# 3. Build frontend
+cd client
+npm run build
+
+# 4. Run frontend unit tests
+cd client
+npm test
+
+# 5. Run Playwright E2E tests (requires API running)
+cd server/API
+dotnet run &
+
+cd client
+npx playwright test
+```
 
 ---
 

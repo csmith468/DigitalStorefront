@@ -33,6 +33,7 @@ test.describe('Browse Catalog Flow', () => {
       await firstProductLink.click();
 
       expect(page.url()).toContain('/product/');
+      await expect(page.getByText('Loading')).not.toBeVisible({ timeout: TIMEOUTS.PAGE_LOAD });
 
       await expect(page.locator('h1')).toBeVisible({ timeout: TIMEOUTS.PAGE_LOAD });
       await expect(page.locator('button:has-text("Add to Cart")')).toBeVisible({ timeout: TIMEOUTS.PAGE_LOAD });

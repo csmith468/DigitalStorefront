@@ -176,7 +176,7 @@ public class ProductService : IProductService
             product.ProductId = await _commandExecutor.InsertAsync(product, ct);
 
             product.Sku = GenerateSku(product.ProductId, product.Slug);
-            await _commandExecutor.UpdateFieldAsync<Product>(product.ProductId, "sku", product.Sku, ct);
+            await _commandExecutor.UpdateFieldAsync<Product>(product.ProductId, "sku", product.Sku, dto.UpdatedAt, ct);
 
             await SetProductSubcategoriesAsync(product.ProductId, dto.SubcategoryIds, ct);
 
@@ -199,10 +199,6 @@ public class ProductService : IProductService
         if (product == null)
             return Result<ProductDetailDto>.Failure(ErrorMessages.Product.NotFound(productId));
 
-        var manageProductResult = _productAuthService.CanUserManageProduct(product);
-        if (!manageProductResult.IsSuccess)
-            return manageProductResult.ToFailure<bool, ProductDetailDto>();
-
         var validateProductResult = await _productValidationService.ValidateProductAsync(dto, product, ct);
         if (!validateProductResult.IsSuccess)
             return validateProductResult.ToFailure<bool, ProductDetailDto>();
@@ -210,7 +206,7 @@ public class ProductService : IProductService
         await _transactionManager.WithTransactionAsync(async () =>
         {
             _mapper.Map(dto, product);
-            await _commandExecutor.UpdateAsync(product, ct);
+            await _commandExecutor.UpdateAsync(product, dto.UpdatedAt, ct);
 
             await SetProductSubcategoriesAsync(productId, dto.SubcategoryIds, ct);
 
@@ -229,10 +225,6 @@ public class ProductService : IProductService
         var product = await _queryExecutor.GetByIdAsync<Product>(productId, ct);
         if (product == null)
             return Result<bool>.Failure(ErrorMessages.Product.NotFound(productId));
-
-        var manageProductResult = _productAuthService.CanUserManageProduct(product);
-        if (!manageProductResult.IsSuccess)
-            return manageProductResult.ToFailure<bool, bool>();
 
         try
         {
@@ -286,15 +278,10 @@ public class ProductService : IProductService
         }
     }
 
-    
-
     private string GenerateSku(int productId, string slug)
     {
         return slug[..3].ToUpper() + "-" + productId.ToString("D5");
     }
-
-    
-
     
     private async Task SetProductTagsAsync(int productId, List<int> updatedTagIds, CancellationToken ct = default)
     {

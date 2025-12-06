@@ -1,6 +1,8 @@
 using API.Database;
 using API.Extensions;
+using API.Filters;
 using API.Middleware;
+using API.Services.Background;
 using Serilog;
 
 Log.Logger = new LoggerConfiguration()
@@ -18,9 +20,13 @@ try
     DbAttributeValidator.ValidateAllEntities(typeof(Program).Assembly);
 
     // Framework Services
-    builder.Services.AddControllers();
+    builder.Services.AddScoped<ActionTimingFilter>();
+    builder.Services.AddControllers(options => options.Filters.Add<ActionTimingFilter>());
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddHttpContextAccessor();
+    builder.Services.AddMemoryCache();
+    builder.Services.AddHostedService<CacheWarmingService>();
+    builder.Services.AddHostedService<PeriodicCleanupService>();
 
     // Security
     builder.Services.AddCorsConfiguration(builder.Configuration);

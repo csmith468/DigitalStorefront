@@ -47,6 +47,7 @@ export function ProductForm ({
     priceTypeId: existingProduct?.priceTypeId || 0,
     subcategoryIds: existingProduct?.subcategories?.map((s) => s.subcategoryId) || [],
     tags: existingProduct?.tags?.map((t) => t.name) || [],
+    updatedAt: existingProduct?.updatedAt || null,
   };
 
   // Hooks (queries and mutations)
