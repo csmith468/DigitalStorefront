@@ -1,8 +1,28 @@
 # Digital Storefront
 
+![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet)
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.6-3178C6?logo=typescript)
+![Azure](https://img.shields.io/badge/Azure-Deployed-0078D4?logo=microsoftazure)
+![License](https://img.shields.io/badge/License-MIT-green)
+
 A production-ready full-stack e-commerce admin console for managing a virtual pet collectibles catalog.
 
 **Live Demo:** [digitalstorefront.dev](https://digitalstorefront.dev)
+
+> **Try it now:** Click "Admin" then "Try It" to explore the full product management workflow without creating an account.
+
+---
+
+## Key Features
+
+| Category | Highlights |
+|----------|------------|
+| **Backend** | Custom Dapper ORM, Result pattern, Polly resilience, multi-tier rate limiting, idempotency keys |
+| **Frontend** | Custom component library (13 primitives), React Query, multi-layer error boundaries |
+| **Security** | JWT + RBAC, SQL injection prevention, optimistic concurrency, correlation IDs |
+| **Testing** | Testcontainers (real SQL Server), Vitest, Playwright E2E |
+| **DevOps** | GitHub Actions CI/CD, Azure (App Service, Static Web Apps, SQL, Blob, Key Vault) |
 
 ---
 
@@ -22,7 +42,7 @@ I logged back into a childhood online game and found their website horribly date
 
 **Architecture at a glance:**
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────┐
 │                     Azure Static Web Apps                       │
 │              React 19 + TypeScript + React Query                │
@@ -163,7 +183,7 @@ The type system prevents unsafe ORDER BY construction - you can't accidentally p
 
 **Polly HTTP Resilience** with three-layer policy composition:
 
-```
+```text
 Order matters: Circuit Breaker (outer) → Retry (middle) → Timeout (inner)
 
 1. Circuit Breaker - Opens after 5 failures, stays open 30 seconds
@@ -399,39 +419,9 @@ This allows first-run setup to prompt for admin credentials locally (no hardcode
 
 ---
 
-## Local Development
-
-### Prerequisites
-- Node.js 20+
-- .NET 8 SDK
-- Docker Desktop
-
-### Quick Start
-
-```bash
-# 1. Start SQL Server container
-cd database/Docker
-cp .env.example .env
-docker-compose up -d
-
-# 2. Run migrations
-cd server/DatabaseManagement
-dotnet run -- --migrate "Server=localhost;Database=DigitalStorefront;User Id=sa;Password=YOUR_PASSWORD;TrustServerCertificate=True"
-
-# 3. Start API (http://localhost:5000)
-cd server/API
-dotnet run
-
-# 4. Start frontend (http://localhost:5173)
-cd client
-npm install && npm run dev
-```
-
----
-
 ## Project Structure
 
-```
+```text
 digital-storefront/
 ├── client/                      # React frontend
 │   ├── src/
@@ -454,12 +444,39 @@ digital-storefront/
 │   │   ├── Models/              # DTOs and entities
 │   │   ├── Middleware/          # Correlation IDs, exception handling
 │   │   ├── Extensions/          # DI configuration
+│   │   ├── Infrastructure/      # Startup orchestration, background jobs, contexts
 │   │   └── Validators/          # FluentValidation
 │   ├── API.Tests/               # xUnit + Testcontainers
 │   └── DatabaseManagement/      # DbUp migration CLI
 │
-├── database/Docker/             # SQL Server container config
+├── docker/                      # SQL Server container config
 └── .github/workflows/           # CI/CD pipelines
+```
+
+---
+
+## Local Development
+
+**Prerequisites:** Node.js 20+, .NET 8 SDK, Docker Desktop
+
+```bash
+# Start SQL Server container
+cd docker
+cp .env.example .env       # Edit .env with your credentials
+docker-compose up -d
+
+# Configure API
+cd server/API
+cp appsettings.example.json appsettings.Development.json   # Edit with your credentials
+
+# Run migrations
+cd server/DatabaseManagement && dotnet run -- --migrate
+
+# Start API (http://localhost:5000)
+cd server/API && dotnet run
+
+# Start frontend (http://localhost:5173)
+cd client && npm install && npm run dev
 ```
 
 ---
@@ -471,12 +488,24 @@ Push to `main` triggers GitHub Actions, which runs tests, builds, and deploys to
 **Before pushing, run locally:**
 
 ```bash
-cd server/DatabaseManagement && dotnet run --migrate   # Run migrations
-cd server/API.Tests && dotnet test                     # Backend tests
-cd client && npm run build && npm test                 # Frontend build + unit tests
-cd client && npx playwright test                       # E2E tests (requires API running)
+# Backend
+cd server/DatabaseManagement && dotnet run -- --migrate
+cd server/API && dotnet build
+cd server/API.Tests && dotnet test
+
+# Frontend
+cd client && npm run build && npm test
+
+# E2E (requires API running)
+cd client && npx playwright test
 ```
 
 ---
 
-**Built by Chapin Smith** | [digitalstorefront.dev](https://digitalstorefront.dev)
+## License
+
+MIT License - see [LICENSE](LICENSE) for details.
+
+---
+
+**Built by Chapin Smith** | [Live Demo](https://digitalstorefront.dev) | [GitHub](https://github.com/csmith468/DigitalStorefront)

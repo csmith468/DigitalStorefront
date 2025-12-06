@@ -1,4 +1,4 @@
-namespace API.Services.Contexts;
+namespace API.Infrastructure.Contexts;
 
 /// <summary>
 ///  Abstraction to get current user ID for audit fields (CreatedBy/UpdatedBy)

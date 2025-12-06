@@ -105,8 +105,19 @@ export function HomePage() {
           </div>
         </div>
         <div className="text-sm text-gray-600 border-t border-blue-200 pt-4">
-          <strong>Technical Highlights:</strong> Custom Dapper ORM with interface segregation, real SQL Server integration tests via Testcontainers,
-          multi-tier rate limiting, Result pattern for error handling, correlation IDs for distributed tracing
+          <div className="mb-2"><strong>Production Patterns:</strong></div>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+            <span>• Custom Dapper ORM with interface segregation</span>
+            <span>• Polly resilience (circuit breaker, retry, timeout)</span>
+            <span>• Testcontainers integration tests (real SQL Server)</span>
+            <span>• Idempotency keys for safe retries</span>
+            <span>• Result pattern for explicit error handling</span>
+            <span>• Optimistic concurrency control</span>
+            <span>• Multi-tier rate limiting</span>
+            <span>• Correlation IDs for distributed tracing</span>
+            <span>• 13 custom UI primitives with ARIA accessibility</span>
+            <span>• Multi-layer error boundaries</span>
+          </div>
         </div>
       </div>
 

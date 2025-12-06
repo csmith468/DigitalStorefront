@@ -1,8 +1,9 @@
 using API.Database;
 using API.Extensions;
 using API.Filters;
+using API.Infrastructure.BackgroundJobs;
+using API.Infrastructure.Startup;
 using API.Middleware;
-using API.Services.Background;
 using Serilog;
 
 Log.Logger = new LoggerConfiguration()
@@ -25,7 +26,7 @@ try
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddHttpContextAccessor();
     builder.Services.AddMemoryCache();
-    builder.Services.AddHostedService<CacheWarmingService>();
+    builder.Services.AddHostedService<StartupOrchestrator>();
     builder.Services.AddHostedService<PeriodicCleanupService>();
 
     // Security
@@ -54,8 +55,6 @@ try
     builder.Services.AddPollyPolicies();
 
     var app = builder.Build();
-
-    await app.Services.EnsureRolesSeededAsync();
 
     // Middleware
     app.UseMiddleware<CorrelationIdMiddleware>();       // generate/preserve

@@ -1,6 +1,4 @@
-using API.Services.Contexts;
-
-namespace API.Services;
+namespace API.Infrastructure.Contexts;
 
 /// <summary>
 /// Abstraction so DatabaseManager can run Dapper queries without needing HTTP context

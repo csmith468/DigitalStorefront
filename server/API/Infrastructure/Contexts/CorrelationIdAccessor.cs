@@ -1,6 +1,6 @@
 using API.Models.Constants;
 
-namespace API.Services.Contexts;
+namespace API.Infrastructure.Contexts;
 
 public interface ICorrelationIdAccessor
 {

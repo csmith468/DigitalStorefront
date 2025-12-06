@@ -1,7 +1,7 @@
 ﻿using DatabaseManagement;
 using API.Database;
+using API.Infrastructure.Contexts;
 using API.Services;
-using API.Services.Contexts;
 using API.Services.Images;
 using DatabaseManagement.Helpers;
 using DatabaseManagement.UserInteraction;

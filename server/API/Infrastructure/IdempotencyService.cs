@@ -1,7 +1,7 @@
 using API.Database;
 using API.Models.DboTables;
 
-namespace API.Services;
+namespace API.Infrastructure;
 
 public interface IIdempotencyService
 {

@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using API.Infrastructure;
 using API.Models.DboTables;
 using API.Services;
 using Microsoft.AspNetCore.Mvc;

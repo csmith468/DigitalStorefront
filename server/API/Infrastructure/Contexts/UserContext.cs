@@ -1,7 +1,7 @@
 using System.Security.Claims;
 using API.Models.Constants;
 
-namespace API.Services;
+namespace API.Infrastructure.Contexts;
 
 public interface IUserContext
 {

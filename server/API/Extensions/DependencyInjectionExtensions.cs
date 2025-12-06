@@ -1,7 +1,8 @@
 using System.Reflection;
 using API.Database;
+using API.Infrastructure.Contexts;
+using API.Infrastructure.Startup;
 using API.Services;
-using API.Services.Contexts;
 using API.Services.Images;
 using API.Utils;
 
@@ -37,6 +38,8 @@ public static class DependencyInjectionExtensions
         
         services.AddScoped<IAuditContext, HttpAuditContext>();
         services.AddScoped<ICorrelationIdAccessor, CorrelationIdAccessor>();
+        services.AddScoped<ICacheWarmer, CacheWarmer>();
+        services.AddScoped<IRoleSeeder, RoleSeeder>();
         services.AddScoped<TokenGenerator>();
         services.AddScoped<PasswordHasher>();
         return services;

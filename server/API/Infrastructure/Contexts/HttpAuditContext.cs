@@ -1,6 +1,4 @@
-using API.Services.Contexts;
-
-namespace API.Services;
+namespace API.Infrastructure.Contexts;
 
 /// <summary>
 /// HTTP-based implementation to get user ID from HTTP request's JWT claims

@@ -1,6 +1,6 @@
 using API.Database;
 
-namespace API.Services.Background;
+namespace API.Infrastructure.BackgroundJobs;
 
 // NOTE: Since only running one instance, this works as mini CRON job
 public class PeriodicCleanupService : BackgroundService
@@ -17,6 +17,16 @@ public class PeriodicCleanupService : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        // Wait for StartupOrchestrator to complete
+        var startedTcs = new TaskCompletionSource();
+        using var scope = _serviceProvider.CreateScope();
+        var lifetime = scope.ServiceProvider.GetRequiredService<IHostApplicationLifetime>();
+        lifetime.ApplicationStarted.Register(() => startedTcs.SetResult());
+        await startedTcs.Task;
+
+        // Wait for connections to stabilize after cold start
+        await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken);
+
         _logger.LogInformation("Periodic cleanup service started");
 
         while (!stoppingToken.IsCancellationRequested)
