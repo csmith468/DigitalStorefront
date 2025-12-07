@@ -157,27 +157,32 @@ if (product == null)
     return Result<ProductDetailDto>.Failure(ErrorMessages.Product.NotFound(id));
 ```
 
-### SQL Injection Prevention with TrustedOrderByExpression
+### SQL Injection Prevention with TrustedSqlExpression
 
-Dynamic ORDER BY clauses can't be parameterized, creating SQL injection risk. `TrustedOrderByExpression` uses a whitelist approach:
+Dynamic SQL fragments like ORDER BY clauses can't be parameterized, creating SQL injection risk when user input influences sorting. `TrustedSqlExpression` is a sealed wrapper that forces developers to explicitly "trust" any SQL expression:
 
 ```csharp
-public class TrustedOrderByExpression
+public sealed class TrustedSqlExpression
 {
-    private static readonly HashSet<string> AllowedColumns =
-        new() { "Name", "Price", "CreatedAt", "UpdatedAt" };
+    private readonly string _expression;
 
-    public static TrustedOrderByExpression? Create(string column, string direction)
+    public TrustedSqlExpression(string expression)
     {
-        if (!AllowedColumns.Contains(column)) return null;
-        if (direction != "ASC" && direction != "DESC") return null;
-
-        return new TrustedOrderByExpression($"{column} {direction}");
+        if (string.IsNullOrWhiteSpace(expression))
+            throw new ArgumentException("SQL expression cannot be empty", nameof(expression));
+        _expression = expression;
     }
+
+    public string ToSql() => _expression;
 }
+
+// Usage - only trusted, hardcoded expressions are wrapped:
+var customOrderBy = !string.IsNullOrWhiteSpace(filterParams.Search)
+    ? new TrustedSqlExpression("Relevance ASC, isDemoProduct DESC, p.productId")
+    : null;
 ```
 
-The type system prevents unsafe ORDER BY construction - you can't accidentally pass user input directly to SQL.
+The type system prevents unsafe SQL construction - you can't accidentally pass user input directly to non-parameterizable SQL fragments.
 
 ### Resilience & Rate Limiting
 

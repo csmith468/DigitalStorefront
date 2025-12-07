@@ -137,7 +137,7 @@ public class ProductService : IProductService
                          {whereClause}
                          """;
         var customOrderBy = !string.IsNullOrWhiteSpace(filterParams.Search)
-            ? new TrustedOrderByExpression("Relevance ASC, isDemoProduct DESC, p.productId")
+            ? new TrustedSqlExpression("Relevance ASC, isDemoProduct DESC, p.productId")
             : null;
         var orderByColumn = string.IsNullOrWhiteSpace(filterParams.Search) ? "productId" : null;
 
