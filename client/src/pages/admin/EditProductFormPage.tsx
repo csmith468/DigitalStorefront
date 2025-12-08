@@ -16,8 +16,8 @@ export function EditProductFormPage() {
       product={product}
       mode="edit"
       title={`Edit Product: ${product.name}`}
-      onSuccess={() => navigate('/admin/products')}
-      onCancel={() => navigate('/admin/products')}
+      onSuccess={() => navigate('/admin')}
+      onCancel={() => navigate('/admin')}
       onImagesChange={() => refetch()}
     />
   );

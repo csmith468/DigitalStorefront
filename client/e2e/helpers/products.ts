@@ -57,7 +57,7 @@ export async function fillProductForm(page: Page, productData: typeof mockProduc
 }
 
 export async function navigateToAdminProducts(page: Page) {
-  await page.goto('/admin/products');
+  await page.goto('/admin');
   await page.waitForSelector('h1:has-text("Product Management")');
 }
 

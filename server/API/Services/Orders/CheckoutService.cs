@@ -28,7 +28,7 @@ public class CheckoutService : ICheckoutService
     // When I decided to build this project I didn't know I would build a payment processor
     // I would add a setting for the conversion that admins can edit but not worth implementing it at this point
     // and I'd implement premium memberships 
-    private const int CoinToUsdInCents = 1; 
+    private const double CoinToUsdInCents = 0.1; 
     
     public CheckoutService(IUserContext userContext, IQueryExecutor queryExecutor, ICommandExecutor commandExecutor,
         ITransactionManager transactionManager, IOptions<StripeOptions> stripeOptions, ILogger<CheckoutService> logger)
@@ -58,7 +58,7 @@ public class CheckoutService : ICheckoutService
         
         var unitPrice = product.PriceTypeId == PriceTypes.Usd
             ? (int)(product.Price * 100)
-            : (int)(product.Price * CoinToUsdInCents);
+            : (int)(product.Price * (decimal)CoinToUsdInCents);
         var total = unitPrice * request.Quantity;
         
         var orderId = await _transactionManager.WithTransactionAsync(async () =>
@@ -88,12 +88,10 @@ public class CheckoutService : ICheckoutService
             Metadata = new Dictionary<string, string> { { "order_id", orderIdAndTotal.OrderId.ToString() } }
         }, cancellationToken: ct);
 
-        await _commandExecutor.UpdateAsync(new Order
-        {
-            OrderId = orderIdAndTotal.OrderId,
-            StripePaymentIntentId = paymentIntent.Id,
-            Status = "Processing"
-        }, null, ct);
+        var order = await _queryExecutor.GetByIdAsync<Order>(orderIdAndTotal.OrderId, ct);
+        order!.StripePaymentIntentId = paymentIntent.Id;
+        order.Status = "Processing";
+        await _commandExecutor.UpdateAsync(order, order.UpdatedAt, ct);
 
         return Result<PaymentIntentResponse>.Success(new PaymentIntentResponse
         {

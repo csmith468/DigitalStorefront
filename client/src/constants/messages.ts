@@ -26,6 +26,10 @@ export const ErrorMessages = {
     tooLarge: (maxSizeMB: number) => `File size must be less than ${maxSizeMB} MB`,
   },
 
+  Checkout: {
+    createFailed: MessageBuilder.error.action('create', 'order'),
+  },
+
   Auth: {
     sessionExpired: 'Your session has expired. Please log in again.',
     loginFailed: 'Invalid username or password.',
@@ -58,6 +62,10 @@ export const SuccessMessages = {
     deleted: MessageBuilder.success.action('deleted', 'Image'),
     setPrimary: MessageBuilder.success.action('set as primary', 'Image'),
     reordered: MessageBuilder.success.action('re-ordered', 'Images'),
+  },
+
+  Checkout: {
+    created: 'Order placed successfully!',
   },
 
   Auth: {

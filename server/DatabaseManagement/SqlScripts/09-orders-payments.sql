@@ -9,9 +9,7 @@ CREATE TABLE dsf.[order] (
     updatedAt DATETIME2 NULL DEFAULT GETUTCDATE(),
     paymentCompletedAt DATETIME2 NULL,
     
-    CONSTRAINT FK_Order_User FOREIGN KEY (userId) REFERENCES dsf.[user](userId),
-    CONSTRAINT UQ_Order_StripeSessionId UNIQUE (stripeSessionId),
-    CONSTRAINT UQ_Order_StripePaymentIntentId UNIQUE (stripePaymentIntentId)
+    CONSTRAINT FK_Order_User FOREIGN KEY (userId) REFERENCES dsf.[user](userId)
 );
 
 CREATE TABLE dsf.orderItem (
@@ -29,6 +27,7 @@ CREATE TABLE dsf.orderItem (
 
 CREATE INDEX IX_Order_UserId ON dsf.[order](userId);
 CREATE INDEX IX_Order_Status ON dsf.[order](status);
-CREATE INDEX IX_Order_StripeSessionId ON dsf.[Order](StripeSessionId);
-CREATE INDEX IX_Order_StripePaymentIntentId ON dsf.[Order](StripePaymentIntentId);
-CREATE INDEX IX_OrderItem_OrderId ON dsf.OrderItem(OrderId);
+CREATE INDEX IX_OrderItem_OrderId ON dsf.orderItem(orderId);
+
+CREATE UNIQUE INDEX IX_Order_StripeSessionId ON dsf.[order](stripeSessionId) WHERE stripeSessionId IS NOT NULL;
+CREATE UNIQUE INDEX IX_Order_StripePaymentIntentId ON dsf.[order](stripePaymentIntentId) WHERE stripePaymentIntentId IS NOT NULL;

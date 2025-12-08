@@ -48,7 +48,7 @@ public class PaymentWebhookService : IPaymentWebhookService
         if (order.Status == "Completed") 
             order.PaymentCompletedAt = DateTime.UtcNow;
         
-        await _commandExecutor.UpdateAsync(order, null);
+        await _commandExecutor.UpdateAsync(order, order.UpdatedAt);
         
         _logger.LogInformation("Order {OrderId} marked as {Status}", order.OrderId, newStatus);
     }

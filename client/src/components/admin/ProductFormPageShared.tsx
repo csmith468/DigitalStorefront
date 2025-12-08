@@ -46,7 +46,7 @@ export function ProductFormPageShared({
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <PageHeader title={title} returnLink='/admin/products' returnText='Back to Products' />
+      <PageHeader title={title} returnLink='/admin' returnText='Back to Products' />
 
       {mode === 'view' && (
         <div className="bg-blue-50 border border-blue-200 p-4 rounded-md mb-6">

@@ -28,7 +28,7 @@ export function HomePage() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <PageHeader
-        title="Welcome to Digital Collectibles"
+        title="Welcome to Digital Storefront"
         subtitle="Inspired by a virtual pet game economy - demonstrating admin console architecture, complex product management, and full-stack integration beyond basic e-commerce"
       />
 
@@ -65,7 +65,7 @@ export function HomePage() {
           </div>
           <div className="flex flex-wrap gap-3">
             <button
-              onClick={() => navigate('/admin/products')}
+              onClick={() => navigate('/admin')}
               className="px-6 py-3 bg-[var(--color-primary)] text-white rounded-md hover:opacity-90 font-medium shadow-md"
             >
               Explore Admin Console →

@@ -1,20 +1,10 @@
 import { Link } from "react-router-dom";
 import type { Product } from "../../types/product";
-import { logger } from "../../utils/logger";
-import toast from "react-hot-toast";
 import { memo } from "react";
-import { SuccessMessages } from "../../constants/messages";
+import { BuyNowButton } from "../checkout/BuyNowButton";
+import { formatPrice } from "../../utils/formatters";
 
 function ProductCard({ product }: { product: Product }) {
-  const formatPrice = (price: number, priceType: string) => {
-    return priceType + price.toLocaleString();
-  };
-
-  const handleAddToCart = (productId: number) => {
-    logger.info(`Add product ${productId} to cart`);
-    toast.success(SuccessMessages.Product.addedToCart);
-  };
-
   const baseBadge = "px-2 py-0.5 rounded-full text-xs font-semibold";
 
   const badgeStyles = {
@@ -95,11 +85,15 @@ function ProductCard({ product }: { product: Product }) {
             Promotional
           </Link>
         ) : (
-          <button
-            onClick={() => handleAddToCart(product.productId)}
-            className="w-full px-4 py-2 text-sm bg-[var(--color-primary)] text-white rounded-md hover:opacity-90 transition-opacity font-medium">
-            Add To Cart
-          </button>
+          <BuyNowButton
+            product={{
+              productId: product.productId,
+              name: product.name,
+              price: product.price,
+              priceIcon: product.priceIcon
+            }}
+            className={"w-full px-4 py-2 text-sm bg-[var(--color-primary)] text-white rounded-md hover:opacity-90 transition-opacity font-medium"}
+          />
         )}
       </div>
     </li>

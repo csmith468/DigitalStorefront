@@ -22,7 +22,7 @@ public class WebhooksController : ControllerBase
         _logger = logger;
     }
 
-    [HttpPost]
+    [HttpPost("stripe")]
     public async Task<IActionResult> HandleStripeWebhookAsync()
     {
         var json = await new StreamReader(HttpContext.Request.Body).ReadToEndAsync();
