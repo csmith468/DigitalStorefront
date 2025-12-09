@@ -2,7 +2,6 @@ import { useQuery } from "@tanstack/react-query";
 import { LoadingScreen } from "../primitives/LoadingScreen";
 import { usePagination } from "../../hooks/utilities/usePagination";
 import { PaginationWrapper } from "../primitives/PaginationWrapper";
-import { PageHeader } from "../primitives/PageHeader";
 import { getOrders } from "../../services/orderService";
 
 export function AdminOrdersList() {
@@ -59,11 +58,7 @@ export function AdminOrdersList() {
 
   return (
     <div className="mb-8">
-      <PageHeader
-        title="Order Management"
-        returnLink="/"
-        returnText="Back to Home"
-      />
+      <h2 className="text-3xl font-bold text-text-primary mb-6">Order Management</h2>
 
       <PaginationWrapper
         {...pagination}

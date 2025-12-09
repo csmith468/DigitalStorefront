@@ -4,6 +4,7 @@ import { TabNav } from "../../components/primitives/TabNav";
 import { AdminProductList } from "../../components/admin/AdminProductList";
 import { AdminOrdersList } from "../../components/admin/AdminOrdersList";
 import { Modal } from "../../components/primitives/Modal";
+import { PageHeader } from "../../components/primitives/PageHeader";
 
 export function AdminPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -32,7 +33,9 @@ export function AdminPage() {
   ];
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 pt-4 pb-8">
+      <PageHeader title="Admin Console" returnLink="/" returnText="Back to Home" />
+
       <TabNav
         tabs={tabs}
         activeTab={activeTab}

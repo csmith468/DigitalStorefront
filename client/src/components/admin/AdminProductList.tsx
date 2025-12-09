@@ -8,7 +8,6 @@ import { PaginationWrapper } from "../primitives/PaginationWrapper";
 import { EyeIcon, PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { FormInput } from "../primitives/FormInput";
 import { FormSelect } from "../primitives/FormSelect";
-import { PageHeader } from "../primitives/PageHeader";
 import { ConfirmModal } from "../primitives/ConfirmModal";
 import { useUser } from "../../contexts/useUser";
 import { useDebounce } from "../../hooks/utilities/useDebounce";
@@ -71,12 +70,8 @@ export function AdminProductList() {
 
   return (
     <div className="mb-8">
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-        <PageHeader 
-          title="Product Management"
-          returnLink='/'
-          returnText='Back to Home' // FUTURE: eventually admin main
-        />
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
+        <h2 className="text-3xl font-bold text-text-primary">Product Management</h2>
         <button
           onClick={() => navigate("/admin/products/create")}
           className="px-4 py-2 bg-[var(--color-primary)] text-white rounded-md hover:opacity-90 font-medium self-end md:self-auto">

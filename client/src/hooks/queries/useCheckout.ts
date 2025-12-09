@@ -1,15 +1,14 @@
-import { ErrorMessages, SuccessMessages } from "../../constants/messages";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createPaymentIntent } from "../../services/checkoutService";
 import type { CreatePaymentIntentRequest } from "../../types/paymentIntent";
-import { useMutationWithToast } from "../utilities/useMutationWithToast";
 
 export const usePaymentIntent = () => {
-  return useMutationWithToast({
+  const queryClient = useQueryClient();
+
+  return useMutation({
     mutationFn: (paymentIntent: CreatePaymentIntentRequest) => createPaymentIntent(paymentIntent),
-    onSuccess: (_data, _, queryClient) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
     },
-    successMessage: SuccessMessages.Checkout.created,
-    errorMessage: ErrorMessages.Checkout.createFailed,
-  })
+  });
 }
