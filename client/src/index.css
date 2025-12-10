@@ -104,6 +104,43 @@ button:focus-visible {
   outline-offset: 2px;
 }
 
+@keyframes flash-purple {
+  0% {
+    background-color: white;
+    border-color: var(--color-border);
+    color: var(--color-text-primary);
+    transform: scale(1);
+  }
+  15% {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+    color: white;
+    transform: scale(1.05);
+  }
+  30% {
+    background-color: white;
+    border-color: var(--color-border);
+    color: var(--color-text-primary);
+    transform: scale(1);
+  }
+  45% {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+    color: white;
+    transform: scale(1.05);
+  }
+  60%, 100% {
+    background-color: white;
+    border-color: var(--color-border);
+    color: var(--color-text-primary);
+    transform: scale(1);
+  }
+}
+
+.animate-flash-purple {
+  animation: flash-purple 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

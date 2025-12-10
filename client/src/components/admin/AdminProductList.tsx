@@ -30,7 +30,7 @@ export function AdminProductList() {
     page: pagination.page,
     pageSize: pagination.pageSize,
   });
-  const { isAdmin, canManageProducts } = useUser();
+  const { isAdmin, canManageProducts, isAuthenticated, openAuthModal } = useUser();
 
   const deleteMutation = useDeleteProduct();
 
@@ -73,7 +73,10 @@ export function AdminProductList() {
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
         <h2 className="text-3xl font-bold text-text-primary">Product Management</h2>
         <button
-          onClick={() => navigate("/admin/products/create")}
+          onClick={() => {
+            if (isAuthenticated) navigate("/admin/products/create");
+            else openAuthModal('register', '/admin/products/create');
+          }}
           className="px-4 py-2 bg-[var(--color-primary)] text-white rounded-md hover:opacity-90 font-medium self-end md:self-auto">
           + Create New Product
         </button>

@@ -18,7 +18,7 @@ export function BuyNowButton({ product, disabled, className }: BuyNowButtonProps
   const navigate = useNavigate();
 
   const handleSuccess = (orderId: number) => {
-    navigate(`/admin?orderSuccess=${orderId}`);
+    navigate(`/admin?orderSuccess=${orderId}&tab=orders`);
   };
 
   return (

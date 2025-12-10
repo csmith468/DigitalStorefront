@@ -31,8 +31,8 @@ test.describe('Public Try-It-Out Flow', () => {
       await expect(cancelButton).toBeVisible();
       await cancelButton.click();
 
-      await page.waitForURL('/admin/products');
-      await expect(page.locator('h1:has-text("Product Management")')).toBeVisible();
+      await page.waitForURL('/admin?tab=products');
+      await expect(page.locator('h2:has-text("Product Management")')).toBeVisible();
     });
   });
 });

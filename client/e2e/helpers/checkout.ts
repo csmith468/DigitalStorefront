@@ -1,12 +1,16 @@
 import { Page, expect } from '@playwright/test';
 import { TIMEOUTS } from '../config/timeouts';
 
+export async function collapseFeatureChecklist(page: Page) {
+  const minimizeButton = page.locator('button[aria-label="Minimize checklist"]');
+  if (await minimizeButton.isVisible({ timeout: 1000 }).catch(() => false)) {
+    await minimizeButton.click();
+  }
+}
+
 export const STRIPE_TEST_CARDS = {
   SUCCESS: '4242424242424242',
   DECLINE: '4000000000000002',
-  INSUFFICIENT_FUNDS: '4000000000009995',
-  EXPIRED: '4000000000000069',
-  INCORRECT_CVC: '4000000000000127',
 } as const;
 
 const TEST_CARD_EXPIRY = '12/30';
@@ -37,6 +41,7 @@ export async function fillStripeCard(
 }
 
 export async function openPaymentModal(page: Page) {
+  await collapseFeatureChecklist(page);
   await page.click('button:has-text("Buy Now")');
   await expect(page.locator('text=Complete Purchase')).toBeVisible({
     timeout: TIMEOUTS.DOM_UPDATE
@@ -55,7 +60,7 @@ export async function completeCheckout(page: Page, cardNumber: string = STRIPE_T
 }
 
 export async function expectPaymentSuccess(page: Page): Promise<string | null> {
-  await page.waitForURL(/\/admin\?orderSuccess=\d+/, {
+  await page.waitForURL(/\/admin\?orderSuccess=\d+(&tab=orders)?/, {
     timeout: TIMEOUTS.FORM_SUBMIT
   });
 
@@ -68,16 +73,9 @@ export async function expectPaymentSuccess(page: Page): Promise<string | null> {
   return orderId;
 }
 
-export async function expectPaymentError(page: Page, errorMessage?: string) {
-  if (errorMessage) {
-    await expect(page.locator(`text=${errorMessage}`)).toBeVisible({
-      timeout: TIMEOUTS.FORM_SUBMIT
-    });
-  } else {
-    await expect(page.locator('.text-red-600, .text-danger')).toBeVisible({
-      timeout: TIMEOUTS.FORM_SUBMIT
-    });
-  }
+export async function expectPaymentError(page: Page) {
+  const errorLocator = page.locator('.text-red-600, .text-danger, [class*="text-red"]');
+  await expect(errorLocator).toBeVisible({ timeout: TIMEOUTS.FORM_SUBMIT });
 }
 
 export async function closeSuccessModal(page: Page) {

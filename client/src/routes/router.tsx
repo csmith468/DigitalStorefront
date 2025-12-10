@@ -14,6 +14,7 @@ import { ProtectedRoute } from "../components/auth/ProtectedRoute";
 import { RouteErrorPage } from "./RouteErrorPage";
 import { SearchResults } from "../pages/SearchResults";
 import { UserProvider } from "../contexts/UserContext";
+import { FeatureChecklist } from "../components/demo/FeatureChecklist";
 
 // Lazy load admin pages
 const AdminPage = lazy(() => import("../pages/admin/AdminPage").then(m => ({ default: m.AdminPage })));
@@ -55,6 +56,7 @@ function RootLayout() {
           </Suspense>
           <Toaster {...toasterConfig} />
           <ReactQueryDevtools initialIsOpen={false} />
+          <FeatureChecklist />
         </Elements>
       </UserProvider>
     </QueryClientProvider>

@@ -7,7 +7,7 @@ import type { User, Auth, LoginRequest, RegisterRequest } from "../types/auth";
 import { authService } from "../services/auth";
 import { AuthModal } from "../components/auth/AuthModal";
 import toast from "react-hot-toast";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { ErrorMessages } from "../constants/messages";
 
 export interface UserContextType {
@@ -18,7 +18,7 @@ export interface UserContextType {
   login: (dto: LoginRequest) => Promise<void>;
   register: (dto: RegisterRequest) => Promise<void>;
   logout: () => void;
-  openAuthModal: (mode: 'login' | 'register') => void;
+  openAuthModal: (mode: 'login' | 'register', redirectTo?: string) => void;
   closeAuthModal: () => void;
 }
 
@@ -33,6 +33,8 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+  const [redirectAfterAuth, setRedirectAfterAuth] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const initAuth = async () => {
@@ -73,12 +75,20 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({
   const login = useCallback(async (dto: LoginRequest) => {
     const response = await authService.login(dto);
     setUserAndTokenFromAuthResponse(response);
-  }, [setUserAndTokenFromAuthResponse]);
+    if (redirectAfterAuth) {
+      navigate(redirectAfterAuth);
+      setRedirectAfterAuth(null);
+    }
+  }, [setUserAndTokenFromAuthResponse, redirectAfterAuth, navigate]);
 
   const register = useCallback(async (dto: RegisterRequest) => {
     const response = await authService.register(dto);
     setUserAndTokenFromAuthResponse(response);
-  }, [setUserAndTokenFromAuthResponse]);
+    if (redirectAfterAuth) {
+      navigate(redirectAfterAuth);
+      setRedirectAfterAuth(null);
+    }
+  }, [setUserAndTokenFromAuthResponse, redirectAfterAuth, navigate]);
 
   const logout = useCallback(() => {
     authService.logout();
@@ -86,8 +96,9 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({
     window.location.href = '/';
   }, []);
 
-  const openAuthModal = useCallback((mode: 'login' | 'register') => {
+  const openAuthModal = useCallback((mode: 'login' | 'register', redirectTo?: string) => {
     setAuthMode(mode);
+    setRedirectAfterAuth(redirectTo || null);
     setAuthModalOpen(true);
   }, []);
 

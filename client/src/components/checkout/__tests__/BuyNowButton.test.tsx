@@ -107,6 +107,6 @@ describe('BuyNowButton', () => {
 
     await user.click(screen.getByRole('button', { name: /simulate success/i }));
 
-    expect(mockNavigate).toHaveBeenCalledWith(`/admin?orderSuccess=${mockOrderId}`);
+    expect(mockNavigate).toHaveBeenCalledWith(`/admin?orderSuccess=${mockOrderId}&tab=orders`);
   });
 });

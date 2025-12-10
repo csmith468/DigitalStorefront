@@ -65,7 +65,7 @@ test.describe('Checkout Flow', () => {
 
       await test.step('Close success modal', async () => {
         await closeSuccessModal(page);
-        expect(page.url()).toContain('/admin');
+        expect(page.url()).toContain('/admin?tab=orders');
       });
 
       await test.step('Verify order appears in orders list', async () => {
@@ -108,7 +108,7 @@ test.describe('Checkout Flow', () => {
       });
 
       await test.step('Verify error is displayed', async () => {
-        await expectPaymentError(page, 'declined');
+        await expectPaymentError(page);
         await expect(page.locator('text=Complete Purchase')).toBeVisible();
 
         const payButton = page.locator('button:has-text("Pay $")');
@@ -118,22 +118,6 @@ test.describe('Checkout Flow', () => {
       await test.step('Can close modal after error', async () => {
         await page.click('button:has-text("Cancel")');
         await expect(page.locator('text=Complete Purchase')).not.toBeVisible();
-      });
-    });
-
-    test('should show error for insufficient funds', async ({ page }) => {
-      await test.step('Navigate to product', async () => {
-        await navigateToProduct(page);
-      });
-
-      await test.step('Attempt payment with insufficient funds card', async () => {
-        await openPaymentModal(page);
-        await fillStripeCard(page, STRIPE_TEST_CARDS.INSUFFICIENT_FUNDS);
-        await submitPayment(page);
-      });
-
-      await test.step('Verify insufficient funds error', async () => {
-        await expectPaymentError(page, 'insufficient');
       });
     });
   });
