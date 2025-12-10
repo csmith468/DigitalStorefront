@@ -23,6 +23,8 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
         Environment.SetEnvironmentVariable("RateLimiting__Global__PermitLimit", "150");
         Environment.SetEnvironmentVariable("RateLimiting__Authenticated__TokenCapacity", "100");
         Environment.SetEnvironmentVariable("Caching__StaticDataExpirationDays", "1");
+        Environment.SetEnvironmentVariable("Stripe__SecretKey", "sk_test_fake_key_for_testing");
+        Environment.SetEnvironmentVariable("Stripe__WebhookSecret", "whsec_fake_secret_for_testing");
     }
 
     public CustomWebApplicationFactory(TestDatabaseManager databaseManager)

@@ -4,7 +4,7 @@ namespace API.Tests.Helpers;
 /// Base class for integration tests that need database access
 /// Manages lifecycle of database and ensures database is reset between tests
 /// </summary>
-public abstract class IntegrationTestBase : IClassFixture<DatabaseFixture>, IAsyncLifetime
+public abstract class IntegrationTestBase : IAsyncLifetime
 {
     protected readonly CustomWebApplicationFactory Factory;
     protected readonly HttpClient Client;

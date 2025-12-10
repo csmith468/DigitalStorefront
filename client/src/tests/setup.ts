@@ -1,6 +1,9 @@
 import '@testing-library/jest-dom';
 import { cleanup } from '@testing-library/react';
 import { afterEach, vi } from 'vitest';
+import { mockAnimationsApi } from 'jsdom-testing-mocks';
+
+mockAnimationsApi();
 
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
