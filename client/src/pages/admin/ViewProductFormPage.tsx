@@ -17,7 +17,7 @@ export function ViewProductFormPage() {
       mode="view"
       title={`View Product: ${product.name}`}
       onSuccess={() => {}}
-      onCancel={() => navigate('/admin/products')}
+      onCancel={() => navigate('/admin')}
       onImagesChange={() => {}}
     />
   );

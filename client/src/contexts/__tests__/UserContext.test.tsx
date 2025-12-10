@@ -3,6 +3,7 @@ import { UserContext, UserProvider } from "../UserContext";
 import { authService } from "../../services/auth";
 import { renderHook, waitFor, act } from "@testing-library/react";
 import { useContext } from "react";
+import { MemoryRouter } from "react-router-dom";
 import { mockAuthResponse, mockLoginRequest, mockRegisterRequest } from "../../tests/fixtures";
 
 
@@ -32,7 +33,9 @@ describe('UserContext', () => {
   });
 
   const wrapper = ({ children }: { children: React.ReactNode }) => (
-    <UserProvider>{children}</UserProvider>
+    <MemoryRouter>
+      <UserProvider>{children}</UserProvider>
+    </MemoryRouter>
   );
 
   describe('Initial auth check', () => {

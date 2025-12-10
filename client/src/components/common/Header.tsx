@@ -68,13 +68,13 @@ export function Header({ mobileMenuOpen, setMobileMenuOpen }: HeaderProps) {
             )}
 
             <Link to="/" className="header-h1 cursor-pointer">
-              Digital Collectibles
+              Digital Storefront
             </Link>
           </div>
 
           <div className="hidden md:block">
             <Link
-              to="/admin/products"
+              to="/admin"
               className="px-4 py-2 text-white border-2 border-white rounded-md hover:bg-white hover:text-[var(--color-primary)] transition-colors text-sm font-bold flex items-center gap-2"
             >
               Admin Console
@@ -144,7 +144,7 @@ export function Header({ mobileMenuOpen, setMobileMenuOpen }: HeaderProps) {
                   </div>
                     <div className="py-1">
                       <MenuItem>{({ focus }) => (
-                        <button onClick={() => navigate('/admin/products')} 
+                        <button onClick={() => navigate('/admin')}
                           className={`${focus ? 'bg-gray-100' : ''} ${dropdownStyle}`}>
                           Admin Console
                         </button>

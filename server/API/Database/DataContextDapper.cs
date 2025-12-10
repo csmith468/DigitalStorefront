@@ -114,7 +114,7 @@ public class DataContextDapper : IQueryExecutor, ICommandExecutor, ITransactionM
           object? parameters = null,
           string? orderByColumn = null,
           bool descending = true,
-          TrustedOrderByExpression? customOrderBy = null,
+          TrustedSqlExpression? customOrderBy = null,
           CancellationToken ct = default) where T : class
       {
           var countSql = $"SELECT COUNT(*) FROM ({baseQuery}) AS CountQuery";

@@ -26,8 +26,16 @@ export async function fillProductForm(page: Page, productData: typeof mockProduc
   if (productData.description) 
     await page.fill('textarea[id="description"]', productData.description);
 
-  await page.selectOption('select[id="productTypeId"]', productData.productTypeId.toString());
-  await page.selectOption('select[id="priceTypeId"]', productData.priceTypeId.toString());
+  const productTypeSelect = page.locator('select[id="productTypeId"]');
+  await productTypeSelect.scrollIntoViewIfNeeded();
+  await productTypeSelect.selectOption(productData.productTypeId.toString());
+
+  const priceTypeSelect = page.locator('select[id="priceTypeId"]');
+  await priceTypeSelect.scrollIntoViewIfNeeded();
+
+  // Wait for any non-placeholder option, then select the first real option
+  await page.waitForSelector('select[id="priceTypeId"] option:nth-child(2)', { state: 'attached' });
+  await priceTypeSelect.selectOption({ index: 1 });
 
   await page.fill('input[id="price"]', productData.price.toString());
   await page.fill('input[id="premiumPrice"]', productData.premiumPrice.toString());
@@ -57,8 +65,8 @@ export async function fillProductForm(page: Page, productData: typeof mockProduc
 }
 
 export async function navigateToAdminProducts(page: Page) {
-  await page.goto('/admin/products');
-  await page.waitForSelector('h1:has-text("Product Management")');
+  await page.goto('/admin?tab=products');
+  await page.waitForSelector('h2:has-text("Product Management")');
 }
 
 export async function clickTryItOut(page: Page) {

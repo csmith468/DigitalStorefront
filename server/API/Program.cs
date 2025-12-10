@@ -49,6 +49,7 @@ try
     builder.Services.AddAutoRegistration(typeof(Program).Assembly);
     builder.Services.AddManualRegistrations();
     builder.Services.AddImageStorage(builder.Configuration);
+    builder.Services.AddStripe(builder.Configuration);
     builder.Services.AddMappings();
 
     // Resilience

@@ -26,7 +26,7 @@ test.describe('Register and Create Product Flow', () => {
 
     await test.step('Navigate to admin console', async () => {
       await navigateToAdminProducts(page);
-      await expect(page.locator('h1:has-text("Product Management")')).toBeVisible();
+      await expect(page.locator('h2:has-text("Product Management")')).toBeVisible();
     });
 
     await test.step('Create new product', async () => {
@@ -39,8 +39,7 @@ test.describe('Register and Create Product Flow', () => {
     await test.step('Verify product appears in list', async () => {
       await navigateToAdminProducts(page);
       await page.fill('input[placeholder*="Search"]', productName);
-      await page.click('[data-testid="admin-search-button"]');
-
+      // Search is debounced so just wait for results to appear
       await expect(page.locator(`td:has-text("${productName}")`)).toBeVisible({ timeout: TIMEOUTS.API_CALL });
     });
   });

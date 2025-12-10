@@ -1,9 +1,11 @@
-import { createBrowserRouter, Navigate, Outlet } from "react-router-dom";
+import { createBrowserRouter, Outlet } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { lazy, Suspense } from "react";
 import { Toaster } from "react-hot-toast";
 import { toasterConfig } from "../config/toastConfig";
+import { loadStripe } from "@stripe/stripe-js";
+import { Elements } from "@stripe/react-stripe-js";
 import { AppLayout } from "./AppLayout";
 import { HomePage } from "../pages/HomePage";
 import { ProductDetailPage } from "../pages/ProductDetailPage";
@@ -12,9 +14,10 @@ import { ProtectedRoute } from "../components/auth/ProtectedRoute";
 import { RouteErrorPage } from "./RouteErrorPage";
 import { SearchResults } from "../pages/SearchResults";
 import { UserProvider } from "../contexts/UserContext";
+import { FeatureChecklist } from "../components/demo/FeatureChecklist";
 
 // Lazy load admin pages
-const AdminProductList = lazy(() => import("../components/admin/AdminProductList").then(m => ({ default: m.AdminProductList })));
+const AdminPage = lazy(() => import("../pages/admin/AdminPage").then(m => ({ default: m.AdminPage })));
 const CreateProductFormPage = lazy(() => import("../pages/admin/CreateProductFormPage").then(m => ({ default: m.CreateProductFormPage })));
 const EditProductFormPage = lazy(() => import("../pages/admin/EditProductFormPage").then(m => ({ default: m.EditProductFormPage })));
 const ViewProductFormPage = lazy(() => import("../pages/admin/ViewProductFormPage").then(m => ({ default: m.ViewProductFormPage })));
@@ -41,15 +44,20 @@ export const queryClient = new QueryClient({
   },
 });
 
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
+
 function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <UserProvider>
-        <Suspense fallback={<LoadingFallback />}>
-          <Outlet />
-        </Suspense>
-        <Toaster {...toasterConfig} />
-        <ReactQueryDevtools initialIsOpen={false} />
+        <Elements stripe={stripePromise}>
+          <Suspense fallback={<LoadingFallback />}>
+            <Outlet />
+          </Suspense>
+          <Toaster {...toasterConfig} />
+          <ReactQueryDevtools initialIsOpen={false} />
+          <FeatureChecklist />
+        </Elements>
       </UserProvider>
     </QueryClientProvider>
   );
@@ -68,8 +76,7 @@ export const router = createBrowserRouter([
           { path: "/search", element: <SearchResults /> },
           { path: "/products/:categorySlug/:subcategorySlug", element: <ProductsView /> },
           { path: "/product/:slug", element: <ProductDetailPage /> },
-          { path: "/admin", element: <Navigate to="/admin/products" replace /> },
-          { path: "/admin/products", element: <AdminProductList /> },
+          { path: "/admin", element: <AdminPage /> },
           { path: "/admin/products/try", element: <TryProductFormPage /> },
           { path: "/admin/products/:id/view", element: <ViewProductFormPage /> },
           {

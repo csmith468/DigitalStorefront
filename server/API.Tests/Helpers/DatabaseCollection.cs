@@ -1,6 +1,6 @@
 namespace API.Tests.Helpers;
 
-[CollectionDefinition("DatabaseCollection")]
+[CollectionDefinition("Database")]
 public class DatabaseCollection : ICollectionFixture<DatabaseFixture>
 {
     // Created just to define collection for tests that need database to attach fixture

@@ -32,7 +32,7 @@ public interface IQueryExecutor
         object? parameters = null, 
         string? orderByColumn = null, 
         bool descending = true,
-        TrustedOrderByExpression? customOrderBy = null,
+        TrustedSqlExpression? customOrderBy = null,
         CancellationToken ct = default) where T : class;
     
     string? Database { get; }

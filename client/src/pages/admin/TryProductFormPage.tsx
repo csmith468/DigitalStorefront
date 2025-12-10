@@ -34,7 +34,7 @@ export function TryProductFormPage() {
       mode="try"
       title="Try the Product Form"
       onSuccess={() => {}}
-      onCancel={() => navigate('/admin/products')}
+      onCancel={() => navigate('/admin')}
       onImagesChange={() => {}}
     />
   );

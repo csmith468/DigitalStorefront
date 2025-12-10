@@ -15,10 +15,13 @@ public class PriceType
 
 public static class PriceTypes
 {
+    public const int Coins = 1;
+    public const int Usd = 2;
+    
     public static readonly List<PriceType> All =
     [
-        new PriceType { PriceTypeId = 1, PriceTypeName = "Coins", Icon = "★" },
-        new PriceType { PriceTypeId = 2, PriceTypeName = "USD", Icon = "$" }
+        new PriceType { PriceTypeId = Coins, PriceTypeName = "Coins", Icon = "★" },
+        new PriceType { PriceTypeId = Usd, PriceTypeName = "USD", Icon = "$" }
     ];
 
     public static string GetIcon(int priceTypeId)

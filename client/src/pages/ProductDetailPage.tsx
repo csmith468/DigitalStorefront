@@ -4,17 +4,16 @@ import { useProductBySlug } from '../hooks/queries/useProducts';
 import { LoadingScreen } from '../components/primitives/LoadingScreen';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
-import { SuccessMessages } from '../constants/messages';
+import { BuyNowButton } from '../components/checkout/BuyNowButton';
+import type { ProductImage } from '../types/product';
+import type { Subcategory } from '../types/subcategory';
+import { formatPrice } from '../utils/formatters';
 
 export function ProductDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   const { data: product, isLoading, error } = useProductBySlug(slug as string);
-
-  const handleAddToCart = () => {
-    toast.success(SuccessMessages.Product.addedToCart);
-  };
 
   const handlePromotional = () => {
     toast.success('Promotional items are display only!');
@@ -107,7 +106,7 @@ export function ProductDetailPage() {
 
           {images.length > 1 && (
             <div className="flex gap-2 overflow-x-auto">
-              {images.map((image, index) => (
+              {images.map((image: ProductImage, index: number) => (
                 <button
                   key={image.productImageId}
                   onClick={() => setCurrentImageIndex(index)}
@@ -166,13 +165,13 @@ export function ProductDetailPage() {
             <div className="flex justify-between items-center">
               <span className="text-text-secondary">Regular Price:</span>
               <span className="text-2xl font-bold text-[var(--color-info)]">
-                {product.priceIcon} {product.price.toLocaleString()}
+                {formatPrice(product.price, product.priceIcon)}
               </span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-text-secondary">Premium Price:</span>
               <span className="text-2xl font-bold text-[var(--color-link-hover)]">
-                {product.priceIcon} {product.premiumPrice.toLocaleString()}
+                {formatPrice(product.premiumPrice, product.priceIcon)}
               </span>
             </div>
           </div>
@@ -184,17 +183,21 @@ export function ProductDetailPage() {
             >Promotional Item
             </button>
           ) : (
-            <button
-              onClick={handleAddToCart}
-              className="w-full px-6 py-4 text-lg bg-[var(--color-primary)] text-white rounded-lg hover:opacity-90 transition-opacity font-semibold"
-            >Add To Cart
-            </button>
+            <BuyNowButton
+              product={{
+                productId: product.productId,
+                name: product.name,
+                price: product.price,
+                priceIcon: product.priceIcon
+              }}
+              className={"w-full px-6 py-4 text-lg bg-[var(--color-primary)] text-white rounded-lg hover:opacity-90 transition-opacity font-semibold"}
+            />
           )}
 
           <div className="text-sm text-text-secondary space-y-1">
             <p>SKU: {product.sku}</p>
             {product.subcategories && product.subcategories.length > 0 && (
-              <p>Categories: {product.subcategories.map(s => s.name).join(', ')}</p>
+              <p>Categories: {product.subcategories.map((s: Subcategory) => s.name).join(', ')}</p>
             )}
           </div>
         </div>
