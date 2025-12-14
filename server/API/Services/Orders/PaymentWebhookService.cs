@@ -1,5 +1,7 @@
 using API.Database;
 using API.Models.DsfTables;
+using API.Models.Dtos;
+using API.Services.Notifications;
 using Stripe;
 
 namespace API.Services.Orders;
@@ -14,13 +16,15 @@ public class PaymentWebhookService : IPaymentWebhookService
 {
     private readonly IQueryExecutor _queryExecutor;
     private readonly ICommandExecutor _commandExecutor;
+    private readonly IEmailDeliveryService _emailDeliveryService;
     private readonly ILogger<PaymentWebhookService> _logger;
 
     public PaymentWebhookService(IQueryExecutor queryExecutor, ICommandExecutor commandExecutor,
-        ILogger<PaymentWebhookService> logger)
+        IEmailDeliveryService emailDeliveryService, ILogger<PaymentWebhookService> logger)
     {
         _queryExecutor = queryExecutor;
         _commandExecutor = commandExecutor;
+        _emailDeliveryService = emailDeliveryService;
         _logger = logger;
     }
 
@@ -51,5 +55,23 @@ public class PaymentWebhookService : IPaymentWebhookService
         await _commandExecutor.UpdateAsync(order, order.UpdatedAt);
         
         _logger.LogInformation("Order {OrderId} marked as {Status}", order.OrderId, newStatus);
+
+        if (order.Status == "Completed")
+            await SendOrderConfirmationEmailAsync(order);
+    }
+
+    private async Task SendOrderConfirmationEmailAsync(Order order)
+    {
+        if (order.Email == null) return;
+
+        var orderItems = await _queryExecutor.GetByFieldAsync<OrderItem>("orderId", order.OrderId);
+        var itemList = string.Join(", ", orderItems.Select(i => i.ProductName));
+
+        await _emailDeliveryService.CreateAndSendAsync(new CreateNotificationRequest
+        {
+            Order = order,
+            Subject = "Thanks for Testing!",
+            Body = $"Test Order #{order.OrderId} ({order.TotalCents / 100m:C}) - {itemList}"
+        });
     }
 }

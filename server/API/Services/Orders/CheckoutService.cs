@@ -63,7 +63,12 @@ public class CheckoutService : ICheckoutService
         
         var orderId = await _transactionManager.WithTransactionAsync(async () =>
         {
-            var id = await _commandExecutor.InsertAsync(new Order { UserId = _userContext.UserId, TotalCents = total }, ct);
+            var id = await _commandExecutor.InsertAsync(new Order
+            {
+                UserId = _userContext.UserId, 
+                TotalCents = total,
+                Email = request.Email
+            }, ct);
             await _commandExecutor.InsertAsync(new OrderItem
             {
                 OrderId = id,

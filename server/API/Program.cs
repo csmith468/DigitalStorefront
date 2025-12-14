@@ -48,9 +48,12 @@ try
     // Dependency Injection
     builder.Services.AddAutoRegistration(typeof(Program).Assembly);
     builder.Services.AddManualRegistrations();
+    builder.Services.AddMappings();
+    
+    // External Services
     builder.Services.AddImageStorage(builder.Configuration);
     builder.Services.AddStripe(builder.Configuration);
-    builder.Services.AddMappings();
+    builder.Services.AddSendGrid(builder.Configuration);
 
     // Resilience
     builder.Services.AddPollyPolicies();

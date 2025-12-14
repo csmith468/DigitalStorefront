@@ -25,6 +25,9 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
         Environment.SetEnvironmentVariable("Caching__StaticDataExpirationDays", "1");
         Environment.SetEnvironmentVariable("Stripe__SecretKey", "sk_test_fake_key_for_testing");
         Environment.SetEnvironmentVariable("Stripe__WebhookSecret", "whsec_fake_secret_for_testing");
+        Environment.SetEnvironmentVariable("SendGrid__ApiKey", "SG.fake_key_for_testing");
+        Environment.SetEnvironmentVariable("SendGrid__FromEmail", "test@example.com");
+        Environment.SetEnvironmentVariable("SendGrid__FromName", "Test");
     }
 
     public CustomWebApplicationFactory(TestDatabaseManager databaseManager)

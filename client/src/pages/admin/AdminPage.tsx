@@ -5,6 +5,7 @@ import { AdminProductList } from "../../components/admin/AdminProductList";
 import { AdminOrdersList } from "../../components/admin/AdminOrdersList";
 import { Modal } from "../../components/primitives/Modal";
 import { PageHeader } from "../../components/primitives/PageHeader";
+import { AdminEmailTemplate } from "../../components/admin/AdminEmailTemplate";
 
 export function AdminPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -29,7 +30,8 @@ export function AdminPage() {
 
   const tabs = [
     { id: 'products', label: 'Products' },
-    { id: 'orders', label: 'Orders' }
+    { id: 'orders', label: 'Orders' },
+    { id: 'emailTemplate', label: 'Email Template' },
   ];
 
   return (
@@ -42,7 +44,9 @@ export function AdminPage() {
         onTabChange={(tab) => setSearchParams({ tab })}
       />
 
-      {activeTab === 'products' ? <AdminProductList /> : <AdminOrdersList />}
+      {activeTab === 'products' && <AdminProductList/>}
+      {activeTab === 'orders' && <AdminOrdersList/>}
+      {activeTab === 'emailTemplate' && <AdminEmailTemplate/>}
 
       <Modal
         isOpen={successOrderId !== null}

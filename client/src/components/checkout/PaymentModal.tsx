@@ -4,6 +4,8 @@ import { ClipboardDocumentIcon } from "@heroicons/react/24/outline";
 import { Modal } from "../primitives/Modal";
 import { formatPrice } from "../../utils/formatters";
 import { usePaymentIntent } from "../../hooks/queries/useCheckout";
+import { FormInput } from "../primitives/FormInput";
+import { FormLabel } from "../primitives/FormLabel";
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -25,6 +27,7 @@ export function PaymentModal({ isOpen, onClose, product, onSuccess }: PaymentMod
   const [error, setError] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [email, setEmail] = useState('');
 
   const handleCopy = (e: React.MouseEvent<HTMLButtonElement>) => {
     navigator.clipboard.writeText('4242424242424242');
@@ -48,7 +51,9 @@ export function PaymentModal({ isOpen, onClose, product, onSuccess }: PaymentMod
 
     try {
       const { clientSecret, orderId } = await paymentIntentMutation.mutateAsync({
-        productId: product.productId, quantity: 1
+        productId: product.productId, 
+        quantity: 1,
+        email: email || undefined
       });
 
       const cardElement = elements.getElement(CardElement);
@@ -117,9 +122,7 @@ export function PaymentModal({ isOpen, onClose, product, onSuccess }: PaymentMod
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Card Details
-          </label>
+          <FormLabel label="Card Details" />
           <div className="border border-gray-300 rounded-lg p-3">
             <CardElement
               options={{
@@ -135,6 +138,18 @@ export function PaymentModal({ isOpen, onClose, product, onSuccess }: PaymentMod
               }}
             />
           </div>
+        </div>
+        <div>
+          <FormInput 
+            id="email" 
+            label="Email (optional to test SendGrid integration)"
+            type="email"
+            value={email}
+            onChange={(_, v) => setEmail(v?.toString() || '')}
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            This will send you a sample order confirmation email.
+          </p>
         </div>
 
         {error && (

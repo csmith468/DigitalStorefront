@@ -1,5 +1,6 @@
 using API.Configuration;
 using API.Services.Images;
+using SendGrid;
 using Stripe;
 
 namespace API.Extensions;
@@ -41,6 +42,22 @@ public static class ExternalServiceExtensions
             .ValidateDataAnnotations()
             .ValidateOnStart();
         StripeConfiguration.ApiKey = config["Stripe:SecretKey"];
+        return services;
+    }
+
+    public static IServiceCollection AddSendGrid(this IServiceCollection services, IConfiguration config)
+    {
+        services.AddOptions<SendGridOptions>()
+            .BindConfiguration(SendGridOptions.SectionName)
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        services.AddScoped<ISendGridClient>(sp =>
+        {
+            var options = config.GetSection(SendGridOptions.SectionName).Get<SendGridOptions>();
+            return new SendGridClient(options!.ApiKey);
+        });
+
         return services;
     }
 }

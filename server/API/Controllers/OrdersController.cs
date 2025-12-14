@@ -3,6 +3,7 @@ using API.Filters;
 using API.Models.Dtos;
 using API.Services.Orders;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace API.Controllers;
 
@@ -19,6 +20,7 @@ public class OrdersController : ControllerBase
         _checkoutService = checkoutService;
     }
 
+    [EnableRateLimiting("anonymous")]
     [HttpGet] 
     public async Task<ActionResult<PaginatedResponse<OrderDetailDto>>> GetOrdersAsync(
         [FromQuery] PaginationParams pagination, CancellationToken ct)
@@ -27,6 +29,7 @@ public class OrdersController : ControllerBase
     }
 
     [Idempotent]
+    [EnableRateLimiting("expensive")]
     [HttpPost("payment-intent")]
     public async Task<ActionResult<PaymentIntentResponse>> CreateOrderAsync(CreatePaymentIntentRequest request, CancellationToken ct)
     {

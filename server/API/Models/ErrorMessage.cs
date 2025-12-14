@@ -69,4 +69,18 @@ public static class ErrorMessages
         public static ErrorMessage InvalidSubcategories(string invalidIds) =>
             new($"Invalid subcategoryIds: {invalidIds}", HttpStatusCode.BadRequest);
     }
+
+    public static class Order
+    {
+        public static ErrorMessage NotFound =
+            new("Order not found", HttpStatusCode.NotFound);
+        public static ErrorMessage NoEmail =
+            new("Order has no email", HttpStatusCode.BadRequest);
+    }
+
+    public static class Email
+    {
+        public static ErrorMessage SendFailed =
+            new("Email failed to send", HttpStatusCode.InternalServerError);
+    }
 }
