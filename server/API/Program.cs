@@ -1,6 +1,7 @@
 using API.Database;
 using API.Extensions;
 using API.Filters;
+using API.Hubs;
 using API.Infrastructure.BackgroundJobs;
 using API.Infrastructure.Startup;
 using API.Middleware;
@@ -26,6 +27,7 @@ try
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddHttpContextAccessor();
     builder.Services.AddMemoryCache();
+    builder.Services.AddSignalR();
     builder.Services.AddHostedService<StartupOrchestrator>();
     builder.Services.AddHostedService<PeriodicCleanupService>();
 
@@ -90,6 +92,7 @@ try
 
     app.MapHealthCheckEndpoints();
     app.MapControllers();
+    app.MapHub<ProductViewerHub>("/hubs/product-viewers");
 
     app.Run();
 }
