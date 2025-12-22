@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { CheckIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
 import { features, STORAGE_KEY, type FeatureItem } from './featureChecklistData';
 import { useLocalStorage } from '../../hooks/utilities/useLocalStorage';
 
@@ -76,9 +77,7 @@ export function FeatureChecklist() {
               className="p-1 hover:bg-gray-200 rounded transition-colors"
               aria-label="Minimize checklist"
             >
-              <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
+              <ChevronDownIcon className="w-4 h-4 text-gray-500" />
             </button>
           </div>
 
@@ -96,9 +95,7 @@ export function FeatureChecklist() {
                     : 'border-gray-300 scale-100'
                 }`}>
                   {completedItems.includes(item.id) && (
-                    <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                    </svg>
+                    <CheckIcon className="w-3 h-3 text-white" strokeWidth={3} />
                   )}
                 </div>
 
