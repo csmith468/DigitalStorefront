@@ -1,40 +1,39 @@
-using System.Collections.Concurrent;
+using API.Infrastructure.Viewers;
 using Microsoft.AspNetCore.SignalR;
 
 namespace API.Hubs;
 
 public class ProductViewerHub : Hub
 {
-    private static readonly ConcurrentDictionary<string, int> _viewerCounts = new();
-    private static readonly ConcurrentDictionary<string, string> _connectionToProduct = new();
+    private readonly IViewerTrackingService _viewerTrackingService;
+    public ProductViewerHub(IViewerTrackingService viewerTrackingService)
+    {
+        _viewerTrackingService = viewerTrackingService;
+    }
 
-    // NOTE: Joins or replaces existing connection
     public async Task JoinProductAsync(string productSlug)
     {
-        if (_connectionToProduct.TryGetValue(Context.ConnectionId, out var previousSlug))
-            await LeaveProductInternalAsync(previousSlug);
+        var result = _viewerTrackingService.TrackViewer(Context.ConnectionId, productSlug);
 
-        _connectionToProduct[Context.ConnectionId] = productSlug;
+        if (result.PreviousProduct != null)
+        {
+            await BroadcastViewerCountUpdateAsync(
+                result.PreviousProduct.ProductSlug,
+                result.PreviousProduct.ViewerCount);
+        }
+
         await Groups.AddToGroupAsync(Context.ConnectionId, productSlug);
-
-        var count = _viewerCounts.AddOrUpdate(productSlug, 1, (_, c) => c + 1);
-        await BroadcastViewerCountUpdateAsync(productSlug, count);
+        await BroadcastViewerCountUpdateAsync(productSlug, result.ViewerCount);
     }
 
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
-        if (_connectionToProduct.TryRemove(Context.ConnectionId, out var productSlug))
-            await LeaveProductInternalAsync(productSlug);
-        await base.OnDisconnectedAsync(exception);
-    }
+        var result = _viewerTrackingService.UntrackViewer(Context.ConnectionId);
 
-    private async Task LeaveProductInternalAsync(string productSlug)
-    {
-        var count = _viewerCounts.AddOrUpdate(productSlug, 0, (_, c) => Math.Max(0, c - 1));
-        if (count == 0)
-            _viewerCounts.TryRemove(productSlug, out _);
-        
-        await BroadcastViewerCountUpdateAsync(productSlug, count);
+        if (result != null)
+            await BroadcastViewerCountUpdateAsync(result.ProductSlug, result.ViewerCount);
+
+        await base.OnDisconnectedAsync(exception);
     }
 
     private async Task BroadcastViewerCountUpdateAsync(string productSlug, int count)
