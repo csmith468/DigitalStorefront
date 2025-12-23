@@ -2,6 +2,7 @@ import { Page } from '@playwright/test';
 import { mockProductFormRequest } from '../fixtures/test-data';
 import { SuccessMessages } from '../../src/constants/messages';
 import { TIMEOUTS } from '../config/timeouts';
+import { clickWhenReady } from '../fixtures';
 
 export function generateTestProduct() {
   const timestamp = Date.now();
@@ -66,24 +67,24 @@ export async function fillProductForm(page: Page, productData: typeof mockProduc
 
 export async function navigateToAdminProducts(page: Page) {
   await page.goto('/admin?tab=products');
-  await page.waitForSelector('h2:has-text("Product Management")');
+  await page.waitForSelector('h2:has-text("Product Management")', { timeout: TIMEOUTS.PAGE_LOAD });
 }
 
 export async function clickTryItOut(page: Page) {
   await navigateToAdminProducts(page);
-  await page.click('button:has-text("Try Now")');
+  await clickWhenReady(page.locator('button:has-text("Try Now")'));
   await page.waitForURL('/admin/products/try');
 }
 
 export async function createProduct(page: Page) {
   await navigateToAdminProducts(page);
-  await page.click('button:has-text("Create New Product")');
+  await clickWhenReady(page.locator('button:has-text("Create New Product")'));
   await page.waitForURL('/admin/products/create');
 
   const productData = generateTestProduct();
   await fillProductForm(page, productData);
 
-  await page.click('button:has-text("Create Product")');
+  await clickWhenReady(page.locator('button:has-text("Create Product")'));
   await page.waitForSelector(`text=${SuccessMessages.Product.created}`, { timeout: TIMEOUTS.FORM_SUBMIT });
 
   await page.waitForURL(/\/admin\/products\/\d+\/edit/);

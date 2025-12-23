@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures';
+import { test, expect, clickWhenReady } from './fixtures';
 import { register, generateTestUser, expectUserLoggedIn } from './helpers/auth';
 import { createProduct, navigateToAdminProducts } from './helpers/products';
 import { TIMEOUTS } from './config/timeouts';
@@ -17,7 +17,7 @@ test.describe('Register and Create Product Flow', () => {
     });
 
     await test.step('Verify user has correct roles', async () => {
-      await page.click('[data-testid="user-dropdown"]');
+      await clickWhenReady(page.locator('[data-testid="user-dropdown"]'));
       await expect(page.locator('text=ProductWriter')).toBeVisible();
       await expect(page.locator('text=ImageManager')).toBeVisible();
 

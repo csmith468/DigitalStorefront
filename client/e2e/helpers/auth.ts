@@ -1,6 +1,7 @@
 import { Page } from '@playwright/test';
 import { mockRegisterRequest } from '../fixtures/test-data';
 import { TIMEOUTS } from '../config/timeouts';
+import { clickWhenReady } from '../fixtures';
 
 export function generateTestUser() {
   const timestamp = Date.now();
@@ -12,12 +13,10 @@ export function generateTestUser() {
 };
 
 export async function register(page: Page, userDetails: typeof mockRegisterRequest) {
-  await page.click('button:has-text("Login")');
-  await page.waitForSelector('text=Sign In', { state: 'visible' });
+  await clickWhenReady(page.locator('button:has-text("Login")'));
+  await page.waitForSelector('text=Sign In', { state: 'visible', timeout: TIMEOUTS.DOM_UPDATE });
 
-  const registerSwitchButton = page.locator('button:has-text("Register Here")');
-  await registerSwitchButton.waitFor({ state: 'visible', timeout: 5000 });
-  await registerSwitchButton.click();
+  await clickWhenReady(page.locator('button:has-text("Register Here")'));
   await page.waitForSelector('text=Create Account', { state: 'visible' });
 
   await page.waitForSelector('input[id="confirmPassword"]', { state: 'visible', timeout: TIMEOUTS.DOM_UPDATE });
