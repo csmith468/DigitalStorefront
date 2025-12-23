@@ -1,12 +1,6 @@
 import { Page, expect } from '@playwright/test';
 import { TIMEOUTS } from '../config/timeouts';
-
-export async function collapseFeatureChecklist(page: Page) {
-  const minimizeButton = page.locator('button[aria-label="Minimize checklist"]');
-  if (await minimizeButton.isVisible({ timeout: 1000 }).catch(() => false)) {
-    await minimizeButton.click();
-  }
-}
+import { collapseFeatureChecklist } from '../fixtures';
 
 export const STRIPE_TEST_CARDS = {
   SUCCESS: '4242424242424242',

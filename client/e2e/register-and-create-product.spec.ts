@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import { register, generateTestUser, expectUserLoggedIn } from './helpers/auth';
 import { createProduct, navigateToAdminProducts } from './helpers/products';
 import { TIMEOUTS } from './config/timeouts';

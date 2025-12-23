@@ -31,6 +31,11 @@ export default defineConfig({
     trace: 'on-first-retry',
 
     screenshot: 'only-on-failure',
+
+    // Partition to avoid rate limits
+    extraHTTPHeaders: {
+      'Test-Partition-Key': `e2e-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    },
   },
   // Configure projects for major browsers.
   projects: [

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import { TIMEOUTS } from './config/timeouts';
 import { openPaymentModal } from './helpers/checkout';
 

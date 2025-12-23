@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import { clickTryItOut, fillProductForm, generateTestProduct } from './helpers/products';
 
 test.describe('Public Try-It-Out Flow', () => {
