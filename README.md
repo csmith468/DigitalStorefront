@@ -527,6 +527,21 @@ dotnet run -- --reset
 - Full registration → login → create product → manage images flow
 - Complete Stripe checkout with success/failure test cards
 
+### E2E in CI/CD
+
+E2E tests run in GitHub Actions against an isolated SQL Server container:
+
+```yaml
+# Each CI run gets a fresh database
+- Start SQL Server container (Docker Compose with healthcheck)
+- Create database + run migrations
+- Start API server
+- Run Playwright tests
+- Cleanup container
+```
+
+This ensures complete isolation between runs - no shared state, no flaky tests from data conflicts. Branch protection requires E2E to pass before merging.
+
 ---
 
 ## Project Structure

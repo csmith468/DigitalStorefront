@@ -49,7 +49,7 @@ jobs:
         working-directory: ./server
 
       - name: Test
-        run: dotnet test --no-build --configuration Release --verbosity normal --filter "Skip!=CI"
+        run: dotnet test --no-build --configuration Release --verbosity normal
         working-directory: ./server
 
       - name: Run Database Migrations

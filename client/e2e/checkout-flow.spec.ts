@@ -30,9 +30,10 @@ test.describe('Checkout Flow', () => {
     await firstProductLink.click();
 
     await page.waitForURL(/\/product\//, { timeout: TIMEOUTS.PAGE_LOAD });
+    await expect(page.getByText('Loading')).not.toBeVisible({ timeout: TIMEOUTS.PAGE_LOAD });
 
-    await expect(page.locator('h1')).toBeVisible({ timeout: TIMEOUTS.PAGE_LOAD });
-    await expect(page.locator('button:has-text("Buy Now")')).toBeVisible({ timeout: TIMEOUTS.PAGE_LOAD });
+    // Wait for product detail page - only one Buy Now button should exist
+    await expect(page.locator('button:has-text("Buy Now")')).toHaveCount(1, { timeout: TIMEOUTS.PAGE_LOAD });
   }
 
   test.describe('Successful Payment', () => {
