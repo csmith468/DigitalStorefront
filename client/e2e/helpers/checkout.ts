@@ -1,12 +1,6 @@
 import { Page, expect } from '@playwright/test';
 import { TIMEOUTS } from '../config/timeouts';
-
-export async function collapseFeatureChecklist(page: Page) {
-  const minimizeButton = page.locator('button[aria-label="Minimize checklist"]');
-  if (await minimizeButton.isVisible({ timeout: 1000 }).catch(() => false)) {
-    await minimizeButton.click();
-  }
-}
+import { collapseFeatureChecklist, clickWhenReady } from '../fixtures';
 
 export const STRIPE_TEST_CARDS = {
   SUCCESS: '4242424242424242',
@@ -35,22 +29,21 @@ export async function fillStripeCard(
   await cvcInput.fill(TEST_CARD_CVC);
 
   const zipInput = stripeFrame.locator('[placeholder="ZIP"]');
-  if (await zipInput.isVisible({ timeout: 1000 }).catch(() => false)) {
+  if (await zipInput.isVisible({ timeout: TIMEOUTS.DOM_UPDATE }).catch(() => false)) {
     await zipInput.fill(TEST_CARD_ZIP);
   }
 }
 
 export async function openPaymentModal(page: Page) {
   await collapseFeatureChecklist(page);
-  await page.click('button:has-text("Buy Now")');
+  await clickWhenReady(page.locator('button:has-text("Buy Now")'));
   await expect(page.locator('text=Complete Purchase')).toBeVisible({
     timeout: TIMEOUTS.DOM_UPDATE
   });
 }
 
 export async function submitPayment(page: Page) {
-  const payButton = page.locator('button:has-text("Pay $")');
-  await payButton.click();
+  await clickWhenReady(page.locator('button:has-text("Pay $")'));
 }
 
 export async function completeCheckout(page: Page, cardNumber: string = STRIPE_TEST_CARDS.SUCCESS) {
@@ -79,7 +72,7 @@ export async function expectPaymentError(page: Page) {
 }
 
 export async function closeSuccessModal(page: Page) {
-  await page.click('button:has-text("Close")');
+  await clickWhenReady(page.locator('button:has-text("Close")'));
   await expect(page.locator('text=Payment Successful!')).not.toBeVisible({
     timeout: TIMEOUTS.DOM_UPDATE
   });

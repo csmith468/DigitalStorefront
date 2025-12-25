@@ -2,6 +2,7 @@ using System.Reflection;
 using API.Database;
 using API.Infrastructure.Contexts;
 using API.Infrastructure.Startup;
+using API.Infrastructure.Viewers;
 using API.Services;
 using API.Services.Images;
 using API.Utils;
@@ -42,6 +43,9 @@ public static class DependencyInjectionExtensions
         services.AddScoped<IRoleSeeder, RoleSeeder>();
         services.AddScoped<TokenGenerator>();
         services.AddScoped<PasswordHasher>();
+
+        // replaces scoped auto-registration
+        services.AddSingleton<IViewerTrackingService, ViewerTrackingService>();
         return services;
     }
     

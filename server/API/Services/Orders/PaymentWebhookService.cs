@@ -71,7 +71,7 @@ public class PaymentWebhookService : IPaymentWebhookService
         {
             Order = order,
             Subject = "Thanks for Testing!",
-            Body = $"Test Order #{order.OrderId} ({order.TotalCents / 100m:C}) - {itemList}"
+            Body = $"Test Order #{order.OrderId} (${order.TotalCents / 100m:F2}) - {itemList}"
         });
     }
 }

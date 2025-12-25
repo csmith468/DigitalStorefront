@@ -1,4 +1,4 @@
-import { test, expect, Page } from '@playwright/test';
+import { test, expect, Page } from './fixtures';
 import { TIMEOUTS } from './config/timeouts';
 import {
   completeCheckout,
@@ -30,8 +30,10 @@ test.describe('Checkout Flow', () => {
     await firstProductLink.click();
 
     await page.waitForURL(/\/product\//, { timeout: TIMEOUTS.PAGE_LOAD });
+    await expect(page.getByText('Loading')).not.toBeVisible({ timeout: TIMEOUTS.PAGE_LOAD });
 
-    await expect(page.locator('h1')).toBeVisible({ timeout: TIMEOUTS.PAGE_LOAD });
+    // Wait for product detail page - only one Buy Now button should exist
+    await expect(page.locator('button:has-text("Buy Now")')).toHaveCount(1, { timeout: TIMEOUTS.PAGE_LOAD });
   }
 
   test.describe('Successful Payment', () => {
@@ -84,7 +86,7 @@ test.describe('Checkout Flow', () => {
         await openPaymentModal(page);
 
         const conversionText = page.locator('text=Conversion');
-        const hasConversion = await conversionText.isVisible({ timeout: 1000 }).catch(() => false);
+        const hasConversion = await conversionText.isVisible({ timeout: TIMEOUTS.DOM_UPDATE }).catch(() => false);
 
         if (hasConversion) {
           await expect(page.locator('text=/\\$\\d+\\.\\d{2} USD/')).toBeVisible();
@@ -135,7 +137,7 @@ test.describe('Checkout Flow', () => {
         const payButton = page.locator('button:has-text("Pay $")');
         await payButton.click();
 
-        const processingVisible = await page.locator('text=Processing').isVisible({ timeout: 2000 }).catch(() => false);
+        const processingVisible = await page.locator('text=Processing').isVisible({ timeout: TIMEOUTS.DOM_UPDATE }).catch(() => false);
 
         if (!processingVisible) {
           await expectPaymentSuccess(page);

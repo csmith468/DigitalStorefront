@@ -2,18 +2,20 @@ import { useParams, Link } from 'react-router-dom';
 import { useState } from 'react';
 import { useProductBySlug } from '../hooks/queries/useProducts';
 import { LoadingScreen } from '../components/primitives/LoadingScreen';
-import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
+import { ArrowTopRightOnSquareIcon, ChevronLeftIcon, ChevronRightIcon, EyeIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { BuyNowButton } from '../components/checkout/BuyNowButton';
 import type { ProductImage } from '../types/product';
 import type { Subcategory } from '../types/subcategory';
 import { formatPrice } from '../utils/formatters';
+import { useProductViewers } from '../hooks/utilities/useProductViewers';
 
 export function ProductDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   const { data: product, isLoading, error } = useProductBySlug(slug as string);
+  const { viewerCount } = useProductViewers(slug);
 
   const handlePromotional = () => {
     toast.success('Promotional items are display only!');
@@ -130,6 +132,22 @@ export function ProductDetailPage() {
             <h1 className="text-3xl font-bold text-text-primary mb-2">
               {product.name}
             </h1>
+
+            {viewerCount !== null && (
+              <div className="flex items-center gap-1.5 text-sm text-text-secondary mb-2">
+                <EyeIcon className="h-4 w-4" />
+                <span>{viewerCount} {viewerCount === 1 ? 'person' : 'people'} viewing</span>
+                <a
+                  href={`/product/${slug}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Open this product in a new tab to test the live viewer count"
+                  className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-primary hover:underline transition-colors"
+                >
+                  (open in another tab to test! <ArrowTopRightOnSquareIcon className='h-3 w-3' />)
+                </a>
+              </div>
+            )}
 
             <div className="flex flex-wrap gap-2 mb-4">
               {product.isNew && (

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, clickWhenReady } from './fixtures';
 import { TIMEOUTS } from './config/timeouts';
 import { openPaymentModal } from './helpers/checkout';
 
@@ -20,8 +20,7 @@ test.describe('Browse Catalog Flow', () => {
     });
 
     await test.step('Click first subcategory and view products', async () => {
-      const firstSubcategory = page.locator('aside a.subcategory-link').first();
-      await firstSubcategory.click();
+      await clickWhenReady(page.locator('aside a.subcategory-link').first());
 
       expect(page.url()).toContain('/products/');
 
@@ -29,8 +28,7 @@ test.describe('Browse Catalog Flow', () => {
     });
 
     await test.step('Click on first product to view details', async () => {
-      const firstProductLink = page.locator('a[href^="/product/"]').first();
-      await firstProductLink.click();
+      await clickWhenReady(page.locator('a[href^="/product/"]').first());
 
       expect(page.url()).toContain('/product/');
       await expect(page.getByText('Loading')).not.toBeVisible({ timeout: TIMEOUTS.PAGE_LOAD });
@@ -45,7 +43,7 @@ test.describe('Browse Catalog Flow', () => {
       await expect(page.locator('text=Test Mode')).toBeVisible();
       await expect(page.locator('text=4242 4242 4242 4242')).toBeVisible();
 
-      await page.click('button:has-text("Cancel")');
+      await clickWhenReady(page.locator('button:has-text("Cancel")'));
       await expect(page.locator('text=Complete Purchase')).not.toBeVisible();
     });
   });
