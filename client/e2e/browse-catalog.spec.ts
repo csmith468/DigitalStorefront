@@ -30,11 +30,11 @@ test.describe('Browse Catalog Flow', () => {
     await test.step('Click on first product to view details', async () => {
       await clickWhenReady(page.locator('a[href^="/product/"]').first());
 
-      expect(page.url()).toContain('/product/');
+      await page.waitForURL(/\/product\/[a-z]/, { timeout: TIMEOUTS.PAGE_LOAD });
       await expect(page.getByText('Loading')).not.toBeVisible({ timeout: TIMEOUTS.PAGE_LOAD });
 
       await expect(page.locator('h1')).toBeVisible({ timeout: TIMEOUTS.PAGE_LOAD });
-      await expect(page.locator('button:has-text("Buy Now")')).toBeVisible({ timeout: TIMEOUTS.PAGE_LOAD });
+      await expect(page.getByText('Regular Price:')).toBeVisible({ timeout: TIMEOUTS.PAGE_LOAD });
     });
 
     await test.step('Click Buy Now opens payment modal', async () => {

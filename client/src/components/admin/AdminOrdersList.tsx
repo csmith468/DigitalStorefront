@@ -1,10 +1,25 @@
 import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { LoadingScreen } from "../primitives/LoadingScreen";
 import { usePagination } from "../../hooks/utilities/usePagination";
 import { PaginationWrapper } from "../primitives/PaginationWrapper";
 import { getOrders } from "../../services/orderService";
 
-export function AdminOrdersList() {
+interface AdminOrdersListProps {
+  recentOrderSuccess?: boolean;
+}
+
+export function AdminOrdersList({ recentOrderSuccess = false }: AdminOrdersListProps) {
+  const [shouldPoll, setShouldPoll] = useState(recentOrderSuccess);
+
+  useEffect(() => {
+    if (recentOrderSuccess) {
+      setShouldPoll(true);
+      const timeout = setTimeout(() => setShouldPoll(false), 10000);
+      return () => clearTimeout(timeout);
+    }
+  }, [recentOrderSuccess]);
+
   const pagination = usePagination({
     initialPageSize: 10,
     pageSizeOptions: [10, 25, 50],
@@ -16,6 +31,7 @@ export function AdminOrdersList() {
       page: pagination.page,
       pageSize: pagination.pageSize
     }, signal),
+    refetchInterval: shouldPoll ? 2000 : false,
   });
 
   if (isLoading && !data) {

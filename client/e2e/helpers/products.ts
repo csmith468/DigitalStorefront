@@ -72,7 +72,7 @@ export async function navigateToAdminProducts(page: Page) {
 
 export async function clickTryItOut(page: Page) {
   await navigateToAdminProducts(page);
-  await clickWhenReady(page.locator('button:has-text("Try Now")'));
+  await clickWhenReady(page.locator('tr:has-text("TRY IT OUT")'));
   await page.waitForURL('/admin/products/try');
 }
 

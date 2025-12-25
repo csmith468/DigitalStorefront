@@ -18,17 +18,17 @@ export const features: FeatureItem[] = [
     completionPaths: ['/'],
   },
   {
-    id: 'payment',
-    title: 'Complete a test purchase',
-    techNote: 'Stripe PaymentIntent, webhooks, idempotency',
-    path: '/products/seasonal/all',
-  },
-  {
     id: 'admin-form',
     title: 'Try the admin form',
     techNote: 'Complex validation, tag autocomplete, drag-drop images',
     path: '/admin',
     completionPaths: ['/admin/products/try', '/admin/products/create'],
+  },
+  {
+    id: 'payment',
+    title: 'Complete a test purchase',
+    techNote: 'Stripe PaymentIntent, webhooks, idempotency',
+    path: '/products/seasonal/all',
   },
   {
     id: 'github',
