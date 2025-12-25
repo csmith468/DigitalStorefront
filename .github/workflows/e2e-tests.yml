@@ -70,7 +70,7 @@ jobs:
 
       - name: Start API server
         run: |
-          dotnet run --no-build --configuration Release &
+          dotnet run --no-build --configuration Release --no-launch-profile &
           echo "Waiting for API to start..."
           timeout 30 bash -c 'until curl -s http://localhost:5000/health > /dev/null 2>&1; do sleep 1; done'
           echo "API is ready!"

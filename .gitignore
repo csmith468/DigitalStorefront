@@ -64,6 +64,5 @@ API/appsettings.Development.json
 API/appsettings.Production.json
 .vscode/*
 server/API/wwwroot/images/*
-client/package-lock.json
 server/API/appsettings.Development.json
 coverage.json

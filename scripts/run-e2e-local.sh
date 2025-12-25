@@ -79,7 +79,7 @@ cd "$REPO_ROOT/server/API"
 ASPNETCORE_ENVIRONMENT=E2E \
 ASPNETCORE_URLS=http://localhost:5000 \
 ConnectionStrings__DefaultConnection="$CONNECTION_STRING" \
-dotnet run &
+dotnet run --no-launch-profile &
 API_PID=$!
 
 # 5. Wait for API
