@@ -1,49 +1,17 @@
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../contexts/useUser';
-import type { ReactNode } from 'react';
 import { PageHeader } from '../components/primitives/PageHeader';
-
-interface FeatureCardProps {
-  title: string;
-  description: string;
-  features: string;
-  children?: ReactNode;
-}
 
 export function HomePage() {
   const navigate = useNavigate();
   const { user, openAuthModal } = useUser();
 
-  const FeatureCard: React.FC<FeatureCardProps> = ({ title, description, features, children }) => {
-    return (
-      <div className="bg-white rounded-lg shadow-md p-5 border border-gray-200">
-        <h2 className="text-xl font-semibold text-text-primary mb-2">{title}</h2>
-        <p className="text-text-secondary mb-3">{description}</p>
-        <div className="text-sm text-gray-500">Features: {features}</div>
-        {children && <div className="mt-3">{children}</div>}
-      </div>
-    );
-  };
-
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <PageHeader
         title="Welcome to Digital Storefront"
-        subtitle="Inspired by a virtual pet game economy - demonstrating admin console architecture, complex product management, and full-stack integration beyond basic e-commerce"
+        subtitle="Inspired by a virtual pet game economy - demonstrating admin console architecture, complex product management, and production-grade patterns"
       />
-
-      <div className="grid md:grid-cols-2 gap-5 mb-8">
-        <FeatureCard
-          title='Browse Products'
-          description='Explore our product catalog organized by categories. Click any category in the sidebar to start browsing.'
-          features='Server-side pagination, filtering, dynamic routing'
-        />
-        <FeatureCard
-          title='Search Products'
-          description='Use the search bar in the header to find products by name, category, or subcategory with relevance-based sorting.'
-          features='Smart search, SQL relevance ranking, React Query caching'
-        />
-      </div>
 
       <div className="mb-8">
         <div className="bg-gradient-to-br from-green-50 to-blue-50 rounded-lg shadow-lg p-6 border-2 border-green-200">
@@ -62,6 +30,7 @@ export function HomePage() {
           </p>
           <div className="text-sm text-gray-600 mb-5">
             <strong>Features:</strong> CRUD operations, drag-and-drop image management, form validation, tag search, protected routes
+            <div className="mt-2 text-gray-500 italic">Use the feature checklist in the corner to explore key technical highlights.</div>
           </div>
           <div className="flex flex-wrap gap-3">
             <button
@@ -115,7 +84,7 @@ export function HomePage() {
             <span>• Optimistic concurrency control</span>
             <span>• Multi-tier rate limiting</span>
             <span>• Correlation IDs for distributed tracing</span>
-            <span>• 13 custom UI primitives with ARIA accessibility</span>
+            <span>• 15 custom UI primitives with ARIA accessibility</span>
             <span>• Multi-layer error boundaries</span>
           </div>
         </div>

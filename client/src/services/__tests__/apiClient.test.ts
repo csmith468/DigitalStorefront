@@ -152,7 +152,7 @@ describe('apiClient', () => {
     });
 
     it('has correct timeout configuration', () => {
-      expect(apiClient.defaults.timeout).toBe(10000);
+      expect(apiClient.defaults.timeout).toBe(30000);
     });
 
     it('has correct Content-Type header', () => {

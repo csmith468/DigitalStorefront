@@ -45,7 +45,7 @@ export function AdminPage() {
       />
 
       {activeTab === 'products' && <AdminProductList/>}
-      {activeTab === 'orders' && <AdminOrdersList/>}
+      {activeTab === 'orders' && <AdminOrdersList recentOrderSuccess={successOrderId !== null} />}
       {activeTab === 'emailTemplate' && <AdminEmailTemplate/>}
 
       <Modal

@@ -19,7 +19,7 @@ A production-ready admin console for e-commerce product management, featuring co
 | Category | Highlights |
 |----------|------------|
 | **Backend** | Custom Dapper ORM, Result pattern, Stripe payments, SignalR real-time, Polly resilience, idempotency keys |
-| **Frontend** | Custom component library (14 primitives), React Query, multi-layer error boundaries |
+| **Frontend** | Custom component library (15 primitives), React Query, multi-layer error boundaries |
 | **Security** | JWT + RBAC, SQL injection prevention, optimistic concurrency, multi-tier rate limiting |
 | **Testing** | Testcontainers (real SQL Server), Vitest, Playwright E2E with Stripe |
 | **DevOps** | GitHub Actions CI/CD, Azure (App Service, Static Web Apps, SQL, Blob, Key Vault) |
@@ -32,7 +32,7 @@ Digital Storefront is a cloud-native application with a React + TypeScript front
 
 ### Why I Built This
 
-I logged back into a childhood online game and found their website horribly dated, which made me want to rebuild it. I started planning a storefront, but realized a shopping cart wouldn't showcase much. So I pivoted to the admin console to build complex form workflows, image management, and the production patterns that don't show up in typical portfolio projects.
+I logged back into a childhood online game and found their website horribly dated, which made me want to rebuild it. I started planning a storefront, but realized a shopping cart wouldn't showcase much. So I pivoted to the admin console to build complex form workflows, image management, and production patterns you'd typically see in real-world systems.
 
 **What it does:**
 
@@ -60,54 +60,22 @@ I logged back into a childhood online game and found their website horribly date
 │      Azure SQL         Blob Storage       Key Vault             │
 │      Database           (Images)          (Secrets)             │
 └─────────────────────────────────────────────────────────────────┘
+                                │
+            ┌───────────────────┼───────────────────┐
+            ▼                   ▼                   ▼
+         Stripe             SendGrid            SignalR
+        (Payments)          (Email)           (Real-time)
 ```
 
 **Code architecture:**
 
-```text
-┌────────────────────────────────────────────────────────────────┐
-│  FRONTEND                                                      │
-│  Components → React Query Hooks → Services → Axios             │
-└────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌────────────────────────────────────────────────────────────────┐
-│  API GATEWAY                                                   │
-│  Rate Limiting → Correlation ID → Exception Handling → Auth   │
-└────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌────────────────────────────────────────────────────────────────┐
-│  CONTROLLERS                                                   │
-│  [Authorize] [Idempotent] [RateLimit] → Thin routing layer    │
-└────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌────────────────────────────────────────────────────────────────┐
-│  SERVICES                                                      │
-│  Business logic returning Result<T> for explicit error handling│
-└────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌────────────────────────────────────────────────────────────────┐
-│  DATABASE LAYER                                                │
-│  IQueryExecutor │ ICommandExecutor │ ITransactionManager       │
-└────────────────────────────────────────────────────────────────┘
-```
-
----
-
-## Tech Stack
-
-| Layer | Technologies |
-|-------|--------------|
-| Frontend | React 19, TypeScript, React Query, React Router v7, Tailwind CSS, Vite |
-| Backend | .NET 8, Dapper (custom ORM abstraction), FluentValidation, Polly, SignalR, Serilog |
-| Payments | Stripe (PaymentIntents, Webhooks), SendGrid (order confirmations) |
-| Database | SQL Server 2022, DbUp migrations |
-| Testing | xUnit, Testcontainers, Vitest, Playwright |
-| Cloud | Azure (App Service, Static Web Apps, SQL Database, Blob Storage, Key Vault, Application Insights) |
-| DevOps | GitHub Actions, Docker |
+| Layer | Flow |
+|-------|------|
+| Client | Components → React Query → Services → Axios |
+| API Gateway | Rate Limiting → Correlation ID → Exception Handling → Auth |
+| Controllers | `[Authorize]` `[Idempotent]` `[RateLimit]` → thin routing |
+| Services | Business logic returning `Result<T>` |
+| Database | IQueryExecutor \| ICommandExecutor \| ITransactionManager |
 
 ---
 
@@ -195,72 +163,13 @@ if (product == null)
 
 ### Stripe Payment Integration
 
-Full payment flow with webhook handling and signature verification:
-
-```csharp
-// CheckoutService orchestrates order creation + Stripe PaymentIntent
-public async Task<Result<PaymentIntentResponse>> ExecuteCheckoutWorkflowAsync(CreatePaymentIntentRequest request, CancellationToken ct)
-{
-    // Step 1: Create order in transaction
-    var orderId = await _transactionManager.WithTransactionAsync(async () =>
-    {
-        var id = await _commandExecutor.InsertAsync(new Order { ... }, ct);
-        await _commandExecutor.InsertAsync(new OrderItem { OrderId = id, ... }, ct);
-        return id;
-    }, ct);
-
-    // Step 2: Create Stripe PaymentIntent with order metadata
-    var paymentIntent = await new PaymentIntentService().CreateAsync(new PaymentIntentCreateOptions
-    {
-        Amount = totalCents,
-        Currency = "usd",
-        Metadata = new Dictionary<string, string> { { "order_id", orderId.ToString() } }
-    });
-
-    return Result<PaymentIntentResponse>.Success(new PaymentIntentResponse
-    {
-        ClientSecret = paymentIntent.ClientSecret,
-        OrderId = orderId
-    });
-}
-
-// WebhooksController validates Stripe signatures before processing
-var stripeEvent = EventUtility.ConstructEvent(json, stripeSignature, _stripeOptions.Value.WebhookSecret);
-```
+Order creation wrapped in a transaction, followed by Stripe PaymentIntent creation with order metadata. Webhooks use signature verification via `EventUtility.ConstructEvent`. The [idempotency layer](#idempotency-keys) protects against duplicate charges during network retries.
 
 > [View full source](https://github.com/csmith468/DigitalStorefront/tree/main/server/API/Services/Orders)
 
 ### SignalR Real-Time Viewer Tracking
 
-Live viewer count on product pages with proper state management:
-
-```csharp
-// ViewerTrackingService manages state with thread-safe collections
-public class ViewerTrackingService : IViewerTrackingService
-{
-    private readonly ConcurrentDictionary<string, int> _viewerCounts = new();
-    private readonly ConcurrentDictionary<string, string> _connectionToProduct = new();
-
-    public ViewerJoinResult TrackViewer(string connectionId, string productSlug)
-    {
-        var previousResult = UntrackViewer(connectionId);  // Handle user switching products
-        _connectionToProduct[connectionId] = productSlug;
-        var count = _viewerCounts.AddOrUpdate(productSlug, 1, (_, c) => c + 1);
-        return new ViewerJoinResult(productSlug, count, previousResult);
-    }
-}
-
-// Hub is thin orchestration layer
-public class ProductViewerHub : Hub
-{
-    public async Task JoinProductAsync(string productSlug)
-    {
-        var result = _viewerTrackingService.TrackViewer(Context.ConnectionId, productSlug);
-        await Groups.AddToGroupAsync(Context.ConnectionId, productSlug);
-        await Clients.Group(productSlug).SendAsync("ViewerCountUpdated", result.ViewerCount);
-    }
-}
-```
+Live viewer counts on product pages. State management is extracted from the Hub into a dedicated `ViewerTrackingService`, keeping the Hub as a thin orchestration layer. This separation made the state logic unit-testable—7 tests cover edge cases like users rapidly switching between products.
 
 > [View full source](https://github.com/csmith468/DigitalStorefront/tree/main/server/API/Infrastructure/Viewers)
 
@@ -331,29 +240,33 @@ protected override async Task ExecuteAsync(CancellationToken stoppingToken)
 
 ### Data Integrity
 
-**Optimistic Concurrency** - `UpdatedAt` timestamp comparison prevents lost updates:
+**Optimistic Concurrency** - `UpdatedAt` timestamp comparison prevents lost updates. The `VerifyConcurrencyAsync` method compares expected vs. actual timestamps, throwing `ConcurrencyException` on mismatch (converted to HTTP 409 by middleware).
+
+### Idempotency Keys
+
+Network retries can cause duplicate orders or charges. The `[Idempotent]` action filter handles this by hashing the request body and storing responses for replay:
 
 ```csharp
-public async Task UpdateAsync<T>(T obj, DateTime? expectedUpdatedAt, CancellationToken ct)
+var requestHash = ComputeSHA256Hash(requestBody);
+var existing = await _idempotencyService.GetExistingAsync(clientKey, endpoint);
+
+if (existing != null)
 {
-    await VerifyConcurrencyAsync<T>(id, expectedUpdatedAt, ct); // Throws ConcurrencyException if mismatch
-    // ... proceed with update
+    if (existing.RequestHash != requestHash)
+    {
+        // Same key, different payload = potential fraud or client bug
+        return Conflict("Idempotency key already used with different request data");
+    }
+
+    // Replay cached response
+    Response.Headers["Idempotent-Replayed"] = "true";
+    return existing.CachedResponse;
 }
+
+// Execute request, cache response for 24 hours
 ```
 
-**Idempotency Keys** - SHA256 hashes request body to prevent duplicates and detect misuse:
-
-```csharp
-[Idempotent] // Custom action filter
-[HttpPost]
-public async Task<ActionResult<ProductDetailDto>> CreateProduct(ProductFormDto dto)
-{
-    // If Idempotency-Key seen with same request hash, returns cached response
-    // If seen with different hash, returns 409 Conflict (fraud prevention)
-}
-```
-
-The frontend axios interceptor auto-generates UUIDs for mutations. Keys expire after 24 hours.
+The frontend axios interceptor auto-generates UUIDs for all mutations, so retries are safe by default.
 
 ### Observability
 
@@ -368,17 +281,9 @@ The frontend axios interceptor auto-generates UUIDs for mutations. Keys expire a
 
 ### React Query for Server State
 
-All server data flows through React Query with custom hooks:
+All server data flows through React Query with custom hooks. Mutations use `useMutationWithToast` for automatic cache invalidation and toast notifications:
 
 ```typescript
-export const useProducts = (filters: ProductFilters) => {
-  return useQuery({
-    queryKey: ['products', filters],
-    queryFn: ({ signal }) => getProducts(filters, signal),
-    staleTime: 1000 * 60 * 5, // 5 minutes
-  });
-};
-
 export const useCreateProduct = () => {
   return useMutationWithToast({
     mutationFn: (product: ProductFormRequest) => createProduct(product),
@@ -392,28 +297,9 @@ export const useCreateProduct = () => {
 }
 ```
 
-### SignalR Hook with Reconnection
+### SignalR Hook
 
-```typescript
-export function useProductViewers(productSlug: string | undefined) {
-  const [viewerCount, setViewerCount] = useState<number | null>(null);
-
-  useEffect(() => {
-    const connection = new signalR.HubConnectionBuilder()
-      .withUrl(`${API_URL}/hubs/product-viewers`)
-      .withAutomaticReconnect()
-      .build();
-
-    connection.on('ViewerCountUpdated', setViewerCount);
-    connection.onreconnected(() => connection.invoke('JoinProductAsync', productSlug));
-    connection.start().then(() => connection.invoke('JoinProductAsync', productSlug));
-
-    return () => { connection.stop(); };
-  }, [productSlug]);
-
-  return { viewerCount };
-}
-```
+The `useProductViewers` hook wraps SignalR connection lifecycle. The key detail: `onreconnected` must rejoin the product group, since SignalR group membership is lost on disconnect.
 
 ### Custom Primitives Library
 
@@ -427,7 +313,7 @@ export function useProductViewers(productSlug: string | undefined) {
 
 **Layout Primitives:**
 
-- `Modal`, `ConfirmModal`,`Tabs`, `TabNav`, `PageHeader`, `PaginationWrapper`, `LoadingScreen`, `OverlappingLabelBox`
+- `Modal`, `ConfirmModal`, `Tabs`, `TabNav`, `PageHeader`, `PaginationWrapper`, `LoadingScreen`, `OverlappingLabelBox`
 
 > [View full source](https://github.com/csmith468/DigitalStorefront/tree/main/client/src/components/primitives)
 
@@ -582,7 +468,8 @@ digital-storefront/
 
 ---
 
-## Local Development
+<details>
+<summary><strong>Local Development</strong></summary>
 
 **Prerequisites:** Node.js 20+, .NET 8 SDK, Docker Desktop
 
@@ -606,9 +493,10 @@ cd server/API && dotnet run
 cd client && npm install && npm run dev
 ```
 
----
+</details>
 
-## Deployment
+<details>
+<summary><strong>Deployment</strong></summary>
 
 Push to `main` triggers GitHub Actions, which runs tests, builds, and deploys to Azure (App Service for backend, Static Web Apps for frontend).
 
@@ -626,6 +514,8 @@ cd client && npm run build && npm test
 # E2E (requires API running)
 cd client && npx playwright test
 ```
+
+</details>
 
 ---
 

@@ -92,7 +92,8 @@ try
 
     app.MapHealthCheckEndpoints();
     app.MapControllers();
-    app.MapHub<ProductViewerHub>("/hubs/product-viewers");
+    app.MapHub<ProductViewerHub>("/hubs/product-viewers")
+        .RequireCors(app.Environment.IsDevelopment() ? "DevCors" : "ProdCors");
 
     app.Run();
 }

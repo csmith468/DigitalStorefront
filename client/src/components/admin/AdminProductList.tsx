@@ -126,7 +126,10 @@ export function AdminProductList() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              <tr className="bg-green-50 hover:bg-green-100 border-b-2 border-green-300">
+              <tr
+                onClick={() => navigate('/admin/products/try')}
+                className="bg-green-50 hover:bg-green-100 border-b-2 border-green-300 cursor-pointer"
+              >
                 <td className="px-6 py-4" colSpan={2}>
                   <div>
                     <div className="text-sm font-bold text-green-800">TRY IT OUT</div>
@@ -140,13 +143,10 @@ export function AdminProductList() {
                   <div>FREE</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold">
-                  <button
-                    onClick={() => navigate('/admin/products/try')}
-                    className="text-green-600 hover:text-green-800 inline-flex items-center gap-1"
-                  >
+                  <span className="text-green-600 inline-flex items-center gap-1">
                     <PencilIcon className="h-5 w-5" />
                     <span>Try Now</span>
-                  </button>
+                  </span>
                 </td>
               </tr>
               {products.length === 0 ? (
